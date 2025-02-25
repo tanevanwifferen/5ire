@@ -113,8 +113,7 @@ export default function ImgCtrl({
     editStage(chat.id, {
       input: insertAtCursor(
         editor,
-        useEmbed ? `<embed src="${url}" style="width:260px; display:block;" type="application/pdf" />` : `<img src="${url}" style="width:260px; display:block;" />`
-        //useEmbed ? `<iframe src="${url}" style="width:100%; height:500px; display:block; border:1px solid #ccc; border-radius:4px;" sandbox="allow-same-origin allow-scripts allow-forms" frameborder="0"></iframe>` : `<img src="${url}" style="width:260px; display:block;" />`
+        useEmbed ? `<iframe src="${url}" style="width:100%; height:500px; display:block; border:1px solid #ccc; border-radius:4px;" sandbox="allow-same-origin" frameborder="0"></iframe>` : `<img src="${url}" style="width:260px; display:block;" />`
       ),
     });
     setOpen(false);

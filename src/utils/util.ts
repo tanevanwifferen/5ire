@@ -297,13 +297,13 @@ export function splitByImg(html: string, base64Only: boolean = false) {
     '.heif': 'image/heif',
     '.pdf': 'application/pdf',
   };
-  const splitRegex = base64Only
-    ? /(<(img|embed)\s+src="data:[^"]+"\s*.*\/?>)/g
-    : /(<(img|embed)\s+src="[^"]+"\s*.*\/?>)/g;
-  const srcRegex = base64Only
-    ? /<(img|embed)\s+src="(data:[^"]+)"\s*.*\/?>/g
-    : /<(img|embed)\s+src="([^"]+)"\s*.*\/?>/g;
-  const items = html
+  const splitRegex = base64Only 
+    ? /(<(img|embed|iframe)\s+src="data:[^"]+"\s*.*?>)/g 
+    : /(<(img|embed|iframe)\s+src="[^"]+"\s*.*?>)/g;
+  const srcRegex = base64Only 
+    ? /<(img|embed|iframe)\s+src="(data:[^"]+)"\s*.*?>/g
+    : /<(img|embed|iframe)\s+src="([^"]+)"\s*.*?>/g;
+  const items = html 
     .split(splitRegex)
     .map((item) => item.trim())
     .filter((item: string) => item !== '');
@@ -322,7 +322,7 @@ export function splitByImg(html: string, base64Only: boolean = false) {
         mimeType = ext ? mimeTypes[ext] || defaultMimeType : defaultMimeType;
       }
       return {
-        type: tagType === 'img' ? 'image' : 'document',
+        type: tagType === 'img' ? 'image' : 'document', // Both embed and iframe tags are treated as documents
         dataType,
         mimeType,
         data,

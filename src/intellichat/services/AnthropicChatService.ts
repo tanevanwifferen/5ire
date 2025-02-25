@@ -80,7 +80,8 @@ export default class AnthropicChatService
   protected async convertPromptContent(
     content: string,
   ): Promise<string | IChatRequestMessageContent[]> {
-    if (this.context.getModel().vision?.enabled) {
+    const model = this.context.getModel();
+    if (model.vision?.enabled || model.pdfSupport?.enabled) {
       const items = splitByImg(content);
       const result: IChatRequestMessageContent[] = [];
       for (let item of items) {
@@ -93,6 +94,21 @@ export default class AnthropicChatService
           }
           result.push({
             type: 'image',
+            source: {
+              type: 'base64',
+              media_type: item.mimeType as string,
+              data,
+            },
+          });
+        } else if (item.type === 'document') {
+          let data = '';
+          if (item.dataType === 'URL') {
+            data = await getBase64(item.data);
+          } else {
+            data = item.data.split(',')[1]; // remove data:application/pdf;base64,
+          }
+          result.push({
+            type: 'document',
             source: {
               type: 'base64',
               media_type: item.mimeType as string,

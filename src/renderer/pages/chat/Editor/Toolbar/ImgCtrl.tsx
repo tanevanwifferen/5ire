@@ -47,6 +47,8 @@ export default function ImgCtrl({
   const [imgURL, setImgURL] = useState<string>('');
   const [imgName, setImgName] = useState<string>('');
   const [imgBase64, setImgBase64] = useState<string>('');
+  // true for <embed> tag, false for <img> tag
+  const [useEmbed, setUseEmbed] = useState<boolean>(false);
   const [errMsg, setErrMsg] = useState<string>('');
   const [open, setOpen] = useState<boolean>(false);
   const model = ctx.getModel();
@@ -111,7 +113,8 @@ export default function ImgCtrl({
     editStage(chat.id, {
       input: insertAtCursor(
         editor,
-        `<img src="${url}" style="width:260px; display:block;" />`
+        useEmbed ? `<embed src="${url}" style="width:260px; display:block;" type="application/pdf" />` : `<img src="${url}" style="width:260px; display:block;" />`
+        //useEmbed ? `<iframe src="${url}" style="width:100%; height:500px; display:block; border:1px solid #ccc; border-radius:4px;" sandbox="allow-same-origin allow-scripts allow-forms" frameborder="0"></iframe>` : `<img src="${url}" style="width:260px; display:block;" />`
       ),
     });
     setOpen(false);
@@ -146,6 +149,7 @@ export default function ImgCtrl({
             if (file.name && file.base64) {
               setImgName(file.name);
               setImgBase64(file.base64);
+              setUseEmbed(file.useEmbed);
             }
           }}
         >

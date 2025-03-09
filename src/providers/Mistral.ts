@@ -2,7 +2,7 @@ import { IServiceProvider } from './types';
 
 export default {
   name: 'Mistral',
-  apiBase: 'https://api.mistral.ai',
+  apiBase: 'https://api.mistral.ai/v1',
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,
@@ -53,7 +53,7 @@ export default {
       },
       'pixtral-large-latest': {
         name: 'pixtral-large-latest',
-        contextWindow: 131072,
+        contextWindow: 128000,
         maxTokens: 4096,
         defaultMaxTokens: 2048,
         inputPrice: 0.002,
@@ -81,7 +81,7 @@ export default {
       },
       'ministral-3b-latest': {
         name: 'ministral-3b-latest',
-        contextWindow: 131072,
+        contextWindow: 128000,
         maxTokens: 4096,
         defaultMaxTokens: 2048,
         inputPrice: 0.00004,

@@ -8,6 +8,7 @@ export type ProviderType =
   | 'Mistral'
   | 'DeepSeek'
   | 'Ollama'
+  | 'LMStudio'
   | 'ChatBro'
   | '5ire'
   | 'Doubao'
@@ -133,6 +134,7 @@ export interface IServiceProvider {
   options: {
     apiBaseCustomizable?: boolean;
     apiKeyCustomizable?: boolean;
+    modelsEndpoint?:string
   };
   chat: IChatConfig;
   embedding?: IEmbeddingConfig;

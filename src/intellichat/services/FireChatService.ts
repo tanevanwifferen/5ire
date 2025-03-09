@@ -10,6 +10,7 @@ import Fire from 'providers/Fire';
 import useAuthStore from 'stores/useAuthStore';
 import INextChatService from './INextCharService';
 import FireReader from 'intellichat/readers/FireReader';
+import { urlJoin } from 'utils/util';
 
 const debug = Debug('5ire:intellichat:FireChatService');
 
@@ -41,8 +42,8 @@ export default class FireChatService
     if (!key) {
       throw new Error('User is not authenticated');
     }
-    const url = new URL(`/v1/chat/completions`, base);
-    const response = await fetch(url.toString(), {
+    const url = urlJoin(`/v1/chat/completions`, base);
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -33,6 +33,12 @@ import useChatStore from 'stores/useChatStore';
 
 const ImageAddIcon = bundleIcon(ImageAdd20Filled, ImageAdd20Regular);
 
+/**
+ * ImgCtrl component
+ * 
+ * This component provides a button and dialog for adding images to the chat.
+ * It only renders when the selected model has vision capabilities enabled.
+ */
 export default function ImgCtrl({
   ctx,
   chat,
@@ -72,9 +78,10 @@ export default function ImgCtrl({
     Mousetrap.unbind('esc');
   };
 
+  // Make sure vision capabilities are properly detected when model changes
   const vision = useMemo<IChatModelVision>(() => {
     return model?.vision || { enabled: false };
-  }, [model]);
+  }, [model, chat]); // Add chat as a dependency to ensure updates when chat changes
 
   useEffect(() => {
     Mousetrap.bind('mod+shift+7', openDialog);
@@ -152,7 +159,7 @@ export default function ImgCtrl({
             }
           }}
         >
-          {t('Common.SelectImage')}
+          {t('Common.SelectFile')}
         </Button>
         <div className="mt-1 text-base">{imgName}</div>
       </div>

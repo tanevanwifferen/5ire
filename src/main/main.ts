@@ -193,7 +193,7 @@ ipcMain.handle('get-app-version', () => {
 });
 
 ipcMain.handle('ingest-event', (_, data) => {
-  axiom.ingest(data);
+  //axiom.ingest(data);
 });
 
 ipcMain.handle('open-external', (_, data) => {

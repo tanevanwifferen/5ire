@@ -133,9 +133,11 @@ const useChatStore = create<IChatStore>((set, get) => ({
   },
   initChat: (chat: Partial<IChat>) => {
     const { api } = useSettingsStore.getState();
+    
+    // Force the model to be the one from the API settings
     const $chat = Object.assign(
       {
-        model: api.model,
+        model: api.model, // This is the model from the config file
         temperature: getProvider(api.provider).chat.temperature.default,
         maxTokens: null,
         maxCtxMessages: NUM_CTX_MESSAGES,
@@ -143,7 +145,10 @@ const useChatStore = create<IChatStore>((set, get) => ({
       },
       get().tempStage,
       chat,
+      // Force the model to be the one from the API settings, overriding any other value
+      { model: api.model }
     ) as IChat;
+    
     debug('Init a chat', $chat);
     set({ chat: $chat, messages: [] });
     return $chat;
@@ -185,9 +190,14 @@ const useChatStore = create<IChatStore>((set, get) => ({
     chat: Partial<IChat>,
     beforeSetCallback?: (chat: IChat) => Promise<void>,
   ) => {
+    // Get the current model from the API settings
+    const { api } = useSettingsStore.getState();
+    
     const $chat = {
       ...get().chat,
       ...chat,
+      // Force the model to be the one from the API settings
+      model: api.model,
       id: typeid('chat').toString(),
       createdAt: date2unix(new Date()),
     } as IChat;

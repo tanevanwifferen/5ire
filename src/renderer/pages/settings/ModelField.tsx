@@ -37,17 +37,12 @@ export default function ModelField() {
   }, [provider]);
 
   const curModelLabel = useMemo(() => {
-    return models.find((m) => m.name === model)?.label || '';
-  }, [model, models]);
+    // The model stored in settings is now the label/key
+    return model || '';
+  }, [model]);
 
-  useEffect(() => {
-    if (provider) {
-      const defaultModel = getDefaultChatModel(provider.name).name || '';
-      setAPI({
-        model: model || defaultModel,
-      });
-    }
-  }, [provider]);
+  // We don't need this effect at all - it's causing the model to be overwritten
+  // The model should be loaded from the settings store and not changed unless explicitly selected by the user
 
   useEffect(() => {
     if (provider && model) {
@@ -103,7 +98,7 @@ export default function ModelField() {
                   model={models[0].name}
                   withTooltip
                 />
-                <span className="latin">{models[0].label}</span>
+                <span className="latin">{models[0].label as string}</span>
                 {models[0].description && (
                   <Tooltip
                     content={models[0].description as string}
@@ -127,14 +122,14 @@ export default function ModelField() {
               >
                 {models.map((model: IChatModel) => (
                   <Option
-                    key={model.name as string}
+                    key={model.label as string}
                     text={model.label as string}
-                    value={model.name as string}
+                    value={model.label as string}  // Use the model key (label) instead of the name
                   >
                     <div className="flex justify-start items-center latin">
                       <div className="flex justify-start items-baseline gap-1">
                         <ToolStatusIndicator
-                          model={model.name}
+                          model={model.label as string}
                           provider={provider.name}
                         />
                         <span className="latin">{model.label as string}</span>

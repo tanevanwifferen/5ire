@@ -31,12 +31,15 @@ export default function APISettings() {
   useEffect(() => {
     const provider = getProvider(api.provider);
     setProvider(provider);
-    onAPIProviderChange(null, { optionValue: provider.name });
+    // Don't call onAPIProviderChange here as it resets the model to default
+    // Just set the provider state
   }, [api.provider, session]);
 
   const onAPIProviderChange = (ev: any, data: any) => {
     const $provider = getProvider(data.optionValue);
     const defaultModel = getDefaultChatModel(data.optionValue);
+    
+    // Get the existing config for this provider, or use defaults if none exists
     const apiConfig = window.electron.store.get(
       `settings.api.providers.${data.optionValue}`,
       {
@@ -51,12 +54,16 @@ export default function APISettings() {
       apiConfig.key = '';
       apiConfig.base = $provider.apiBase;
     }
+    
+    // Only set the model to default if the current model doesn't exist in the provider's models
+    // This preserves the user's model selection when possible
     if (
       Object.keys($provider.chat.models).length &&
       !$provider.chat.models[apiConfig.model]
     ) {
       apiConfig.model = defaultModel.name || '';
     }
+    
     setAPI(apiConfig);
   };
 

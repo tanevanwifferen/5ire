@@ -151,11 +151,17 @@ export default function ImgCtrl({
           id="select-file-button"
           onClick={async () => {
             const dataString = await window.electron.selectImageWithBase64();
-            const file = JSON.parse(dataString);
-            if (file.name && file.base64) {
-              setImgName(file.name);
-              setImgBase64(file.base64);
-              setUseEmbed(file.useEmbed);
+            if (dataString) {
+              try {
+                const file = JSON.parse(dataString);
+                if (file.name && file.base64) {
+                  setImgName(file.name);
+                  setImgBase64(file.base64);
+                  setUseEmbed(file.useEmbed);
+                }
+              } catch (err) {
+                console.error('Failed to parse image data:', err);
+              }
             }
           }}
         >

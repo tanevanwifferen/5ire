@@ -112,7 +112,7 @@ export default abstract class NextCharService {
 
   protected getModelName() {
     const model = this.context.getModel();
-    return this.modelMapping[model.name as string] || model.name;
+    return this.modelMapping[model.label as string] || model.label;
   }
 
   public onComplete(callback: (result: any) => Promise<void>) {

@@ -34,6 +34,12 @@ export default {
             'image/webp',
           ],
         },
+        pdfSupport: {
+          enabled: true,
+          allowUrl: true,
+          allowBase64: true,
+          allowedMimeTypes: ['application/pdf'],
+        },
         description: `Highest level of intelligence and capability with toggleable extended thinking`,
         group: 'Claude-3.5',
       },
@@ -54,6 +60,12 @@ export default {
             'image/gif',
             'image/webp',
           ],
+          pdfSupport: {
+            enabled: true,
+            allowUrl: true,
+            allowBase64: true,
+            allowedMimeTypes: ['application/pdf'],
+          },
         },
         description: `High level of intelligence and capability`,
         group: 'Claude-3.5',
@@ -108,6 +120,12 @@ export default {
             'image/webp',
           ],
         },
+        pdfSupport: {
+          enabled: true,
+          allowUrl: true,
+          allowBase64: true,
+          allowedMimeTypes: ['application/pdf'],
+        },
         description:
           'A multilingual model with balance of intelligence and speed, strong utility, balanced for scaled deployments',
         group: 'Claude-3',
@@ -129,6 +147,12 @@ export default {
             'image/gif',
             'image/webp',
           ],
+        },
+        pdfSupport: {
+          enabled: true,
+          allowUrl: true,
+          allowBase64: true,
+          allowedMimeTypes: ['application/pdf'],
         },
         description:
           'Fastest and most compact multilingual model for near-instant responsiveness, quick and accurate targeted performance',

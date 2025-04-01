@@ -9,7 +9,7 @@ import {
 import useChatStore from 'stores/useChatStore';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@fluentui/react-components';
-import { removeTagsExceptImg, setCursorToEnd } from 'utils/util';
+import { removeTagsExceptMediaTags, setCursorToEnd } from 'utils/util';
 import { debounce } from 'lodash';
 import { tempChatId } from 'consts';
 import Spinner from '../../../components/Spinner';
@@ -83,7 +83,7 @@ export default function Editor({
           } else {
             event.preventDefault();
             setSubmitted(true);
-            onSubmit(removeTagsExceptImg(editorRef.current?.innerHTML || ''));
+            onSubmit(removeTagsExceptMediaTags(editorRef.current?.innerHTML || ''));
             // @ts-ignore
             editorRef.current.innerHTML = '';
             editStage(chat.id, { input: '' });

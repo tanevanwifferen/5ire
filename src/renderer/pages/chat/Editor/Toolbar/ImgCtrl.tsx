@@ -28,7 +28,7 @@ import { useTranslation } from 'react-i18next';
 import { isBlank } from 'utils/validators';
 import { isWebUri } from 'valid-url';
 import { insertAtCursor } from 'utils/util';
-import { IChatModelVision } from 'providers/types';
+import { IChatModelPdf, IChatModelVision } from 'providers/types';
 import useChatStore from 'stores/useChatStore';
 
 const ImageAddIcon = bundleIcon(ImageAdd20Filled, ImageAdd20Regular);
@@ -47,6 +47,8 @@ export default function ImgCtrl({
   const [imgURL, setImgURL] = useState<string>('');
   const [imgName, setImgName] = useState<string>('');
   const [imgBase64, setImgBase64] = useState<string>('');
+  // true for <embed> tag, false for <img> tag
+  const [useEmbed, setUseEmbed] = useState<boolean>(false);
   const [errMsg, setErrMsg] = useState<string>('');
   const [open, setOpen] = useState<boolean>(false);
   const model = ctx.getModel();
@@ -74,6 +76,10 @@ export default function ImgCtrl({
     return model?.vision || { enabled: false };
   }, [model]);
 
+  const pdf = useMemo<IChatModelPdf>(() => {
+    return model?.pdfSupport || { enabled: false };
+  }, [model]);
+
   useEffect(() => {
     Mousetrap.bind('mod+shift+7', openDialog);
     if (vision.enabled) {
@@ -82,7 +88,7 @@ export default function ImgCtrl({
     return () => {
       Mousetrap.unbind('mod+shift+7');
     };
-  }, [vision]);
+  }, [vision, pdf]);
 
   const isAddBtnDisabled = useMemo(() => {
     return isBlank(imgURL) && isBlank(imgBase64);
@@ -111,7 +117,7 @@ export default function ImgCtrl({
     editStage(chat.id, {
       input: insertAtCursor(
         editor,
-        `<img src="${url}" style="width:260px; display:block;" />`,
+        useEmbed ? `<iframe src="${url}" style="width:100%; height:500px; display:block; border:1px solid #ccc; border-radius:4px;" sandbox="allow-same-origin" frameborder="0"></iframe>` : `<img src="${url}" style="width:260px; display:block;" />`,
       ),
     });
     setOpen(false);
@@ -142,14 +148,17 @@ export default function ImgCtrl({
           id="select-file-button"
           onClick={async () => {
             const dataString = await window.electron.selectImageWithBase64();
-            const file = JSON.parse(dataString);
-            if (file.name && file.base64) {
-              setImgName(file.name);
-              setImgBase64(file.base64);
+            if(dataString){
+              const file = JSON.parse(dataString);
+              if (file.name && file.base64) {
+                setImgName(file.name);
+                setImgBase64(file.base64);
+                setUseEmbed(file.useEmbed);
+              }
             }
           }}
         >
-          {t('Common.SelectImage')}
+          {t('Common.SelectFile')}
         </Button>
         <div className="mt-1 text-base">{imgName}</div>
       </div>

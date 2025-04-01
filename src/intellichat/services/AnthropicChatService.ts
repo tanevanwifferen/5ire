@@ -89,7 +89,8 @@ export default class AnthropicChatService
   protected async convertPromptContent(
     content: string,
   ): Promise<string | IChatRequestMessageContent[]> {
-    if (this.context.getModel().vision?.enabled) {
+    const model = this.context.getModel();
+    if (model.vision?.enabled || model.pdfSupport?.enabled) {
       const items = splitByImg(content);
       const promises = items.map(async (item) => {
         if (item.type === 'image') {
@@ -107,8 +108,22 @@ export default class AnthropicChatService
               data,
             },
           };
-        }
-        if (item.type === 'text') {
+        } else if (item.type === 'document') {
+          let data = '';
+          if (item.dataType === 'URL') {
+            data = await getBase64(item.data);
+          } else {
+            data = item.data.split(',')[1]; // remove data:application/pdf;base64,
+          }
+          return {
+            type: 'document',
+            source: {
+              type: 'base64',
+              media_type: item.mimeType as string,
+              data,
+            },
+          }
+        } else if (item.type === 'text') {
           return {
             type: 'text',
             text: item.data,
@@ -129,21 +144,21 @@ export default class AnthropicChatService
     messages: IChatRequestMessage[],
     msgId?:string
   ): Promise<IChatRequestMessage[]> {
-    const result = this.context
+    const result = await this.context
       .getCtxMessages(msgId)
-      .reduce((acc: IChatRequestMessage[], msg: IChatMessage) => {
+      .reduce(async (acc: Promise<IChatRequestMessage[]>, msg: IChatMessage) => {
         return [
-          ...acc,
+          ...await acc,
           {
             role: 'user',
-            content: msg.prompt,
+            content: await this.convertPromptContent(msg.prompt),
           },
           {
             role: 'assistant',
-            content: msg.reply,
+            content: await this.convertPromptContent(msg.reply),
           },
         ] as IChatRequestMessage[];
-      }, []);
+      }, Promise.resolve([]));
 
     const processedMessages = (await Promise.all(
       messages.map(async (msg) => {

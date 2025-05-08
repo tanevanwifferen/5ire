@@ -54,7 +54,9 @@ export default class OllamaChatService
             // remove data:image/png;base64,
             return base64Data[1];
           }) || [];
-      const remoteImageItems = items.filter((item: any) => item.dataType === 'URL');
+      const remoteImageItems = items.filter(
+        (item: any) => item.dataType === 'URL',
+      );
       if (remoteImageItems.length > 0) {
         const base64Images = await Promise.all(
           remoteImageItems.map(async (item: any) => {
@@ -82,7 +84,9 @@ export default class OllamaChatService
       }
       return result;
     }
-    return stripHtmlTags(content);
+    return {
+      content: stripHtmlTags(content),
+    };
   }
 
   protected makeToolMessages(

@@ -17,6 +17,8 @@ import { ITool } from 'intellichat/readers/IChatReader';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
 import OpenAI from '../../providers/OpenAI';
+import { isObject } from 'lodash';
+import Ollama from 'providers/Ollama';
 
 // const debug = Debug('5ire:intellichat:OpenAIChatService');
 
@@ -150,19 +152,17 @@ export default class OpenAIChatService
         }
         const { content } = msg;
         if (typeof content === 'string') {
-          // Note: Ollama models have a different format for messages
-          // https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-chat-completion
-          if (this.name.toLocaleLowerCase() === 'ollama') {
+          const formattedContent = await this.convertPromptContent(content);
+          // Note: Ollama's API requires the content to be in a specific format
+          if (this.name === Ollama.name) {
             return {
               role: 'user',
-              ...((await this.convertPromptContent(
-                content,
-              )) as IChatRequestMessageContent),
+              ...(formattedContent as Partial<IChatRequestMessageContent>),
             };
           } else {
             return {
               role: 'user',
-              content: await this.convertPromptContent(content),
+              content: formattedContent,
             };
           }
         }

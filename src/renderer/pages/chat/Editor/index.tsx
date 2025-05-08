@@ -125,7 +125,7 @@ export default function Editor({
           insertText(text);
         });
       } else if (item.kind === 'file' && item.type.startsWith('image/')) {
-        // 处理图片
+        // handle image paste
         const file = item.getAsFile();
         const reader = new FileReader();
         reader.onload = function (event) {
@@ -133,6 +133,13 @@ export default function Editor({
           img.src = event.target?.result as string;
           if (editorRef.current) {
             editorRef.current.appendChild(img);
+            const selection = window.getSelection();
+            // move cursor after the image
+            const range = document.createRange();
+            range.setStartAfter(img);
+            range.collapse(true);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
           }
         };
         reader.readAsDataURL(file as Blob);

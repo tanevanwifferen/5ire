@@ -386,7 +386,10 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
     const { getModelsSync, getAvailableProvider } = get();
     const provider = getAvailableProvider(providerName);
     if (provider.modelsEndpoint) {
-      return mergeRemoteModel(modelName);
+      const customModel = provider.models.find(
+        (m: IChatModelConfig) => m.name === modelName,
+      );
+      return mergeRemoteModel(modelName, customModel);
     }
     const models = getModelsSync(provider, { withDisabled: false });
     return (
@@ -420,9 +423,9 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
     provider: IChatProviderConfig,
     options?: { withDisabled?: boolean },
   ) => {
-    const modelsMap = keyBy(provider.models || [], 'name');
     let $models: IChatModelConfig[] = [];
     if (provider.modelsEndpoint) {
+      const modelsMap = keyBy(provider.models || [], 'name');
       try {
         const resp = await fetch(
           `${provider.apiBase}${provider.modelsEndpoint}`,

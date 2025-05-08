@@ -140,7 +140,7 @@ export default abstract class NextCharService {
     content: string,
   ): Promise<
     | string
-    | IChatRequestMessageContent[]
+    | Partial<IChatRequestMessageContent>
     | IChatRequestMessageContent[]
     | IGeminiChatRequestMessagePart[]
   > {

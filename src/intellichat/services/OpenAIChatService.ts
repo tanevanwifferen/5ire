@@ -43,7 +43,9 @@ export default class OpenAIChatService
 
   protected async convertPromptContent(
     content: string,
-  ): Promise<string | IChatRequestMessageContent[]> {
+  ): Promise<
+    string | IChatRequestMessageContent[] | Partial<IChatRequestMessageContent>
+  > {
     if (this.context.getModel().capabilities.vision?.enabled) {
       const items = splitByImg(content);
       const result: IChatRequestMessageContent[] = [];
@@ -111,7 +113,6 @@ export default class OpenAIChatService
               return content
                 .map((item) => {
                   if (typeof item === 'string') return item;
-
                   if (item && typeof item === 'object') {
                     if (item.type === 'text' && typeof item.text === 'string') {
                       return item.text;
@@ -149,10 +150,21 @@ export default class OpenAIChatService
         }
         const { content } = msg;
         if (typeof content === 'string') {
-          return {
-            role: 'user',
-            content: await this.convertPromptContent(content),
-          };
+          // Note: Ollama models have a different format for messages
+          // https://github.com/ollama/ollama/blob/main/docs/api.md#generate-a-chat-completion
+          if (this.name.toLocaleLowerCase() === 'ollama') {
+            return {
+              role: 'user',
+              ...((await this.convertPromptContent(
+                content,
+              )) as IChatRequestMessageContent),
+            };
+          } else {
+            return {
+              role: 'user',
+              content: await this.convertPromptContent(content),
+            };
+          }
         }
         return {
           role: 'user',
@@ -240,9 +252,9 @@ export default class OpenAIChatService
     const maxTokens = this.context.getMaxTokens();
     if (maxTokens) {
       // OpenAI's new API use max_completion_tokens, while others still use max_tokens
-      if(this.name.toLocaleLowerCase() === 'openai'){
+      if (this.name.toLocaleLowerCase() === 'openai') {
         payload.max_completion_tokens = maxTokens;
-      }else{
+      } else {
         payload.max_tokens = maxTokens;
       }
     }

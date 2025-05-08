@@ -39,6 +39,8 @@
     <a href="https://x.com/intent/follow?screen_name=1ronben">Twitter</a>
     ·
     <a href="https://github.com/nanbingxyz/5ire/releases/latest">Releases</a>
+     ·
+    <a href="https://5ireai.com">中文官网</a>
   </p>
   <div><a href="https://buymeacoffee.com/ironben"><img src="https://github.com/user-attachments/assets/2265e2d6-2a17-4a48-b779-52a925261135" style="width:200px"/></a></div>
    <br />
@@ -56,7 +58,7 @@ These components are required as they constitute the runtime environment for the
 
 For detailed installation instructions, please see our [Installation Guide](INSTALLATION.md).
 
-### Dev Guide
+### Getting involved
 
 If you want to contribute code to 5ire or develop your own apps based on 5ire, start with the [Development Setup Guide](DEVELOPMENT.md).
 

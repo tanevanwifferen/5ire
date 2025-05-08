@@ -87,6 +87,11 @@
   table tr:first-child th:last-child {
     border-top-right-radius: 6px;
   }
+  img {
+    max-width: 95%;
+    max-height: 300px;
+    border-radius: 6px;
+  }
 }
 
 [data-theme='dark'] .message:not(.hljs *, .think, .think *) {

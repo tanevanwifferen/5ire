@@ -58,7 +58,7 @@ These components are required as they constitute the runtime environment for the
 
 For detailed installation instructions, please see our [Installation Guide](INSTALLATION.md).
 
-### Dev Guide
+### Getting involved
 
 If you want to contribute code to 5ire or develop your own apps based on 5ire, start with the [Development Setup Guide](DEVELOPMENT.md).
 

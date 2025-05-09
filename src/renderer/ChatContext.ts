@@ -132,15 +132,14 @@ const getCtxMessages = (msgId?: string) => {
     if (msgId) {
       const index = messages.findIndex((m) => m.id === msgId);
       if (index > -1) {
-        messages = messages.slice(0, index + 1);
+        messages = messages.slice(0, index);
       }
     }
-
-    if (messages.length <= maxCtxMessages) {
-      ctxMessages = messages.slice(0, -1);
+    messages = messages.filter((m) => m.prompt && m.reply);
+    if (messages.length > maxCtxMessages) {
+      ctxMessages = messages.slice(-maxCtxMessages);
     } else {
-      // @NOTE: 去除最后一条外的最后的 maxCtxMessages 条 （最后一条是刚创建的）
-      ctxMessages = messages.slice(-maxCtxMessages - 1, messages.length - 1);
+      ctxMessages = messages;
     }
   }
   // debug(`Chat(${chat.id}):getCtxMessages: ${ctxMessages.length} messages`);

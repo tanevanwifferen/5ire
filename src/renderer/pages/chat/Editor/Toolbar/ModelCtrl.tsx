@@ -90,7 +90,7 @@ export default function ModelCtrl({
 
   useEffect(() => {
     onModelChange();
-  }, [curModel?.name]);
+  }, [curProvider?.name, curModel?.name]);
 
   useEffect(() => {
     Mousetrap.bind('mod+shift+0', () => {

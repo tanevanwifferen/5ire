@@ -37,6 +37,7 @@ export default function ToolDetailDialog(options: {
       server &&
         window.electron.mcp.listTools(server.key).then((_tools) => {
           setTools(_tools);
+          return;
         });
     }
     return () => {
@@ -75,7 +76,7 @@ export default function ToolDetailDialog(options: {
                 >
                   <AccordionHeader>
                     <div className="text-gray-500 dark:text-gray-300 font-bold">
-                      {tool.name.split('__')[1]}
+                      {tool.name.split('--')[1]}
                     </div>
                   </AccordionHeader>
                   <AccordionPanel>

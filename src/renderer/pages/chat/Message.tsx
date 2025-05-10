@@ -193,7 +193,7 @@ export default function Message({ message }: { message: IChatMessage }) {
         {message.isActive && states.runningTool ? (
           <div className="flex flex-row justify-start items-center gap-1">
             <ToolSpinner size={20} style={{ marginBottom: '-1px' }} />
-            <span>{states.runningTool.replace('__', ':')}</span>
+            <span>{states.runningTool.replace('--', ':')}</span>
           </div>
         ) : null}
         {isLoading && isEmpty ? (

@@ -230,7 +230,7 @@
   "Tools.New": "添加工具",
   "Tools.Edit": "编辑工具",
   "Tools.Key": "工具标识",
-  "Tools.KeyHint": "工具标识必须唯一，只能由大小写字母和数字组成且不能以数字开头",
+  "Tools.KeyHint": "需全局唯一，长度至少2字符，仅含大小写字母、数字及连字符，且必须以字母开头并以非连字符结尾。​",
   "Common.Description": "描述",
   "Tools.Command": "命令",
   "Tools.EnvVars": "环境变量",
@@ -305,5 +305,6 @@
   "Common.InputUsage": "输入用量",
   "Common.StartDate": "开始日期",
   "Common.EndDate": "结束日期",
-  "Common.ExtraLarge": "特大"
+  "Common.ExtraLarge": "特大",
+  "Tools.InvalidMCPServerKey": "key不可用，请检查是否唯一，格式是否合法"
 }

@@ -248,7 +248,7 @@ export default class ModuleContext {
       }
       const { tools } = await this.clients[key].listTools();
       allTools = tools.map((tool: any) => {
-        tool.name = `${key}--${tool.name}`;
+        tool.name = `${key}__${tool.name}`;
         return tool;
       });
     } else {
@@ -257,7 +257,7 @@ export default class ModuleContext {
           const { tools } = await this.clients[clientName].listTools();
           allTools = allTools.concat(
             tools.map((tool: any) => {
-              tool.name = `${clientName}--${tool.name}`;
+              tool.name = `${clientName}__${tool.name}`;
               return tool;
             }),
           );

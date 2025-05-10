@@ -10,6 +10,7 @@ import {
   Input,
   DialogActions,
   InputOnChangeData,
+  InfoLabel,
 } from '@fluentui/react-components';
 import { useTranslation } from 'react-i18next';
 import {
@@ -182,12 +183,12 @@ export default function ToolEditDialog(options: {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Field
-                    label={t('Tools.Key')}
                     validationState={keyValidationState}
                     validationMessage={
-                      server ? t('Tools.KeyCannotUpdate') : t('Tools.KeyHint')
+                      keyValidationState==='none'?'': t('Tools.InvalidMCPServerKey')
                     }
                   >
+                    <InfoLabel className='mb-[7px]' info={server? t('Tools.KeyCannotUpdate'):t('Tools.KeyHint')} >{t('Tools.Key')}</InfoLabel>
                     <Input
                       disabled={!!server}
                       className="w-full min-w-fit"

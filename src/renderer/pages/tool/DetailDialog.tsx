@@ -75,7 +75,7 @@ export default function ToolDetailDialog(options: {
                 >
                   <AccordionHeader>
                     <div className="text-gray-500 dark:text-gray-300 font-bold">
-                      {tool.name.split('--')[1]}
+                      {tool.name.split('__')[1]}
                     </div>
                   </AccordionHeader>
                   <AccordionPanel>

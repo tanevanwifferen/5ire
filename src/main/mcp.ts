@@ -104,8 +104,10 @@ export default class ModuleContext {
       }
       const config = JSON.parse(fs.readFileSync(this.cfgPath, 'utf-8'));
       // migration to new config format
-      if (Array.isArray(config.servers)) {
-        config.mcpServers = keyBy(config.servers, 'key');
+      if (config.servers) {
+        if (Array.isArray(config.servers) && !config.mcpServers) {
+          config.mcpServers = keyBy(config.servers, 'key');
+        }
         delete config.servers;
         await this.putConfig(config);
       }
@@ -179,7 +181,7 @@ export default class ModuleContext {
     try {
       const config = await this.getConfig();
       const mcpSvr = ModuleContext.getMCPServer(server, config) as IMCPServer;
-      const {  command, args, env } = mcpSvr;
+      const { command, args, env } = mcpSvr;
       let cmd: string = command;
       if (command === 'npx') {
         cmd = process.platform === 'win32' ? `${command}.cmd` : command;

@@ -17,7 +17,6 @@ import { ITool } from 'intellichat/readers/IChatReader';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
 import OpenAI from '../../providers/OpenAI';
-import { isObject } from 'lodash';
 import Ollama from 'providers/Ollama';
 
 // const debug = Debug('5ire:intellichat:OpenAIChatService');
@@ -238,13 +237,11 @@ export default class OpenAIChatService
     if (this.isToolsEnabled()) {
       const tools = await window.electron.mcp.listTools();
       if (tools) {
-        const unusedTools = tools
-          .filter((tool: any) => !this.usedToolNames.includes(tool.name))
-          .map((tool: any) => {
-            return this.makeTool(tool);
-          });
-        if (unusedTools.length > 0) {
-          payload.tools = unusedTools;
+        const $tools = tools.map((tool: any) => {
+          return this.makeTool(tool);
+        });
+        if ($tools.length > 0) {
+          payload.tools = $tools;
           payload.tool_choice = 'auto';
         }
       }

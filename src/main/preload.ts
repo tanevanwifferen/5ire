@@ -53,13 +53,13 @@ const electronHandler = {
     updateServer(server: any): Promise<boolean> {
       return ipcRenderer.invoke('mcp-update-server', server);
     },
-    activate(config: {
+    activate(server: {
       key: string;
       command?: string;
       args?: string[];
       env?: Record<string, string>;
     }): Promise<{ error: any }> {
-      return ipcRenderer.invoke('mcp-activate', config);
+      return ipcRenderer.invoke('mcp-activate', server);
     },
     deactivated(clientName: string): Promise<{ error: any }> {
       return ipcRenderer.invoke('mcp-deactivate', clientName);

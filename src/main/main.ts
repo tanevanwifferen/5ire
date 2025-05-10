@@ -33,6 +33,7 @@ import {
   MAX_FILE_SIZE,
   SUPPORTED_IMAGE_TYPES,
 } from '../consts';
+import { IMCPServer } from 'types/mcp';
 
 dotenv.config({
   path: app.isPackaged
@@ -395,14 +396,14 @@ ipcMain.handle('mcp-init', async () => {
     mainWindow?.webContents.send('mcp-server-loaded', mcp.getClientNames());
   });
 });
-ipcMain.handle('mcp-add-server', async (_, config) => {
-  return await mcp.addServer(config);
+ipcMain.handle('mcp-add-server', async (_, server: IMCPServer) => {
+  return await mcp.addServer(server);
 });
-ipcMain.handle('mcp-update-server', async (_, config) => {
-  return await mcp.updateServer(config);
+ipcMain.handle('mcp-update-server', async (_, server: IMCPServer) => {
+  return await mcp.updateServer(server);
 });
-ipcMain.handle('mcp-activate', async (_, config) => {
-  return await mcp.activate(config);
+ipcMain.handle('mcp-activate', async (_, server: IMCPServer) => {
+  return await mcp.activate(server);
 });
 ipcMain.handle('mcp-deactivate', async (_, clientName: string) => {
   return await mcp.deactivate(clientName);

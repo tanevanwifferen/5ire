@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Empty from 'renderer/components/Empty';
 import TooltipIcon from 'renderer/components/TooltipIcon';
@@ -33,6 +33,10 @@ export default function Tools() {
   const [delConfirmDialogOpen, setDelConfirmDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { config, loadConfig, deleteServer } = useMCPStore();
+
+  const mcpServers = useMemo(() => {
+    return Object.values(config.mcpServers);
+  }, [config.mcpServers]);
 
   const editServer = useCallback((server: IMCPServer) => {
     setServer(server);
@@ -126,11 +130,11 @@ export default function Tools() {
         </div>
       </div>
       <div className="mt-2.5 pb-12 h-full -mr-5 overflow-y-auto">
-        {config.servers.length == 0 ? (
+        {mcpServers.length === 0 ? (
           <Empty image="tools" text={t('Tool.Info.Empty')} />
         ) : (
           <Grid
-            servers={config.servers}
+            servers={mcpServers}
             onEdit={editServer}
             onDelete={toDeleteServer}
             onInspect={inspectServer}

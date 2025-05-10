@@ -21,6 +21,9 @@ export interface IMCPServerParameter {
 }
 
 export interface IMCPConfig {
-  servers: IMCPServer[];
+  servers?: IMCPServer[]; // Deprecated
+  mcpServers: {
+    [key: string]: IMCPServer;
+  };
   updated?: number;
 }

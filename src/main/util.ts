@@ -155,3 +155,31 @@ export async function getFileType(filePath: string): Promise<string> {
   const ext = filePath.split('.').pop() || 'txt';
   return ext.toLocaleLowerCase();
 }
+
+export function decodeBase64(str:string):string|null {
+  if (typeof str !== 'string') return null;
+  str = str.trim();
+  if (str.length % 4 !== 0) return null;
+  const base64Reg = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$/;
+  if (!base64Reg.test(str)) return null;
+  try {
+    return Buffer.from(str, 'base64').toString('utf-8');
+  } catch (e) {
+    return null;
+  }
+}
+
+export function isValidMCPServer(server: any): boolean {
+  if (!server || typeof server !== 'object') return false;
+  if (!server.name || typeof server.name !== 'string') return false;
+  const hasUrl = typeof server.url === 'string';
+  const hasCmd = typeof server.cmd === 'string';
+  if (!hasUrl && !hasCmd) return false;
+  if (hasUrl && hasCmd) return false;
+  if (hasCmd && (!server.args || !Array.isArray(server.args))) return false;
+  if (server.headers && typeof server.headers !== 'object') return false;
+  if (server.env && typeof server.env !== 'object') return false;
+  if (server.description && typeof server.description !== 'string') return false;
+
+  return true;
+}

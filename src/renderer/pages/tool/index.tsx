@@ -141,6 +141,7 @@ export default function Tools() {
                 <MenuTrigger disableButtonEnhancement>
                   {(triggerProps: MenuButtonProps) => (
                     <SplitButton
+                      size="medium"
                       icon={<AddRegular />}
                       menuButton={triggerProps}
                       appearance="primary"
@@ -148,14 +149,14 @@ export default function Tools() {
                         onClick: () => newServer('local'),
                       }}
                     >
-                      {t('Tools.LocalServer')}
+                      {t('Common.Local')}
                     </SplitButton>
                   )}
                 </MenuTrigger>
                 <MenuPopover>
                   <MenuList>
                     <MenuItem onClick={() => newServer('remote')}>
-                      {t('Tools.RemoteServer')}
+                      {t('Common.Remote')}
                     </MenuItem>
                   </MenuList>
                 </MenuPopover>

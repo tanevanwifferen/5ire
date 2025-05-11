@@ -322,5 +322,7 @@
   "Common.URL": "URL",
   "Tools.Hint.UrlIsRequired": "URL is required",
   "Common.HttpHeaders": "Http Headers",
-  "Common.Value": "Value"
+  "Common.Value": "Value",
+  "Common.Local": "Local",
+  "Common.Remote": "Remote"
 }

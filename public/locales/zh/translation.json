@@ -312,5 +312,7 @@
   "Common.URL": "URL",
   "Tools.Hint.UrlIsRequired": "请填写 Server 地址",
   "Common.HttpHeaders": "请求头",
-  "Common.Value": "值"
+  "Common.Value": "值",
+  "Common.Local": "Local",
+  "Common.Remote": "远程"
 }

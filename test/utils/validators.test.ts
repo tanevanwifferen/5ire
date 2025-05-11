@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import { isValidUsername, isValidEmail, isValidPassword } from '../../src/utils/validators';
+import { isValidUsername, isValidEmail, isValidPassword, isValidMCPServer } from '../../src/utils/validators';
 
 describe('utils/validators', () => {
   test('isValidUsername', () => {
@@ -48,5 +48,27 @@ describe('utils/validators', () => {
     expect(isValidPassword('Gd2303')).toBe(true);
     expect(isValidPassword('Pass12345678909876541')).toBe(false);
   })
+
+  test('isValidMCPServer', () => {
+    const svr1 = {
+      name: 'AMap',
+      command: 'npx',
+      description: 'MCP Server for AMap (GaoDe Map)',
+      args: ['-y', '@amap/amap-maps-mcp-server'],
+      env: {
+        AMAP_MAPS_API_KEY:
+          '{{amapKey@string::got it from https://lbs.amap.com/api/mcp-server/create-project-and-key }}',
+      },
+      homepage: 'https://lbs.amap.com/api/mcp-server/summary',
+    };
+    expect(isValidMCPServer(svr1)).toBe(true);
+
+    const svr2 = {
+      name: 'InvalidServer',
+      command: 'invalid-command',
+      args: 'not-an-array',
+    };
+    expect(isValidMCPServer(svr2)).toBe(false);
+  });
 
 });

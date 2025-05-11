@@ -10,8 +10,26 @@ export default function ToolSetup() {
   useEffect(() => {
     window.electron.ipcRenderer.on('install-tool', async (data: any) => {
       navigate('/tool');
-      data.isActive = false;
-      setMcpServer(data);
+      const server = {
+        name: data.name,
+        isActive: false,
+        description: data.description,
+      } as any;
+      if (data.url) {
+        server.url = data.url;
+        if (data.headers) {
+          server.headers = data.headers;
+        }
+      } else {
+        server.command = data.command;
+        if (data.args) {
+          server.args = data.args;
+        }
+        if (data.env) {
+          server.env = data.env;
+        }
+      }
+      setMcpServer(server);
       setInstallDialogOpen(true);
     });
   }, []);

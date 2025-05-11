@@ -56,3 +56,18 @@ export function isValidHttpHRL(url: string) {
 export function isValidMCPServerKey(key: string) {
   return /^[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]$/.test(key) && !/-{2,}/.test(key);
 }
+
+
+export function isValidMCPServer(server: any): boolean {
+  if (!server || typeof server !== 'object') return false;
+  if (!server.name || typeof server.name !== 'string') return false;
+  const hasUrl = typeof server.url === 'string';
+  const hasCmd = typeof server.command === 'string';
+  if (!hasUrl && !hasCmd) return false;
+  if (hasUrl && hasCmd) return false;
+  if (hasCmd && (!server.args || !Array.isArray(server.args))) return false;
+  if (server.headers && typeof server.headers !== 'object') return false;
+  if (server.env && typeof server.env !== 'object') return false;
+  if (server.description && typeof server.description !== 'string') return false;
+  return true;
+}

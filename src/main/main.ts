@@ -25,7 +25,6 @@ import {
   decodeBase64,
   getFileInfo,
   getFileType,
-  isValidMCPServer,
   resolveHtmlPath,
 } from './util';
 import './sqlite';
@@ -41,6 +40,7 @@ import {
   SUPPORTED_IMAGE_TYPES,
 } from '../consts';
 import { IMCPServer } from 'types/mcp';
+import { isValidMCPServer, isValidMCPServerKey } from 'utils/validators';
 
 dotenv.config({
   path: app.isPackaged
@@ -638,7 +638,7 @@ deeplink.on('received', (link: string) => {
     if (data) {
       try {
         const json = JSON.parse(data);
-        if (isValidMCPServer(json)) {
+        if (isValidMCPServer(json) && isValidMCPServerKey(json.name)) {
           if (mcp.isServerExist(json.name)) {
             const dialogOpts = {
               type: 'info',

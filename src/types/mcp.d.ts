@@ -1,6 +1,7 @@
+export type MCPServerType = 'local' | 'remote';
 export interface IMCPServer {
   key: string;
-  type: 'sto' | 'sse' | 'streamableHttp';
+  type: MCPServerType;
   name?: string;
   url?: string;
   command?: string;

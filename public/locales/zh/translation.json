@@ -306,5 +306,11 @@
   "Common.StartDate": "开始日期",
   "Common.EndDate": "结束日期",
   "Common.ExtraLarge": "特大",
-  "Tools.InvalidMCPServerKey": "key不可用，请检查是否唯一，格式是否合法"
+  "Tools.InvalidMCPServerKey": "key不可用，请检查是否唯一，格式是否合法",
+  "Tools.RemoteServer": "远程 Server",
+  "Tools.LocalServer": "本地 Server",
+  "Common.URL": "URL",
+  "Tools.Hint.UrlIsRequired": "请填写 Server 地址",
+  "Common.HttpHeaders": "请求头",
+  "Common.Value": "值"
 }

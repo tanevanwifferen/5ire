@@ -316,5 +316,11 @@
   "Common.StartDate": "Start Date",
   "Common.EndDate": "End Date",
   "Common.ExtraLarge": "Extral Large",
-  "Tools.InvalidMCPServerKey": "Invalid key, check if the entry is unique and the format is valid"
+  "Tools.InvalidMCPServerKey": "Invalid key, check if the entry is unique and the format is valid",
+  "Tools.LocalServer": "Local Server",
+  "Tools.RemoteServer": "Remote Server",
+  "Common.URL": "URL",
+  "Tools.Hint.UrlIsRequired": "URL is required",
+  "Common.HttpHeaders": "Http Headers",
+  "Common.Value": "Value"
 }

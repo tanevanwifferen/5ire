@@ -5,6 +5,8 @@ import { IMCPConfig, IMCPServer } from 'types/mcp';
 import { isUndefined, keyBy, omitBy } from 'lodash';
 import * as logging from './logging';
 
+const CONNECT_TIMEOUT = 60 * 1000 * 5; // 5 minutes
+
 export const DEFAULT_INHERITED_ENV_VARS =
   process.platform === 'win32'
     ? [
@@ -206,7 +208,6 @@ export default class ModuleContext {
       });
       const config = await this.getConfig();
       const mcpSvr = ModuleContext.getMCPServer(server, config) as IMCPServer;
-      let transport = null;
       if (mcpSvr.url) {
         const options = {} as {
           requestInit: { headers: Record<string, string> };
@@ -214,14 +215,23 @@ export default class ModuleContext {
         if (mcpSvr.headers) {
           options.requestInit = { headers: mcpSvr.headers };
         }
+        const isSSE = mcpSvr.url.endsWith('sse');
+        const PrimaryTransport = isSSE
+          ? this.SSETransport
+          : this.StreamableHTTPTransport;
+        const SecondaryTransport = isSSE
+          ? this.StreamableHTTPTransport
+          : this.SSETransport;
         try {
-          transport = new this.StreamableHTTPTransport(new URL(mcpSvr.url));
+          const transport = new PrimaryTransport(new URL(mcpSvr.url));
+          await client.connect(transport, { timeout: CONNECT_TIMEOUT });
         } catch (error) {
           logging.captureException(error as Error);
           console.log(
             'Streamable HTTP connection failed, falling back to SSE transport',
           );
-          transport = new this.SSETransport(new URL(mcpSvr.url));
+          const transport = new SecondaryTransport(new URL(mcpSvr.url));
+          await client.connect(transport, { timeout: CONNECT_TIMEOUT });
         }
       } else {
         const { command, args, env } = mcpSvr;
@@ -234,14 +244,14 @@ export default class ModuleContext {
           ...env,
           PATH: process.env.PATH,
         };
-        transport = new this.StdioTransport({
+        const transport = new this.StdioTransport({
           command: cmd,
           args,
           stderr: process.platform === 'win32' ? 'pipe' : 'inherit',
           env: mergedEnv,
         });
+        await client.connect(transport, { timeout: CONNECT_TIMEOUT });
       }
-      await client.connect(transport, { timeout: 60 * 1000 * 5 });
       this.clients[server.key] = client;
       await this.updateConfigAfterActivation(mcpSvr, config);
       return { error: null };

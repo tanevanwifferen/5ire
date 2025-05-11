@@ -131,6 +131,7 @@ export default function ToolEditDialog(options: {
       return;
     }
     const upset = server ? updateServer : addServer;
+    config.type = 'local';
     const ok = await upset(config);
     if (ok) {
       setOpen(false);
@@ -177,7 +178,12 @@ export default function ToolEditDialog(options: {
                 </DialogTrigger>
               }
             >
-              {server ? t('Tools.Edit') : t('Tools.New')}
+              <div className="flex flex-start justify-start items-baseline gap-2">
+                <span>{server ? t('Tools.Edit') : t('Tools.New')}</span>
+                <span className="text-sm text-gray-500">
+                  ({t('Tools.LocalServer')})
+                </span>
+              </div>
             </DialogTitle>
             <DialogContent className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
@@ -185,10 +191,19 @@ export default function ToolEditDialog(options: {
                   <Field
                     validationState={keyValidationState}
                     validationMessage={
-                      keyValidationState==='none'?'': t('Tools.InvalidMCPServerKey')
+                      keyValidationState === 'none'
+                        ? ''
+                        : t('Tools.InvalidMCPServerKey')
                     }
                   >
-                    <InfoLabel className='mb-[7px]' info={server? t('Tools.KeyCannotUpdate'):t('Tools.KeyHint')} >{t('Tools.Key')}</InfoLabel>
+                    <InfoLabel
+                      className="mb-[7px]"
+                      info={
+                        server ? t('Tools.KeyCannotUpdate') : t('Tools.KeyHint')
+                      }
+                    >
+                      {t('Tools.Key')}
+                    </InfoLabel>
                     <Input
                       disabled={!!server}
                       className="w-full min-w-fit"

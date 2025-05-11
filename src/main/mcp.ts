@@ -48,6 +48,10 @@ export default class ModuleContext {
 
   private StdioTransport: any;
 
+  private SSETransport: any;
+
+  private StreamableHTTPTransport: any;
+
   private cfgPath: string;
 
   constructor() {
@@ -57,6 +61,9 @@ export default class ModuleContext {
   public async init() {
     this.Client = await ModuleContext.importClient();
     this.StdioTransport = await ModuleContext.importStdioTransport();
+    this.SSETransport = await ModuleContext.importSSETransport();
+    this.StreamableHTTPTransport =
+      await ModuleContext.importStreamableHTTPTransport();
   }
 
   private static async importClient() {
@@ -71,6 +78,20 @@ export default class ModuleContext {
       '@modelcontextprotocol/sdk/client/stdio.js'
     );
     return StdioClientTransport;
+  }
+
+  private static async importSSETransport() {
+    const { SSEClientTransport } = await import(
+      '@modelcontextprotocol/sdk/client/sse.js'
+    );
+    return SSEClientTransport;
+  }
+
+  private static async importStreamableHTTPTransport() {
+    const { StreamableHTTPClientTransport } = await import(
+      '@modelcontextprotocol/sdk/client/streamableHttp.js'
+    );
+    return StreamableHTTPClientTransport;
   }
 
   private static getMCPServer(server: IMCPServer, config: IMCPConfig) {
@@ -179,33 +200,47 @@ export default class ModuleContext {
 
   public async activate(server: IMCPServer): Promise<{ error: any }> {
     try {
+      const client = new this.Client({
+        name: server.key,
+        version: '1.0.0',
+      });
       const config = await this.getConfig();
       const mcpSvr = ModuleContext.getMCPServer(server, config) as IMCPServer;
-      const { command, args, env } = mcpSvr;
-      let cmd: string = command;
-      if (command === 'npx') {
-        cmd = process.platform === 'win32' ? `${command}.cmd` : command;
+      let transport = null;
+      if (mcpSvr.url) {
+        const options = {} as {
+          requestInit: { headers: Record<string, string> };
+        };
+        if (mcpSvr.headers) {
+          options.requestInit = { headers: mcpSvr.headers };
+        }
+        try {
+          transport = new this.StreamableHTTPTransport(new URL(mcpSvr.url));
+        } catch (error) {
+          logging.captureException(error as Error);
+          console.log(
+            'Streamable HTTP connection failed, falling back to SSE transport',
+          );
+          transport = new this.SSETransport(new URL(mcpSvr.url));
+        }
+      } else {
+        const { command, args, env } = mcpSvr;
+        let cmd: string = command as string;
+        if (command === 'npx') {
+          cmd = process.platform === 'win32' ? `${command}.cmd` : command;
+        }
+        const mergedEnv = {
+          ...getDefaultEnvironment(),
+          ...env,
+          PATH: process.env.PATH,
+        };
+        transport = new this.StdioTransport({
+          command: cmd,
+          args,
+          stderr: process.platform === 'win32' ? 'pipe' : 'inherit',
+          env: mergedEnv,
+        });
       }
-      const mergedEnv = {
-        ...getDefaultEnvironment(),
-        ...env,
-        PATH: process.env.PATH,
-      };
-      const client = new this.Client(
-        {
-          name: server.key,
-          version: '1.0.0',
-        },
-        {
-          capabilities: {},
-        },
-      );
-      const transport = new this.StdioTransport({
-        command: cmd,
-        args,
-        stderr: process.platform === 'win32' ? 'pipe' : 'inherit',
-        env: mergedEnv,
-      });
       await client.connect(transport, { timeout: 60 * 1000 * 5 });
       this.clients[server.key] = client;
       await this.updateConfigAfterActivation(mcpSvr, config);

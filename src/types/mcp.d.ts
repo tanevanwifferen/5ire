@@ -1,10 +1,13 @@
 export interface IMCPServer {
   key: string;
+  type: 'sto' | 'sse' | 'streamableHttp';
   name?: string;
-  command: string;
+  url?: string;
+  command?: string;
   description?: string;
-  args: string[];
+  args?: string[];
   env?: Record<string, string>;
+  headers?: Record<string, string>;
   isActive: boolean;
   homepage?: string;
 }

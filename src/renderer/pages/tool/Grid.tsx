@@ -32,7 +32,6 @@ import {
   Circle16Filled,
   CircleHintHalfVertical16Filled,
   CircleOff16Regular,
-  Info16Regular,
   DeleteFilled,
   DeleteRegular,
   EditFilled,
@@ -41,6 +40,8 @@ import {
   MoreHorizontalFilled,
   WrenchScrewdriver20Filled,
   WrenchScrewdriver20Regular,
+  InfoRegular,
+  GlobeErrorRegular,
 } from '@fluentui/react-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -127,7 +128,13 @@ export default function Grid({
                     <Popover withArrow size="small" positioning="after">
                       <PopoverTrigger disableButtonEnhancement>
                         <Button
-                          icon={<Info16Regular />}
+                          icon={
+                            item.type === 'remote' ? (
+                              <GlobeErrorRegular className="w-4 h-4" />
+                            ) : (
+                              <InfoRegular className="w-4 h-4" />
+                            )
+                          }
                           size="small"
                           appearance="subtle"
                         />
@@ -180,18 +187,10 @@ export default function Grid({
                     </Menu>
                   </div>
                 </div>
-                <div>
-                  <span
-                    className={`text-xs px-2 pb-0.5 rounded-full ${item.type === 'remote' ? 'bg-[#e6ddee] dark:bg-[#4e3868]' : 'bg-[#d8e6f1] dark:bg-[#365065]'}`}
-                  >
-                    {item.type === 'remote' ? 'remote' : 'local'}
-                  </span>
-                </div>
               </div>
             </TableCellLayout>
             <TableCellActions>
               <Switch
-                className="-mb-0.5 mr-16"
                 disabled={loading[item.key]}
                 checked={item.isActive}
                 aria-label={t('Common.State')}

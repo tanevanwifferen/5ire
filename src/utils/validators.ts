@@ -65,7 +65,7 @@ export function isValidMCPServer(server: any): boolean {
   const hasCmd = typeof server.command === 'string';
   if (!hasUrl && !hasCmd) return false;
   if (hasUrl && hasCmd) return false;
-  if (hasCmd && (!server.args || !Array.isArray(server.args))) return false;
+  if (server.args && !Array.isArray(server.args)) return false;
   if (server.headers && typeof server.headers !== 'object') return false;
   if (server.env && typeof server.env !== 'object') return false;
   if (server.description && typeof server.description !== 'string') return false;

@@ -218,11 +218,13 @@ export default function ToolInstallDialog(options: {
       if (isArgValid && isEnvValid) {
         const payload = {
           ...server,
-          args: mcpUtils.fillArgs(
+        };
+        if (Object.keys(argParams).length > 0) {
+          payload.args = mcpUtils.fillArgs(
             server.args as string[],
             argParams as MCPArgParameter,
-          ),
-        };
+          );
+        }
         if (Object.keys(envParams).length > 0) {
           payload.env = mcpUtils.FillEnvOrHeaders(server.env, envParams);
         }

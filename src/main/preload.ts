@@ -19,6 +19,7 @@ export type Channels =
   | 'app-upgrade-not-available'
   | 'native-theme-change'
   | 'sign-in'
+  | 'install-tool'
   | 'minimize-app'
   | 'maximize-app'
   | 'download-started'

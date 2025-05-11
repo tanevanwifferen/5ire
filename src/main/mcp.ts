@@ -106,20 +106,31 @@ export default class ModuleContext {
     return mcpSvr;
   }
 
-  private async updateConfigAfterActivation(
-    server: IMCPServer,
-    config: IMCPConfig,
-  ) {
+  private updateConfigAfterActivation(server: IMCPServer, config: IMCPConfig) {
     config.mcpServers[server.key] = server;
-    await this.putConfig(config);
+    this.putConfig(config);
   }
 
-  private async updateConfigAfterDeactivation(key: string, config: IMCPConfig) {
+  private updateConfigAfterDeactivation(key: string, config: IMCPConfig) {
     config.mcpServers[key] = { ...config.mcpServers[key], isActive: false };
-    await this.putConfig(config);
+    this.putConfig(config);
   }
 
-  public async getConfig(): Promise<IMCPConfig> {
+  public isServerExist(key: string): boolean {
+    const defaultConfig = { mcpServers: {} };
+    try {
+      if (!fs.existsSync(this.cfgPath)) {
+        fs.writeFileSync(this.cfgPath, JSON.stringify(defaultConfig, null, 2));
+      }
+      const config = JSON.parse(fs.readFileSync(this.cfgPath, 'utf-8'));
+      return !!config.mcpServers[key];
+    } catch (err: any) {
+      logging.captureException(err);
+      return false;
+    }
+  }
+
+  public getConfig(): IMCPConfig {
     const defaultConfig = { mcpServers: {} };
     try {
       if (!fs.existsSync(this.cfgPath)) {
@@ -132,7 +143,7 @@ export default class ModuleContext {
           config.mcpServers = keyBy(config.servers, 'key');
         }
         delete config.servers;
-        await this.putConfig(config);
+        this.putConfig(config);
       }
       if (!config.mcpServers) {
         config.mcpServers = {};
@@ -150,13 +161,21 @@ export default class ModuleContext {
     }
   }
 
-  public async putConfig(config: any) {
+  public putConfig(config: any) {
     try {
-      Object.keys(config.mcpServers).forEach((key) => {
-        delete config.mcpServers[key].key;
-        delete config.mcpServers[key].homepage;
+      const newConfig = { ...config };
+      Object.keys(newConfig.mcpServers).forEach((key) => {
+        const svr = newConfig.mcpServers[key];
+        delete newConfig.mcpServers[key].key;
+        delete newConfig.mcpServers[key].homepage;
+        if (Object.keys(svr.headers || {}).length === 0) {
+          delete newConfig.mcpServers[key].headers;
+        }
+        if (Object.keys(svr.env || {}).length === 0) {
+          delete newConfig.mcpServers[key].env;
+        }
       });
-      fs.writeFileSync(this.cfgPath, JSON.stringify(config, null, 2));
+      fs.writeFileSync(this.cfgPath, JSON.stringify(newConfig, null, 2));
       return true;
     } catch (err: any) {
       logging.captureException(err);
@@ -180,11 +199,11 @@ export default class ModuleContext {
     );
   }
 
-  public async addServer(server: IMCPServer) {
-    const config = await this.getConfig();
+  public addServer(server: IMCPServer) {
+    const config = this.getConfig();
     if (!config.mcpServers[server.key]) {
       config.mcpServers[server.key] = server;
-      await this.putConfig(config);
+      this.putConfig(config);
       return true;
     }
     return false;
@@ -206,7 +225,7 @@ export default class ModuleContext {
         name: server.key,
         version: '1.0.0',
       });
-      const config = await this.getConfig();
+      const config = this.getConfig();
       const mcpSvr = ModuleContext.getMCPServer(server, config) as IMCPServer;
       if (mcpSvr.url) {
         const options = {} as {
@@ -253,7 +272,7 @@ export default class ModuleContext {
         await client.connect(transport, { timeout: CONNECT_TIMEOUT });
       }
       this.clients[server.key] = client;
-      await this.updateConfigAfterActivation(mcpSvr, config);
+      this.updateConfigAfterActivation(mcpSvr, config);
       return { error: null };
     } catch (error: any) {
       logging.captureException(error);
@@ -269,7 +288,7 @@ export default class ModuleContext {
         delete this.clients[key];
         logging.debug('Deactivating server:', key);
       }
-      await this.updateConfigAfterDeactivation(key, await this.getConfig());
+      this.updateConfigAfterDeactivation(key, this.getConfig());
       return { error: null };
     } catch (error: any) {
       logging.captureException(error);

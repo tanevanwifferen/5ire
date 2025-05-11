@@ -12,6 +12,7 @@ import {
   shell,
   ipcMain,
   nativeTheme,
+  MessageBoxOptions,
 } from 'electron';
 import crypto from 'crypto';
 import { autoUpdater } from 'electron-updater';
@@ -20,7 +21,13 @@ import Store from 'electron-store';
 import * as logging from './logging';
 import axiom from '../vendors/axiom';
 import MenuBuilder from './menu';
-import { getFileInfo, getFileType, resolveHtmlPath } from './util';
+import {
+  decodeBase64,
+  getFileInfo,
+  getFileType,
+  isValidMCPServer,
+  resolveHtmlPath,
+} from './util';
 import './sqlite';
 import Downloader from './downloader';
 import { Embedder } from './embedder';
@@ -117,7 +124,7 @@ class AppUpdater {
 }
 let downloader: Downloader;
 let mainWindow: BrowserWindow | null = null;
-const protocol = app.isPackaged ? 'app.5ire' : 'app.5ire.dev';
+const protocol = app.isPackaged ? 'app.5ire' : 'dev.5ire';
 
 // IPCs
 ipcMain.on('ipc-5ire', async (event) => {
@@ -396,11 +403,11 @@ ipcMain.handle('mcp-init', async () => {
     mainWindow?.webContents.send('mcp-server-loaded', mcp.getClientNames());
   });
 });
-ipcMain.handle('mcp-add-server', async (_, server: IMCPServer) => {
-  return await mcp.addServer(server);
+ipcMain.handle('mcp-add-server', (_, server: IMCPServer) => {
+  return mcp.addServer(server);
 });
-ipcMain.handle('mcp-update-server', async (_, server: IMCPServer) => {
-  return await mcp.updateServer(server);
+ipcMain.handle('mcp-update-server', (_, server: IMCPServer) => {
+  return mcp.updateServer(server);
 });
 ipcMain.handle('mcp-activate', async (_, server: IMCPServer) => {
   return await mcp.activate(server);
@@ -417,12 +424,12 @@ ipcMain.handle(
     return await mcp.callTool(args);
   },
 );
-ipcMain.handle('mcp-get-config', async () => {
-  return await mcp.getConfig();
+ipcMain.handle('mcp-get-config', () => {
+  return mcp.getConfig();
 });
 
-ipcMain.handle('mcp-put-config', async (_, config) => {
-  return await mcp.putConfig(config);
+ipcMain.handle('mcp-put-config', (_, config) => {
+  return mcp.putConfig(config);
 });
 ipcMain.handle('mcp-get-active-servers', () => {
   return mcp.getClientNames();
@@ -625,6 +632,52 @@ deeplink.on('received', (link: string) => {
       accessToken: params.get('access_token'),
       refreshToken: params.get('refresh_token'),
     });
+  } else if (host === 'install-tool') {
+    const base64 = hash.substring(1);
+    const data = decodeBase64(base64);
+    if (data) {
+      try {
+        const json = JSON.parse(data);
+        if (isValidMCPServer(json)) {
+          if (mcp.isServerExist(json.name)) {
+            const dialogOpts = {
+              type: 'info',
+              buttons: ['Ok'],
+              title: 'Server Exists',
+              message: `The server ${json.name} already exists`,
+            } as MessageBoxOptions;
+            dialog.showMessageBox(dialogOpts);
+            return;
+          }
+          mainWindow?.webContents.send('install-tool', json);
+          return;
+        }
+        const dialogOpts = {
+          type: 'error',
+          buttons: ['Ok'],
+          title: 'Install Tool Failed',
+          message: 'Invalid Format, please check the link and try again.',
+        } as MessageBoxOptions;
+        dialog.showMessageBox(dialogOpts);
+      } catch (error) {
+        console.error(error);
+        const dialogOpts = {
+          type: 'error',
+          buttons: ['Ok'],
+          title: 'Install Tool Failed',
+          message: 'Invalid JSON, please check the link and try again.',
+        } as MessageBoxOptions;
+        dialog.showMessageBox(dialogOpts);
+      }
+    } else {
+      const dialogOpts = {
+        type: 'error',
+        buttons: ['Ok'],
+        title: 'Install Tool Failed',
+        message: 'Invalid base64 data, please check the link and try again.',
+      } as MessageBoxOptions;
+      dialog.showMessageBox(dialogOpts);
+    }
   } else {
     logging.captureException(`Invalid deeplink, ${link}`);
   }

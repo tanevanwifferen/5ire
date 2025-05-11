@@ -118,70 +118,80 @@ export default function Grid({
       renderCell: (item) => {
         return (
           <TableCell>
-            <TableCellLayout truncate>
-              <div className="flex flex-start items-center flex-grow overflow-y-hidden">
-                {renderToolState(item)}
-                <div className="ml-1.5">{item.name || item.key}</div>
-                <div className="-mb-0.5">
-                  <Popover withArrow size="small" positioning="after">
-                    <PopoverTrigger disableButtonEnhancement>
-                      <Button
-                        icon={<Info16Regular />}
-                        size="small"
-                        appearance="subtle"
-                      />
-                    </PopoverTrigger>
-                    <PopoverSurface tabIndex={-1}>
-                      <div
-                        className="text-xs"
-                        dangerouslySetInnerHTML={{
-                          __html: render(
-                            `\`\`\`json\n${JSON.stringify(item, null, 2)}\n\`\`\``,
-                          ),
-                        }}
-                      />
-                    </PopoverSurface>
-                  </Popover>
+            <TableCellLayout truncate style={{ display: 'block' }}>
+              <div className="flex justify-between items-center overflow-y-hidden">
+                <div className="flex flex-start items-center">
+                  {renderToolState(item)}
+                  <div className="ml-1.5">{item.name || item.key}</div>
+                  <div className="-mb-0.5">
+                    <Popover withArrow size="small" positioning="after">
+                      <PopoverTrigger disableButtonEnhancement>
+                        <Button
+                          icon={<Info16Regular />}
+                          size="small"
+                          appearance="subtle"
+                        />
+                      </PopoverTrigger>
+                      <PopoverSurface tabIndex={-1}>
+                        <div
+                          className="text-xs"
+                          dangerouslySetInnerHTML={{
+                            __html: render(
+                              `\`\`\`json\n${JSON.stringify(item, null, 2)}\n\`\`\``,
+                            ),
+                          }}
+                        />
+                      </PopoverSurface>
+                    </Popover>
+                  </div>
+                  <div className="ml-4">
+                    <Menu>
+                      <MenuTrigger disableButtonEnhancement>
+                        <Button
+                          icon={<MoreHorizontalIcon />}
+                          appearance="subtle"
+                        />
+                      </MenuTrigger>
+                      <MenuPopover>
+                        <MenuList>
+                          <MenuItem
+                            disabled={item.isActive}
+                            icon={<EditIcon />}
+                            onClick={() => onEdit(item)}
+                          >
+                            {t('Common.Edit')}
+                          </MenuItem>
+                          <MenuItem
+                            disabled={item.isActive}
+                            icon={<DeleteIcon />}
+                            onClick={() => onDelete(item)}
+                          >
+                            {t('Common.Delete')}
+                          </MenuItem>
+                          <MenuItem
+                            disabled={!item.isActive}
+                            icon={<WrenchScrewdriverIcon />}
+                            onClick={() => onInspect(item)}
+                          >
+                            {t('Common.Tools')}
+                          </MenuItem>
+                        </MenuList>
+                      </MenuPopover>
+                    </Menu>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <Menu>
-                    <MenuTrigger disableButtonEnhancement>
-                      <Button
-                        icon={<MoreHorizontalIcon />}
-                        appearance="subtle"
-                      />
-                    </MenuTrigger>
-                    <MenuPopover>
-                      <MenuList>
-                        <MenuItem
-                          disabled={item.isActive}
-                          icon={<EditIcon />}
-                          onClick={() => onEdit(item)}
-                        >
-                          {t('Common.Edit')}
-                        </MenuItem>
-                        <MenuItem
-                          disabled={item.isActive}
-                          icon={<DeleteIcon />}
-                          onClick={() => onDelete(item)}
-                        >
-                          {t('Common.Delete')}
-                        </MenuItem>
-                        <MenuItem
-                          disabled={!item.isActive}
-                          icon={<WrenchScrewdriverIcon />}
-                          onClick={() => onInspect(item)}
-                        >
-                          {t('Common.Tools')}
-                        </MenuItem>
-                      </MenuList>
-                    </MenuPopover>
-                  </Menu>
+                <div>
+                  <span
+                    className={`text-xs px-2 pb-0.5 rounded-full ${item.type === 'remote' ? 'bg-[#e6ddee] dark:bg-[#4e3868]' : 'bg-[#d8e6f1] dark:bg-[#365065]'}`}
+                  >
+                    {item.type === 'remote' ? 'remote' : 'local'}
+                  </span>
                 </div>
               </div>
             </TableCellLayout>
             <TableCellActions>
               <Switch
+                className="-mb-0.5 mr-16"
                 disabled={loading[item.key]}
                 checked={item.isActive}
                 aria-label={t('Common.State')}

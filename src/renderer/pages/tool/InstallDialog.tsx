@@ -20,7 +20,7 @@ import ListInput from 'renderer/components/ListInput';
 import useMCPStore from 'stores/useMCPStore';
 import { isNumeric } from 'utils/validators';
 import { captureException } from '../../logging';
-import { capitalize } from 'lodash';
+import { capitalize, omitBy } from 'lodash';
 import useMarkdown from 'hooks/useMarkdown';
 
 function Form(
@@ -174,6 +174,40 @@ export default function ToolInstallDialog(options: {
     [],
   );
 
+  const previewServer = useMemo(() => {
+    const payload = {
+      ...server,
+    };
+    const $argParams = omitBy(
+      argParams,
+      (value) => !value || value.length === 0,
+    );
+    if (Object.keys($argParams).length > 0) {
+      payload.args = mcpUtils.fillArgs(
+        server.args as string[],
+        $argParams as MCPArgParameter,
+      );
+    }
+    const $envParams = omitBy(
+      envParams,
+      (value) => !value || value.length === 0,
+    );
+    if (Object.keys($envParams).length > 0) {
+      payload.env = mcpUtils.FillEnvOrHeaders(server.env, $envParams);
+    }
+    const $headerParams = omitBy(
+      headerParams,
+      (value) => !value || value.length === 0,
+    );
+    if (Object.keys($headerParams).length > 0) {
+      payload.headers = mcpUtils.FillEnvOrHeaders(
+        server.headers,
+        $headerParams,
+      );
+    }
+    return payload;
+  }, [server, argParams, envParams, headerParams]);
+
   const install = async () => {
     if (!server.key) {
       server.key = server.name as string;
@@ -190,7 +224,7 @@ export default function ToolInstallDialog(options: {
           ),
         };
         if (Object.keys(envParams).length > 0) {
-          payload.env = mcpUtils.FillEnv(server.env, envParams);
+          payload.env = mcpUtils.FillEnvOrHeaders(server.env, envParams);
         }
         addServer(payload);
         setOpen(false);
@@ -200,7 +234,7 @@ export default function ToolInstallDialog(options: {
       if (isHeaderValid) {
         const payload = {
           ...server,
-          headers: mcpUtils.FillEnv(server.headers, headerParams),
+          headers: mcpUtils.FillEnvOrHeaders(server.headers, headerParams),
         };
         addServer(payload);
         setOpen(false);
@@ -251,7 +285,7 @@ export default function ToolInstallDialog(options: {
                 className="text-xs"
                 dangerouslySetInnerHTML={{
                   __html: render(
-                    `\`\`\`json\n${JSON.stringify(server, null, 2)}\n\`\`\``,
+                    `\`\`\`json\n${JSON.stringify(previewServer, null, 2)}\n\`\`\``,
                   ),
                 }}
               />

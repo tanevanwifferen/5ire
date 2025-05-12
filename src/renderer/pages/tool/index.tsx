@@ -23,6 +23,8 @@ import {
 import { IMCPServer, MCPServerType } from 'types/mcp';
 import useToast from 'hooks/useToast';
 import ConfirmDialog from 'renderer/components/ConfirmDialog';
+import HigressLogo from 'renderer/components/icons/HigressLogo';
+import ComposioLogo from 'renderer/components/icons/ComposioLogo';
 import LocalServerEditDialog from './LocalServerEditDialog';
 import Grid from './Grid';
 import DetailDialog from './DetailDialog';
@@ -161,13 +163,44 @@ export default function Tools() {
                   </MenuList>
                 </MenuPopover>
               </Menu>
-              <Button
-                appearance="outline"
-                icon={<BuildingShopIcon />}
-                onClick={() => setMarketOpen(true)}
-              >
-                {t('Tools.Market')}
-              </Button>
+              <Menu positioning="below-end">
+                <MenuTrigger disableButtonEnhancement>
+                  {(triggerProps: MenuButtonProps) => (
+                    <SplitButton
+                      size="medium"
+                      icon={<BuildingShopIcon />}
+                      menuButton={triggerProps}
+                      primaryActionButton={{
+                        onClick: () => setMarketOpen(true),
+                      }}
+                    >
+                      {t('Tools.Market')}
+                    </SplitButton>
+                  )}
+                </MenuTrigger>
+                <MenuPopover>
+                  <MenuList>
+                    <MenuItem
+                      icon={<HigressLogo />}
+                      onClick={() =>
+                        window.electron.openExternal('https://mcp.higress.ai')
+                      }
+                    >
+                      Higress Market
+                    </MenuItem>
+                    <MenuItem
+                      icon={<ComposioLogo />}
+                      onClick={() =>
+                        window.electron.openExternal(
+                          'https://mcp.composio.dev/',
+                        )
+                      }
+                    >
+                      Composio Market
+                    </MenuItem>
+                  </MenuList>
+                </MenuPopover>
+              </Menu>
             </div>
           </div>
           <div className="tips flex justify-start items-center">

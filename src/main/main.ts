@@ -232,6 +232,9 @@ ipcMain.on('maximize-app', () => {
 });
 ipcMain.on('close-app', () => {
   mainWindow?.close();
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
 });
 
 ipcMain.handle('quit-and-upgrade', () => {

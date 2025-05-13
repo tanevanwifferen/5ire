@@ -16,7 +16,6 @@ import {
 } from 'electron';
 import crypto from 'crypto';
 import { autoUpdater } from 'electron-updater';
-import { Deeplink } from 'electron-deeplink';
 import Store from 'electron-store';
 import * as logging from './logging';
 import axiom from '../vendors/axiom';
@@ -51,18 +50,6 @@ dotenv.config({
 logging.init();
 
 logging.info('Main process start...');
-
-/**
- * 每次打开一个协议 URL，系统都会启动一个新的应用，需要应用自己去判断，把 URL 当做参数传给已有的应用，还是自己直接处理
- * 获取单实例锁
- */
-
-const gotTheLock = app.requestSingleInstanceLock();
-
-if (!gotTheLock) {
-  app.quit();
-}
-
 
 const mcp = new ModuleContext();
 const store = new Store();
@@ -121,6 +108,101 @@ class AppUpdater {
 let downloader: Downloader;
 let mainWindow: BrowserWindow | null = null;
 const protocol = app.isPackaged ? 'app.5ire' : 'dev.5ire';
+
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(protocol, process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient(protocol);
+}
+
+const onDeepLink = (link: string) => {
+  const { host, hash } = new URL(link);
+  if (host === 'login-callback') {
+    const params = new URLSearchParams(hash.substring(1));
+    mainWindow?.webContents.send('sign-in', {
+      accessToken: params.get('access_token'),
+      refreshToken: params.get('refresh_token'),
+    });
+  } else if (host === 'install-tool') {
+    const base64 = hash.substring(1);
+    const data = decodeBase64(base64);
+    if (data) {
+      try {
+        const json = JSON.parse(data);
+        if (isValidMCPServer(json) && isValidMCPServerKey(json.name)) {
+          if (mcp.isServerExist(json.name)) {
+            const dialogOpts = {
+              type: 'info',
+              buttons: ['Ok'],
+              title: 'Server Exists',
+              message: `The server ${json.name} already exists`,
+            } as MessageBoxOptions;
+            dialog.showMessageBox(dialogOpts);
+            return;
+          }
+          mainWindow?.webContents.send('install-tool', json);
+          return;
+        }
+        const dialogOpts = {
+          type: 'error',
+          buttons: ['Ok'],
+          title: 'Install Tool Failed',
+          message: 'Invalid Format, please check the link and try again.',
+        } as MessageBoxOptions;
+        dialog.showMessageBox(dialogOpts);
+      } catch (error) {
+        console.error(error);
+        const dialogOpts = {
+          type: 'error',
+          buttons: ['Ok'],
+          title: 'Install Tool Failed',
+          message: 'Invalid JSON, please check the link and try again.',
+        } as MessageBoxOptions;
+        dialog.showMessageBox(dialogOpts);
+      }
+    } else {
+      const dialogOpts = {
+        type: 'error',
+        buttons: ['Ok'],
+        title: 'Install Tool Failed',
+        message: 'Invalid base64 data, please check the link and try again.',
+      } as MessageBoxOptions;
+      dialog.showMessageBox(dialogOpts);
+    }
+  } else {
+    logging.captureException(`Invalid deeplink, ${link}`);
+  }
+};
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+    const link = commandLine.pop()?.slice(0, -1);
+    if (link) {
+      onDeepLink(link);
+    }
+    console.log('second-instance', event, commandLine, workingDirectory);
+  });
+
+  // Create mainWindow, load the rest of the app, etc...
+  app.whenReady().then(() => {
+    createWindow();
+  });
+
+  app.on('open-url', (_, url) => {
+    onDeepLink(url);
+  });
+}
 
 // IPCs
 ipcMain.on('ipc-5ire', async (event) => {
@@ -604,81 +686,6 @@ app
     axiom.ingest([{ app: 'launch' }]);
   })
   .catch(logging.captureException);
-
-/**
- * Register deeplink
- * 只能放在最外层，on才能接受到事件。（createWindow中注册无法接受到事件）
- * 待观察
- */
-
-logging.info(`Registering protocol:`, protocol);
-app.setAsDefaultProtocolClient(protocol);
-const deeplink = new Deeplink({
-  app,
-  // @ts-ignore 虽然这时mainWindow为null,但由于是传入的引用，调用时已实例化
-  mainWindow,
-  protocol,
-  isDev: isDebug,
-  debugLogging: isDebug,
-});
-deeplink.on('received', (link: string) => {
-  const { host, hash } = new URL(link);
-  if (host === 'login-callback') {
-    const params = new URLSearchParams(hash.substring(1));
-    mainWindow?.webContents.send('sign-in', {
-      accessToken: params.get('access_token'),
-      refreshToken: params.get('refresh_token'),
-    });
-  } else if (host === 'install-tool') {
-    const base64 = hash.substring(1);
-    const data = decodeBase64(base64);
-    if (data) {
-      try {
-        const json = JSON.parse(data);
-        if (isValidMCPServer(json) && isValidMCPServerKey(json.name)) {
-          if (mcp.isServerExist(json.name)) {
-            const dialogOpts = {
-              type: 'info',
-              buttons: ['Ok'],
-              title: 'Server Exists',
-              message: `The server ${json.name} already exists`,
-            } as MessageBoxOptions;
-            dialog.showMessageBox(dialogOpts);
-            return;
-          }
-          mainWindow?.webContents.send('install-tool', json);
-          return;
-        }
-        const dialogOpts = {
-          type: 'error',
-          buttons: ['Ok'],
-          title: 'Install Tool Failed',
-          message: 'Invalid Format, please check the link and try again.',
-        } as MessageBoxOptions;
-        dialog.showMessageBox(dialogOpts);
-      } catch (error) {
-        console.error(error);
-        const dialogOpts = {
-          type: 'error',
-          buttons: ['Ok'],
-          title: 'Install Tool Failed',
-          message: 'Invalid JSON, please check the link and try again.',
-        } as MessageBoxOptions;
-        dialog.showMessageBox(dialogOpts);
-      }
-    } else {
-      const dialogOpts = {
-        type: 'error',
-        buttons: ['Ok'],
-        title: 'Install Tool Failed',
-        message: 'Invalid base64 data, please check the link and try again.',
-      } as MessageBoxOptions;
-      dialog.showMessageBox(dialogOpts);
-    }
-  } else {
-    logging.captureException(`Invalid deeplink, ${link}`);
-  }
-});
 
 process.on('uncaughtException', (error) => {
   logging.captureException(error);

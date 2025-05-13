@@ -182,13 +182,25 @@ const onDeepLink = (link: string) => {
 };
 
 const handleDeepLinkOnColdStart = () => {
-  const url = process.argv.find(arg => arg.startsWith(`${protocol}://`));
-  if (url) {
-    app.whenReady().then(() => {
-      onDeepLink(url);
+  // windows & linux
+  const deepLinkingUrl = process.argv.length > 1 ? process.argv[process.argv.length - 1] : null;
+  if (deepLinkingUrl && deepLinkingUrl.startsWith(`${protocol}://`)) {
+    app.once('ready', ()=>{
+      onDeepLink(deepLinkingUrl);
     })
-  }
-};
+  };
+  // macOS
+  app.on('open-url', (event, url) => {
+    event.preventDefault()
+    if(app.isReady()) {
+      onDeepLink(url);
+    }else{
+      app.once('ready', () => {
+        onDeepLink(url);
+      });
+    }
+  });
+}
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -199,11 +211,10 @@ if (!gotTheLock) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
     }
-    const link = commandLine.pop()?.slice(0, -1);
+    const link = commandLine.pop();
     if (link) {
       onDeepLink(link);
     }
-    console.log('second-instance', event, commandLine, workingDirectory);
   });
 
   app
@@ -250,17 +261,6 @@ if (!gotTheLock) {
     axiom.ingest([{ app: 'launch' }]);
   })
   .catch(logging.captureException);
-
-  app.on('open-url', (event, url) => {
-    event.preventDefault()
-    if(app.isReady()) {
-      onDeepLink(url);
-    }else{
-      app.once('ready', () => {
-        onDeepLink(url);
-      });
-    }
-  });
   handleDeepLinkOnColdStart();
 }
 

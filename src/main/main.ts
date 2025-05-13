@@ -111,17 +111,15 @@ let downloader: Downloader;
 let mainWindow: BrowserWindow | null = null;
 const protocol = app.isPackaged ? 'app.5ire' : 'dev.5ire';
 
-let isProtocolSet = false;
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
-    isProtocolSet = app.setAsDefaultProtocolClient(protocol, process.execPath, [
+    app.setAsDefaultProtocolClient(protocol, process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   }
 } else {
-  isProtocolSet = app.setAsDefaultProtocolClient(protocol);
+  app.setAsDefaultProtocolClient(protocol);
 }
-logging.info(`Is protocol ${protocol} set =`, isProtocolSet);
 
 const onDeepLink = (link: string) => {
   const { host, hash } = new URL(link);

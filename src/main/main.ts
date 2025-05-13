@@ -56,14 +56,13 @@ logging.info('Main process start...');
  * 每次打开一个协议 URL，系统都会启动一个新的应用，需要应用自己去判断，把 URL 当做参数传给已有的应用，还是自己直接处理
  * 获取单实例锁
  */
-/**
+
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  // 如果获取失败，说明已经有实例在运行了，直接退出
   app.quit();
 }
-*/
+
 
 const mcp = new ModuleContext();
 const store = new Store();
@@ -116,9 +115,6 @@ class AppUpdater {
       }
       logging.captureException(message);
     });
-    // if (process.env.NODE_ENV === 'production') {
-    //   autoUpdater.checkForUpdates();
-    // }
     autoUpdater.checkForUpdates();
   }
 }
@@ -616,6 +612,7 @@ app
  */
 
 logging.info(`Registering protocol:`, protocol);
+app.setAsDefaultProtocolClient(protocol);
 const deeplink = new Deeplink({
   app,
   // @ts-ignore 虽然这时mainWindow为null,但由于是传入的引用，调用时已实例化

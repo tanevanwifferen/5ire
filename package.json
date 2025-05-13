@@ -233,7 +233,7 @@
       {
         "name": "5ire-deep-linking",
         "schemes": [
-          "app5ire"
+          "app.5ire"
         ]
       }
     ],

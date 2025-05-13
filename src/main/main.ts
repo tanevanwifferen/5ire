@@ -105,22 +105,23 @@ class AppUpdater {
     autoUpdater.checkForUpdates();
   }
 }
+let rendererReady = false;
+let pendingInstallTool: any = null;
 let downloader: Downloader;
 let mainWindow: BrowserWindow | null = null;
 const protocol = app.isPackaged ? 'app.5ire' : 'dev.5ire';
 
-
 let isProtocolSet = false;
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
-     isProtocolSet = app.setAsDefaultProtocolClient(protocol, process.execPath, [
+    isProtocolSet = app.setAsDefaultProtocolClient(protocol, process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   }
 } else {
   isProtocolSet = app.setAsDefaultProtocolClient(protocol);
 }
-logging.info(`Is protocol ${protocol} set =`,isProtocolSet);
+logging.info(`Is protocol ${protocol} set =`, isProtocolSet);
 
 const onDeepLink = (link: string) => {
   const { host, hash } = new URL(link);
@@ -147,7 +148,11 @@ const onDeepLink = (link: string) => {
             dialog.showMessageBox(dialogOpts);
             return;
           }
-          mainWindow?.webContents.send('install-tool', json);
+          if (!rendererReady) {
+            pendingInstallTool = json;
+          } else {
+            mainWindow?.webContents.send('install-tool', json);
+          }
           return;
         }
         const dialogOpts = {
@@ -183,24 +188,25 @@ const onDeepLink = (link: string) => {
 
 const handleDeepLinkOnColdStart = () => {
   // windows & linux
-  const deepLinkingUrl = process.argv.length > 1 ? process.argv[process.argv.length - 1] : null;
+  const deepLinkingUrl =
+    process.argv.length > 1 ? process.argv[process.argv.length - 1] : null;
   if (deepLinkingUrl && deepLinkingUrl.startsWith(`${protocol}://`)) {
-    app.once('ready', ()=>{
+    app.once('ready', () => {
       onDeepLink(deepLinkingUrl);
-    })
-  };
+    });
+  }
   // macOS
   app.on('open-url', (event, url) => {
-    event.preventDefault()
-    if(app.isReady()) {
+    event.preventDefault();
+    if (app.isReady()) {
       onDeepLink(url);
-    }else{
+    } else {
       app.once('ready', () => {
         onDeepLink(url);
       });
     }
   });
-}
+};
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -218,53 +224,62 @@ if (!gotTheLock) {
   });
 
   app
-  .whenReady()
-  .then(async () => {
-    createWindow();
-    // Remove this if your app does not use auto updates
-    // eslint-disable-next-line
-    new AppUpdater();
+    .whenReady()
+    .then(async () => {
+      createWindow();
+      // Remove this if your app does not use auto updates
+      // eslint-disable-next-line
+      new AppUpdater();
 
-    app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
-      if (mainWindow === null) createWindow();
-    });
+      app.on('activate', () => {
+        // On macOS it's common to re-create a window in the app when the
+        // dock icon is clicked and there are no other windows open.
+        if (mainWindow === null) createWindow();
+      });
 
-    app.on('will-finish-launching', () => {
-      initCrashReporter();
-    });
+      app.on('will-finish-launching', () => {
+        initCrashReporter();
+      });
 
-    app.on('window-all-closed', () => {
-      // Respect the OSX convention of having the application in memory even
-      // after all windows have been closed
-      if (process.platform !== 'darwin') {
-        app.quit();
-      }
-      axiom.flush();
-    });
+      app.on('window-all-closed', () => {
+        // Respect the OSX convention of having the application in memory even
+        // after all windows have been closed
+        if (process.platform !== 'darwin') {
+          app.quit();
+        }
+        axiom.flush();
+      });
 
-    app.on('before-quit', async () => {
-      ipcMain.removeAllListeners();
-      await mcp.close();
-      process.stdin.destroy();
-    });
+      app.on('before-quit', async () => {
+        ipcMain.removeAllListeners();
+        await mcp.close();
+        process.stdin.destroy();
+      });
 
-    app.on(
-      'certificate-error',
-      (event, _webContents, _url, _error, _certificate, callback) => {
-        // 允许私有证书
-        event.preventDefault();
-        callback(true);
-      },
-    );
-    axiom.ingest([{ app: 'launch' }]);
-  })
-  .catch(logging.captureException);
+      app.on(
+        'certificate-error',
+        (event, _webContents, _url, _error, _certificate, callback) => {
+          // 允许私有证书
+          event.preventDefault();
+          callback(true);
+        },
+      );
+      axiom.ingest([{ app: 'launch' }]);
+    })
+    .catch(logging.captureException);
   handleDeepLinkOnColdStart();
 }
 
 // IPCs
+
+ipcMain.on('install-tool-listener-ready', () => {
+  rendererReady = true;
+  if (pendingInstallTool !== null) {
+    mainWindow?.webContents.send('install-tool', pendingInstallTool);
+    pendingInstallTool = null;
+  }
+});
+
 ipcMain.on('ipc-5ire', async (event) => {
   event.reply('ipc-5ire', {
     darkMode: nativeTheme.shouldUseDarkColors,
@@ -704,8 +719,6 @@ if (app.dock) {
 }
 
 app.setName('5ire');
-
-
 
 process.on('uncaughtException', (error) => {
   logging.captureException(error);

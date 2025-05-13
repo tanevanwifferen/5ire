@@ -32,7 +32,8 @@ export type Channels =
   | 'save-embedding-model-file'
   | 'remove-embedding-model'
   | 'close-app'
-  | 'mcp-server-loaded';
+  | 'mcp-server-loaded'
+  | 'install-tool-listener-ready';
 
 const electronHandler = {
   upgrade: () => ipcRenderer.invoke('quit-and-upgrade'),

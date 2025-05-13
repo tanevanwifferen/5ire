@@ -34,12 +34,13 @@ export default function ModelCtrl({
   const [curModel, setCurModel] = useState<IChatModelConfig>();
   const [models, setModels] = useState<IChatModelConfig[]>([]);
   const isChanged = useRef(false);
-
+  const [isModelsLoaded, setIsModelsLoaded] = useState(false);
   const [menuModelOpen, setMenuModelOpen] = useState(false);
   const [menuProviderOpen, setMenuProviderOpen] = useState(false);
 
   const loadModels = useCallback(
     async (provider: IChatProviderConfig) => {
+      setIsModelsLoaded(false);
       const $models = await getModels(provider);
       setModels($models);
       const defaultModel = find($models, { isDefault: true }) || $models[0];
@@ -53,6 +54,7 @@ export default function ModelCtrl({
         }
       }
       setCurModel(defaultModel);
+      setIsModelsLoaded(true);
     },
     [chat.id, chat.provider, chat.model],
   );
@@ -78,19 +80,21 @@ export default function ModelCtrl({
     }
   }, [curProvider?.name]);
 
-  const onModelChange = async () => {
-    if (isChanged.current) {
-      await editStage(chat.id, {
-        provider: curProvider?.name,
-        model: curModel?.name,
+  useEffect(() => {
+    const shouldTriggerChange =
+      isModelsLoaded &&
+      curProvider &&
+      curModel &&
+      models.some((m) => m.name === curModel.name);
+
+    if (shouldTriggerChange && isChanged.current) {
+      editStage(chat.id, {
+        provider: curProvider.name,
+        model: curModel.name,
       });
       isChanged.current = false;
     }
-  };
-
-  useEffect(() => {
-    onModelChange();
-  }, [curProvider?.name, curModel?.name]);
+  }, [curProvider?.name, curModel?.name, isModelsLoaded]);
 
   useEffect(() => {
     Mousetrap.bind('mod+shift+0', () => {

@@ -109,15 +109,19 @@ let downloader: Downloader;
 let mainWindow: BrowserWindow | null = null;
 const protocol = app.isPackaged ? 'app.5ire' : 'dev.5ire';
 
+
+let isProtocolSet = false;
 if (process.defaultApp) {
+
   if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient(protocol, process.execPath, [
+     isProtocolSet = app.setAsDefaultProtocolClient(protocol, process.execPath, [
       path.resolve(process.argv[1]),
     ]);
   }
 } else {
-  app.setAsDefaultProtocolClient(protocol);
+  isProtocolSet = app.setAsDefaultProtocolClient(protocol);
 }
+logging.info(`Is protocol ${protocol} set =`,isProtocolSet);
 
 const onDeepLink = (link: string) => {
   const { host, hash } = new URL(link);
@@ -194,10 +198,50 @@ if (!gotTheLock) {
     console.log('second-instance', event, commandLine, workingDirectory);
   });
 
-  // Create mainWindow, load the rest of the app, etc...
-  app.whenReady().then(() => {
+  app
+  .whenReady()
+  .then(async () => {
     createWindow();
-  });
+    // Remove this if your app does not use auto updates
+    // eslint-disable-next-line
+    new AppUpdater();
+
+    app.on('activate', () => {
+      // On macOS it's common to re-create a window in the app when the
+      // dock icon is clicked and there are no other windows open.
+      if (mainWindow === null) createWindow();
+    });
+
+    app.on('will-finish-launching', () => {
+      initCrashReporter();
+    });
+
+    app.on('window-all-closed', () => {
+      // Respect the OSX convention of having the application in memory even
+      // after all windows have been closed
+      if (process.platform !== 'darwin') {
+        app.quit();
+      }
+      axiom.flush();
+    });
+
+    app.on('before-quit', async () => {
+      ipcMain.removeAllListeners();
+      await mcp.close();
+      process.stdin.destroy();
+    });
+
+    app.on(
+      'certificate-error',
+      (event, _webContents, _url, _error, _certificate, callback) => {
+        // 允许私有证书
+        event.preventDefault();
+        callback(true);
+      },
+    );
+    axiom.ingest([{ app: 'launch' }]);
+  })
+  .catch(logging.captureException);
 
   app.on('open-url', (_, url) => {
     onDeepLink(url);
@@ -645,50 +689,7 @@ if (app.dock) {
 
 app.setName('5ire');
 
-app
-  .whenReady()
-  .then(async () => {
-    createWindow();
-    // Remove this if your app does not use auto updates
-    // eslint-disable-next-line
-    new AppUpdater();
 
-    app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
-      if (mainWindow === null) createWindow();
-    });
-
-    app.on('will-finish-launching', () => {
-      initCrashReporter();
-    });
-
-    app.on('window-all-closed', () => {
-      // Respect the OSX convention of having the application in memory even
-      // after all windows have been closed
-      if (process.platform !== 'darwin') {
-        app.quit();
-      }
-      axiom.flush();
-    });
-
-    app.on('before-quit', async () => {
-      ipcMain.removeAllListeners();
-      await mcp.close();
-      process.stdin.destroy();
-    });
-
-    app.on(
-      'certificate-error',
-      (event, _webContents, _url, _error, _certificate, callback) => {
-        // 允许私有证书
-        event.preventDefault();
-        callback(true);
-      },
-    );
-    axiom.ingest([{ app: 'launch' }]);
-  })
-  .catch(logging.captureException);
 
 process.on('uncaughtException', (error) => {
   logging.captureException(error);

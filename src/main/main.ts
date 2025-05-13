@@ -112,7 +112,6 @@ const protocol = app.isPackaged ? 'app.5ire' : 'dev.5ire';
 
 let isProtocolSet = false;
 if (process.defaultApp) {
-
   if (process.argv.length >= 2) {
      isProtocolSet = app.setAsDefaultProtocolClient(protocol, process.execPath, [
       path.resolve(process.argv[1]),
@@ -181,6 +180,15 @@ const onDeepLink = (link: string) => {
     logging.captureException(`Invalid deeplink, ${link}`);
   }
 };
+
+const handleDeepLinkOnColdStart = () => {
+  const url = process.argv.find(arg => arg.startsWith(`${protocol}://`));
+  if (url) {
+    app.whenReady().then(() => {
+      onDeepLink(url);
+    })
+  }
+};
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -243,9 +251,17 @@ if (!gotTheLock) {
   })
   .catch(logging.captureException);
 
-  app.on('open-url', (_, url) => {
-    onDeepLink(url);
+  app.on('open-url', (event, url) => {
+    event.preventDefault()
+    if(app.isReady()) {
+      onDeepLink(url);
+    }else{
+      app.once('ready', () => {
+        onDeepLink(url);
+      });
+    }
   });
+  handleDeepLinkOnColdStart();
 }
 
 // IPCs

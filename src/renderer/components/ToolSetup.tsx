@@ -32,6 +32,12 @@ export default function ToolSetup() {
       setMcpServer(server);
       setInstallDialogOpen(true);
     });
+    // 通知 main process 监听器已准备就绪
+    window.electron.ipcRenderer.sendMessage('install-tool-listener-ready');
+
+    return () => {
+      window.electron.ipcRenderer.unsubscribeAll('install-tool');
+    };
   }, []);
 
   return mcpServer ? (

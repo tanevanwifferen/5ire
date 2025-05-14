@@ -349,8 +349,18 @@ ipcMain.handle('ingest-event', (_, data) => {
   axiom.ingest(data);
 });
 
-ipcMain.handle('open-external', (_, data) => {
-  shell.openExternal(data);
+ipcMain.handle('open-external', (_, url) => {
+  try {
+    const parsedUrl = new URL(url);
+    const allowedProtocols = ['http:', 'https:', 'mailto:'];
+    if (!allowedProtocols.includes(parsedUrl.protocol)) {
+      console.warn(`Blocked unsafe protocol: ${parsedUrl.protocol}`);
+      return;
+    }
+    shell.openExternal(url);
+  } catch (e) {
+    console.warn('Invalid URL:', url);
+  }
 });
 
 ipcMain.handle('get-user-data-path', (_, paths) => {

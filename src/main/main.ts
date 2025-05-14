@@ -184,6 +184,20 @@ const onDeepLink = (link: string) => {
   }
 };
 
+const openSafeExternal = (url: string) => {
+  try {
+    const parsedUrl = new URL(url);
+    const allowedProtocols = ['http:', 'https:', 'mailto:'];
+    if (!allowedProtocols.includes(parsedUrl.protocol)) {
+      console.warn(`Blocked unsafe protocol: ${parsedUrl.protocol}`);
+      return;
+    }
+    shell.openExternal(url);
+  } catch (e) {
+    console.warn('Invalid URL:', url);
+  }
+};
+
 const handleDeepLinkOnColdStart = () => {
   // windows & linux
   const deepLinkingUrl =
@@ -350,17 +364,7 @@ ipcMain.handle('ingest-event', (_, data) => {
 });
 
 ipcMain.handle('open-external', (_, url) => {
-  try {
-    const parsedUrl = new URL(url);
-    const allowedProtocols = ['http:', 'https:', 'mailto:'];
-    if (!allowedProtocols.includes(parsedUrl.protocol)) {
-      console.warn(`Blocked unsafe protocol: ${parsedUrl.protocol}`);
-      return;
-    }
-    shell.openExternal(url);
-  } catch (e) {
-    console.warn('Invalid URL:', url);
-  }
+  openSafeExternal(url);
 });
 
 ipcMain.handle('get-user-data-path', (_, paths) => {
@@ -657,6 +661,22 @@ const createWindow = async () => {
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    openSafeExternal(url);
+    return { action: 'deny' };
+  });
+
+  // 拦截导航事件，防止在当前窗口打开外部链接
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (mainWindow) {
+      const currentURL = mainWindow.webContents.getURL();
+      if (url !== currentURL) {
+        event.preventDefault();
+        openSafeExternal(url);
+      }
+    }
+  });
 
   mainWindow.on('ready-to-show', async () => {
     if (!mainWindow) {

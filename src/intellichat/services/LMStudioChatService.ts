@@ -11,9 +11,4 @@ export default class LMStudioChatService
     super(name, chatContext);
     this.provider = LMStudio;
   }
-
-  protected getSystemRoleName(): string {
-    return 'system';
-  }
-
 }

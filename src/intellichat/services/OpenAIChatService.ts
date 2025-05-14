@@ -33,10 +33,6 @@ export default class OpenAIChatService
     });
   }
 
-  protected getSystemRoleName() {
-    return 'developer';
-  }
-
   // eslint-disable-next-line class-methods-use-this
   protected getReaderType() {
     return OpenAIReader;

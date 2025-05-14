@@ -22,10 +22,6 @@ export default class FireChatService
     this.provider = Fire;
   }
 
-  protected getSystemRoleName(): string {
-    return 'system';
-  }
-
   // eslint-disable-next-line class-methods-use-this
   protected getReaderType() {
     return FireReader;

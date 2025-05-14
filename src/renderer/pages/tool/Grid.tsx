@@ -145,7 +145,7 @@ export default function Grid({
                           dangerouslySetInnerHTML={{
                             __html: render(
                               `\`\`\`json\n${JSON.stringify(item, null, 2)}\n\`\`\``,
-                            ),
+                            )
                           }}
                         />
                       </PopoverSurface>

@@ -10,7 +10,6 @@ import {
   Input,
   DialogActions,
 } from '@fluentui/react-components';
-import DOMPurify from 'dompurify';
 import Mousetrap from 'mousetrap';
 import { useTranslation } from 'react-i18next';
 import { Dismiss24Regular } from '@fluentui/react-icons';
@@ -287,11 +286,9 @@ export default function ToolInstallDialog(options: {
               <div
                 className="text-xs"
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(
-                    render(
-                      `\`\`\`json\n${JSON.stringify(previewServer, null, 2)}\n\`\`\``,
-                    ),
-                  ),
+                  __html: render(
+                    `\`\`\`json\n${JSON.stringify(previewServer, null, 2)}\n\`\`\``,
+                  )
                 }}
               />
             </div>

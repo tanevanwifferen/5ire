@@ -242,14 +242,17 @@ export default class ModuleContext {
           ? this.StreamableHTTPTransport
           : this.SSETransport;
         try {
-          const transport = new PrimaryTransport(new URL(mcpSvr.url));
+          const transport = new PrimaryTransport(new URL(mcpSvr.url), options);
           await client.connect(transport, { timeout: CONNECT_TIMEOUT });
         } catch (error) {
           logging.captureException(error as Error);
           console.log(
             'Streamable HTTP connection failed, falling back to SSE transport',
           );
-          const transport = new SecondaryTransport(new URL(mcpSvr.url));
+          const transport = new SecondaryTransport(
+            new URL(mcpSvr.url),
+            options,
+          );
           await client.connect(transport, { timeout: CONNECT_TIMEOUT });
         }
       } else {

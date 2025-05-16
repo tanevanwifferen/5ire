@@ -4,6 +4,7 @@ import { app } from 'electron';
 import { IMCPConfig, IMCPServer } from 'types/mcp';
 import { isUndefined, keyBy, omitBy } from 'lodash';
 import * as logging from './logging';
+import { purifyServer } from 'utils/mcp';
 
 const CONNECT_TIMEOUT = 60 * 1000 * 5; // 5 minutes
 
@@ -152,6 +153,11 @@ export default class ModuleContext {
       (Object.entries(config.mcpServers) as [string, IMCPServer][]).forEach(
         ([key, server]) => {
           server.key = key;
+          if (server.url) {
+            server.type = 'remote';
+          } else {
+            server.type = 'local';
+          }
         },
       );
       return config;
@@ -164,17 +170,12 @@ export default class ModuleContext {
   public putConfig(config: any) {
     try {
       const newConfig = { ...config };
-      Object.keys(newConfig.mcpServers).forEach((key) => {
-        const svr = newConfig.mcpServers[key];
-        delete newConfig.mcpServers[key].key;
-        delete newConfig.mcpServers[key].homepage;
-        if (Object.keys(svr.headers || {}).length === 0) {
-          delete newConfig.mcpServers[key].headers;
-        }
-        if (Object.keys(svr.env || {}).length === 0) {
-          delete newConfig.mcpServers[key].env;
-        }
-      });
+      Object.keys(newConfig.mcpServers).forEach(
+        (key: string) => {
+          const svr = newConfig.mcpServers[key];
+          newConfig.mcpServers[key] = purifyServer(svr);
+        },
+      );
       fs.writeFileSync(this.cfgPath, JSON.stringify(newConfig, null, 2));
       return true;
     } catch (err: any) {

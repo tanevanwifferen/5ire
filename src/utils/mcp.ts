@@ -8,6 +8,7 @@ import {
   MCPArgType,
   MCPEnvType,
   IMCPServerParameter,
+  IMCPServer,
 } from 'types/mcp';
 
 export function getParameters(params: string[]): IMCPServerParameter[] {
@@ -75,4 +76,19 @@ export function FillEnvOrHeaders(
     $envOrHeaders[key] = result;
   }
   return $envOrHeaders;
+}
+
+export function purifyServer(server: IMCPServer): Omit<IMCPServer, 'type' | 'key' > {
+  return {
+    name: server.name,
+    description: server.description,
+    url: server.url,
+    command: server.command,
+    ...(server.args?.length ? { args: server.args } : {}),
+    ...(Object.keys(server.headers || {}).length
+      ? { headers: server.headers }
+      : {}),
+    ...(Object.keys(server.env || {}).length ? { env: server.env } : {}),
+    isActive: server.isActive || false,
+  };
 }

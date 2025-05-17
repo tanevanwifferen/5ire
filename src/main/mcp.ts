@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import { app } from 'electron';
 import { IMCPConfig, IMCPServer } from 'types/mcp';
 import { isUndefined, keyBy, omitBy } from 'lodash';
-import * as logging from './logging';
 import { purifyServer } from 'utils/mcp';
+import * as logging from './logging';
 
 const CONNECT_TIMEOUT = 60 * 1000 * 5; // 5 minutes
 
@@ -170,12 +170,10 @@ export default class ModuleContext {
   public putConfig(config: any) {
     try {
       const newConfig = { ...config };
-      Object.keys(newConfig.mcpServers).forEach(
-        (key: string) => {
-          const svr = newConfig.mcpServers[key];
-          newConfig.mcpServers[key] = purifyServer(svr);
-        },
-      );
+      Object.keys(newConfig.mcpServers).forEach((key: string) => {
+        const svr = newConfig.mcpServers[key];
+        newConfig.mcpServers[key] = purifyServer(svr);
+      });
       fs.writeFileSync(this.cfgPath, JSON.stringify(newConfig, null, 2));
       return true;
     } catch (err: any) {
@@ -334,7 +332,6 @@ export default class ModuleContext {
         }),
       );
     }
-    // logging.debug('All Tools:', JSON.stringify(allTools, null, 2));
     return allTools;
   }
 
@@ -347,17 +344,18 @@ export default class ModuleContext {
     name: string;
     args: any;
   }) {
-    if (!this.clients[client]) {
+    const mcpClient = this.clients[client];
+    if (!mcpClient) {
       throw new Error(`MCP Client ${client} not found`);
     }
     logging.debug('Calling:', client, name, args);
-    const result = await this.clients[client].callTool(
+    const result = await mcpClient.callTool(
       {
         name,
         arguments: args,
       },
       undefined,
-      { timeout: 60 * 1000 * 5 },
+      { timeout: CONNECT_TIMEOUT },
     );
     return result;
   }

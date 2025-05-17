@@ -53,11 +53,16 @@ export default function ModelCtrl({
           setIsModelsLoaded(true);
           return;
         }
+      } else {
+        editStage(chat.id, {
+          provider: provider.name,
+          model: defaultModel.name,
+        });
       }
       setCurModel(defaultModel);
       setIsModelsLoaded(true);
     },
-    [chat.id, chat.provider, chat.model],
+    [chat.id, getModels, ctx],
   );
 
   useEffect(() => {
@@ -82,15 +87,16 @@ export default function ModelCtrl({
   }, [curProvider?.name]);
 
   useEffect(() => {
+    if (curProvider?.name !== chat.provider) {
+      return;
+    }
     const shouldTriggerChange =
       isModelsLoaded &&
       curProvider &&
       curModel &&
       models.some((m) => m.name === curModel.name);
-
     if (shouldTriggerChange && isChanged.current) {
       editStage(chat.id, {
-        provider: curProvider.name,
         model: curModel.name,
       });
       isChanged.current = false;

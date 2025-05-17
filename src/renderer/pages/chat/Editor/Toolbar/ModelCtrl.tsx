@@ -50,6 +50,7 @@ export default function ModelCtrl({
         const $model = find($models, { name: ctxModel.name });
         if ($model) {
           setCurModel($model);
+          setIsModelsLoaded(true);
           return;
         }
       }

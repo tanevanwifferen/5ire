@@ -392,7 +392,7 @@ ${prompt}
       chatService.current.onError(async (err: any, aborted: boolean) => {
         console.error(err);
         if (!aborted) {
-          notifyError(err.message || err);
+          notifyError(err.message || err.error);
         }
         await updateMessage({
           id: msg.id,

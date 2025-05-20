@@ -52,8 +52,8 @@ export default function GlobalNav({ collapsed }: { collapsed: boolean }) {
   const { createFolder, selectFolder } = useChatStore();
 
   const numOfActiveServers = useMemo(
-    () => config.servers.filter((server: IMCPServer) => server.isActive).length,
-    [config.servers],
+    () => Object.values(config.mcpServers).filter((server: IMCPServer) => server.isActive).length,
+    [config.mcpServers],
   );
 
   const activeToolsCount = useMemo(() => {

@@ -389,11 +389,15 @@ ${prompt}
       chatService.current.onToolCalls((toolName: string) => {
         updateStates($chatId, { runningTool: toolName });
       });
-      chatService.current.onError((err: any, aborted: boolean) => {
+      chatService.current.onError(async (err: any, aborted: boolean) => {
         console.error(err);
         if (!aborted) {
-          notifyError(err.message || err);
+          notifyError(err.message || err.error);
         }
+        await updateMessage({
+          id: msg.id,
+          isActive: 0,
+        });
         updateStates($chatId, { loading: false });
       });
 

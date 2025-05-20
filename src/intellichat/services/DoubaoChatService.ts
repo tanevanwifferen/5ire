@@ -13,10 +13,6 @@ export default class DoubaoChatService
     this.provider = Doubao;
   }
 
-  protected getSystemRoleName(): string {
-    return 'system';
-  }
-
   protected async makeRequest(
     messages: IChatRequestMessage[],
     msgId?: string,

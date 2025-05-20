@@ -64,6 +64,8 @@ If you want to contribute code to 5ire or develop your own apps based on 5ire, s
 
 Visit [Wiki](https://deepwiki.com/nanbingxyz/5ire) for more details.
 
+**🚀 To integrate 5ire’s one-click server installation into your website, see the** [One-Click Server Installation Integration Guide](https://github.com/nanbingxyz/5ire/wiki/One%E2%80%90Click-Server-Installation-Integration-Guide).
+
 <br />
 
 # Features

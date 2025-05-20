@@ -6,7 +6,6 @@ import {
 
 import Fire from 'providers/Fire';
 import useAuthStore from 'stores/useAuthStore';
-import FireReader from 'intellichat/readers/FireReader';
 import { urlJoin } from 'utils/util';
 import INextChatService from './INextCharService';
 import OpenAIChatService from './OpenAIChatService';
@@ -20,15 +19,6 @@ export default class FireChatService
   constructor(name:string, context: IChatContext) {
     super(name, context);
     this.provider = Fire;
-  }
-
-  protected getSystemRoleName(): string {
-    return 'system';
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  protected getReaderType() {
-    return FireReader;
   }
 
   private getUserId() {

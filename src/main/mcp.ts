@@ -2,8 +2,11 @@ import path from 'path';
 import fs from 'node:fs';
 import { app } from 'electron';
 import { IMCPConfig, IMCPServer } from 'types/mcp';
-import { isUndefined, omitBy } from 'lodash';
+import { isUndefined, keyBy, omitBy } from 'lodash';
+import { purifyServer } from 'utils/mcp';
 import * as logging from './logging';
+
+const CONNECT_TIMEOUT = 60 * 1000 * 5; // 5 minutes
 
 export const DEFAULT_INHERITED_ENV_VARS =
   process.platform === 'win32'
@@ -48,6 +51,10 @@ export default class ModuleContext {
 
   private StdioTransport: any;
 
+  private SSETransport: any;
+
+  private StreamableHTTPTransport: any;
+
   private cfgPath: string;
 
   constructor() {
@@ -57,6 +64,9 @@ export default class ModuleContext {
   public async init() {
     this.Client = await ModuleContext.importClient();
     this.StdioTransport = await ModuleContext.importStdioTransport();
+    this.SSETransport = await ModuleContext.importSSETransport();
+    this.StreamableHTTPTransport =
+      await ModuleContext.importStreamableHTTPTransport();
   }
 
   private static async importClient() {
@@ -73,10 +83,22 @@ export default class ModuleContext {
     return StdioClientTransport;
   }
 
-  private static getMCPServer(server: IMCPServer, config: IMCPConfig) {
-    let mcpSvr = config.servers.find(
-      (svr: IMCPServer) => svr.key === server.key,
+  private static async importSSETransport() {
+    const { SSEClientTransport } = await import(
+      '@modelcontextprotocol/sdk/client/sse.js'
     );
+    return SSEClientTransport;
+  }
+
+  private static async importStreamableHTTPTransport() {
+    const { StreamableHTTPClientTransport } = await import(
+      '@modelcontextprotocol/sdk/client/streamableHttp.js'
+    );
+    return StreamableHTTPClientTransport;
+  }
+
+  private static getMCPServer(server: IMCPServer, config: IMCPConfig) {
+    let mcpSvr = config.mcpServers[server.key];
     mcpSvr = {
       ...mcpSvr,
       ...omitBy({ ...server, isActive: true }, isUndefined),
@@ -85,41 +107,59 @@ export default class ModuleContext {
     return mcpSvr;
   }
 
-  private async updateConfigAfterActivation(
-    server: IMCPServer,
-    config: IMCPConfig,
-  ) {
-    const index = config.servers.findIndex(
-      (svr: IMCPServer) => svr.key === server.key,
-    );
-    if (index > -1) {
-      config.servers[index] = server;
-    } else {
-      config.servers.push(server);
-    }
-    await this.putConfig(config);
+  private updateConfigAfterActivation(server: IMCPServer, config: IMCPConfig) {
+    config.mcpServers[server.key] = server;
+    this.putConfig(config);
   }
 
-  private async updateConfigAfterDeactivation(key: string, config: IMCPConfig) {
-    config.servers = config.servers.map((svr: IMCPServer) => {
-      if (svr.key === key) {
-        svr.isActive = false;
-      }
-      return svr;
-    });
-    await this.putConfig(config);
+  private updateConfigAfterDeactivation(key: string, config: IMCPConfig) {
+    config.mcpServers[key] = { ...config.mcpServers[key], isActive: false };
+    this.putConfig(config);
   }
 
-  public async getConfig() {
-    const defaultConfig = { servers: [] };
+  public isServerExist(key: string): boolean {
+    const defaultConfig = { mcpServers: {} };
     try {
       if (!fs.existsSync(this.cfgPath)) {
         fs.writeFileSync(this.cfgPath, JSON.stringify(defaultConfig, null, 2));
       }
       const config = JSON.parse(fs.readFileSync(this.cfgPath, 'utf-8'));
-      if (!config.servers) {
-        config.servers = [];
+      return !!config.mcpServers[key];
+    } catch (err: any) {
+      logging.captureException(err);
+      return false;
+    }
+  }
+
+  public getConfig(): IMCPConfig {
+    const defaultConfig = { mcpServers: {} };
+    try {
+      if (!fs.existsSync(this.cfgPath)) {
+        fs.writeFileSync(this.cfgPath, JSON.stringify(defaultConfig, null, 2));
       }
+      const config = JSON.parse(fs.readFileSync(this.cfgPath, 'utf-8'));
+      // migration to new config format
+      if (config.servers) {
+        if (Array.isArray(config.servers) && !config.mcpServers) {
+          config.mcpServers = keyBy(config.servers, 'key');
+        }
+        delete config.servers;
+        this.putConfig(config);
+      }
+      if (!config.mcpServers) {
+        config.mcpServers = {};
+      }
+      // Set key for each server if not already set
+      (Object.entries(config.mcpServers) as [string, IMCPServer][]).forEach(
+        ([key, server]) => {
+          server.key = key;
+          if (server.url) {
+            server.type = 'remote';
+          } else {
+            server.type = 'local';
+          }
+        },
+      );
       return config;
     } catch (err: any) {
       logging.captureException(err);
@@ -127,9 +167,14 @@ export default class ModuleContext {
     }
   }
 
-  public async putConfig(config: any) {
+  public putConfig(config: any) {
     try {
-      fs.writeFileSync(this.cfgPath, JSON.stringify(config, null, 2));
+      const newConfig = { ...config };
+      Object.keys(newConfig.mcpServers).forEach((key: string) => {
+        const svr = newConfig.mcpServers[key];
+        newConfig.mcpServers[key] = purifyServer(svr);
+      });
+      fs.writeFileSync(this.cfgPath, JSON.stringify(newConfig, null, 2));
       return true;
     } catch (err: any) {
       logging.captureException(err);
@@ -138,25 +183,26 @@ export default class ModuleContext {
   }
 
   public async load() {
-    const { servers } = await this.getConfig();
+    const { mcpServers } = await this.getConfig();
     await Promise.all(
-      servers.map(async (server: IMCPServer) => {
+      Object.keys(mcpServers).map(async (key: string) => {
+        const server = mcpServers[key];
         if (server.isActive) {
-          logging.debug('Activating server:', server.key);
+          logging.debug('Activating server:', key);
           const { error } = await this.activate(server);
           if (error) {
-            logging.error('Failed to activate server:', server.key, error);
+            logging.error('Failed to activate server:', key, error);
           }
         }
       }),
     );
   }
 
-  public async addServer(server: IMCPServer) {
-    const config = await this.getConfig();
-    if (!config.servers.find((svr: IMCPServer) => svr.key === server.key)) {
-      config.servers.push(server);
-      await this.putConfig(config);
+  public addServer(server: IMCPServer) {
+    const config = this.getConfig();
+    if (!config.mcpServers[server.key]) {
+      config.mcpServers[server.key] = server;
+      this.putConfig(config);
       return true;
     }
     return false;
@@ -164,11 +210,8 @@ export default class ModuleContext {
 
   public async updateServer(server: IMCPServer) {
     const config = await this.getConfig();
-    const index = config.servers.findIndex(
-      (svr: IMCPServer) => svr.key === server.key,
-    );
-    if (index > -1) {
-      config.servers[index] = server;
+    if (config.mcpServers[server.key]) {
+      config.mcpServers[server.key] = server;
       await this.putConfig(config);
       return true;
     }
@@ -177,36 +220,61 @@ export default class ModuleContext {
 
   public async activate(server: IMCPServer): Promise<{ error: any }> {
     try {
-      const config = await this.getConfig();
-      const mcpSvr = ModuleContext.getMCPServer(server, config) as IMCPServer;
-      const { key, command, args, env } = mcpSvr;
-      let cmd: string = command;
-      if (command === 'npx') {
-        cmd = process.platform === 'win32' ? `${command}.cmd` : command;
-      }
-      const mergedEnv = {
-        ...getDefaultEnvironment(),
-        ...env,
-        PATH: process.env.PATH,
-      };
-      const client = new this.Client(
-        {
-          name: key,
-          version: '1.0.0',
-        },
-        {
-          capabilities: {},
-        },
-      );
-      const transport = new this.StdioTransport({
-        command: cmd,
-        args,
-        stderr: process.platform === 'win32' ? 'pipe' : 'inherit',
-        env: mergedEnv,
+      const client = new this.Client({
+        name: server.key,
+        version: '1.0.0',
       });
-      await client.connect(transport, { timeout: 60 * 1000 * 5 });
-      this.clients[key] = client;
-      await this.updateConfigAfterActivation(mcpSvr, config);
+      const config = this.getConfig();
+      const mcpSvr = ModuleContext.getMCPServer(server, config) as IMCPServer;
+      if (mcpSvr.url) {
+        const options = {} as {
+          requestInit: { headers: Record<string, string> };
+        };
+        if (mcpSvr.headers) {
+          options.requestInit = { headers: mcpSvr.headers };
+        }
+        const isSSE = mcpSvr.url.endsWith('sse');
+        const PrimaryTransport = isSSE
+          ? this.SSETransport
+          : this.StreamableHTTPTransport;
+        const SecondaryTransport = isSSE
+          ? this.StreamableHTTPTransport
+          : this.SSETransport;
+        try {
+          const transport = new PrimaryTransport(new URL(mcpSvr.url), options);
+          await client.connect(transport, { timeout: CONNECT_TIMEOUT });
+        } catch (error) {
+          logging.captureException(error as Error);
+          console.log(
+            'Streamable HTTP connection failed, falling back to SSE transport',
+          );
+          const transport = new SecondaryTransport(
+            new URL(mcpSvr.url),
+            options,
+          );
+          await client.connect(transport, { timeout: CONNECT_TIMEOUT });
+        }
+      } else {
+        const { command, args, env } = mcpSvr;
+        let cmd: string = command as string;
+        if (command === 'npx') {
+          cmd = process.platform === 'win32' ? `${command}.cmd` : command;
+        }
+        const mergedEnv = {
+          ...getDefaultEnvironment(),
+          ...env,
+          PATH: process.env.PATH,
+        };
+        const transport = new this.StdioTransport({
+          command: cmd,
+          args,
+          stderr: process.platform === 'win32' ? 'pipe' : 'inherit',
+          env: mergedEnv,
+        });
+        await client.connect(transport, { timeout: CONNECT_TIMEOUT });
+      }
+      this.clients[server.key] = client;
+      this.updateConfigAfterActivation(mcpSvr, config);
       return { error: null };
     } catch (error: any) {
       logging.captureException(error);
@@ -220,8 +288,9 @@ export default class ModuleContext {
       if (this.clients[key]) {
         await this.clients[key].close();
         delete this.clients[key];
+        logging.debug('Deactivating server:', key);
       }
-      await this.updateConfigAfterDeactivation(key, await this.getConfig());
+      this.updateConfigAfterDeactivation(key, this.getConfig());
       return { error: null };
     } catch (error: any) {
       logging.captureException(error);
@@ -263,7 +332,6 @@ export default class ModuleContext {
         }),
       );
     }
-    // logging.debug('All Tools:', JSON.stringify(allTools, null, 2));
     return allTools;
   }
 
@@ -276,17 +344,18 @@ export default class ModuleContext {
     name: string;
     args: any;
   }) {
-    if (!this.clients[client]) {
+    const mcpClient = this.clients[client];
+    if (!mcpClient) {
       throw new Error(`MCP Client ${client} not found`);
     }
     logging.debug('Calling:', client, name, args);
-    const result = await this.clients[client].callTool(
+    const result = await mcpClient.callTool(
       {
         name,
         arguments: args,
       },
       undefined,
-      { timeout: 60 * 1000 * 5 },
+      { timeout: CONNECT_TIMEOUT },
     );
     return result;
   }

@@ -19,6 +19,7 @@ export type Channels =
   | 'app-upgrade-not-available'
   | 'native-theme-change'
   | 'sign-in'
+  | 'install-tool'
   | 'minimize-app'
   | 'maximize-app'
   | 'download-started'
@@ -31,7 +32,8 @@ export type Channels =
   | 'save-embedding-model-file'
   | 'remove-embedding-model'
   | 'close-app'
-  | 'mcp-server-loaded';
+  | 'mcp-server-loaded'
+  | 'install-tool-listener-ready';
 
 const electronHandler = {
   upgrade: () => ipcRenderer.invoke('quit-and-upgrade'),
@@ -53,13 +55,13 @@ const electronHandler = {
     updateServer(server: any): Promise<boolean> {
       return ipcRenderer.invoke('mcp-update-server', server);
     },
-    activate(config: {
+    activate(server: {
       key: string;
       command?: string;
       args?: string[];
       env?: Record<string, string>;
     }): Promise<{ error: any }> {
-      return ipcRenderer.invoke('mcp-activate', config);
+      return ipcRenderer.invoke('mcp-activate', server);
     },
     deactivated(clientName: string): Promise<{ error: any }> {
       return ipcRenderer.invoke('mcp-deactivate', clientName);

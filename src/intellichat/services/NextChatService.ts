@@ -11,6 +11,7 @@ import {
   IMCPTool,
   IOpenAITool,
 } from 'intellichat/types';
+import OpenAI from 'providers/OpenAI';
 import { IServiceProvider } from 'providers/types';
 import useInspectorStore from 'stores/useInspectorStore';
 import { raiseError, stripHtmlTags } from 'utils/util';
@@ -45,6 +46,9 @@ export default abstract class NextCharService {
   protected traceTool: (chatId: string, label: string, msg: string) => void;
 
   protected getSystemRoleName() {
+    if(this.name === OpenAI.name){
+      return 'developer'
+    }
     return 'system';
   }
 

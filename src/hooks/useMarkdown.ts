@@ -1,5 +1,6 @@
 /* eslint-disable react/no-danger */
 import { useTranslation } from 'react-i18next';
+import DOMPurify from 'dompurify';
 // @ts-ignore
 import MarkdownIt from 'markdown-it';
 // @ts-ignore
@@ -134,6 +135,6 @@ export default function useMarkdown() {
   };
 
   return {
-    render: (str: string): string => md.render(str),
+    render: (str: string): string => DOMPurify.sanitize(md.render(str)),
   };
 }

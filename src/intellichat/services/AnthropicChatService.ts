@@ -22,6 +22,7 @@ import { ITool } from 'intellichat/readers/IChatReader';
 import INextChatService from './INextCharService';
 import NextChatService from './NextChatService';
 import Anthropic from '../../providers/Anthropic';
+import {  isPlainObject, omit } from 'lodash';
 
 const debug = Debug('5ire:intellichat:AnthropicChatService');
 
@@ -43,6 +44,17 @@ export default class AnthropicChatService
     toolResult: any,
     content?: string,
   ): IChatRequestMessage[] {
+    /**
+     * Note：not supported tool's inputs
+     * 1.mimeType
+     */
+    if (isPlainObject(toolResult.content)) {
+      delete toolResult.content.mimeType;
+    } else if (Array.isArray(toolResult.content)) {
+      toolResult.content = toolResult.content.map((item: any) => {
+        return omit(item, ['mimeType']);
+      });
+    }
     const result = [
       {
         role: 'assistant',

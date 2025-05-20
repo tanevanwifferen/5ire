@@ -30,6 +30,7 @@ import Settings from '../pages/settings';
 import Prompts from '../pages/prompt';
 import PromptForm from '../pages/prompt/Form';
 import AppLoader from '../apps/Loader';
+import ToolSetup from './ToolSetup';
 
 const debug = Debug('5ire:components:FluentApp');
 
@@ -129,7 +130,9 @@ export default function FluentApp() {
       <Router>
         <AppHeader />
         <Toaster toasterId="toaster" limit={5} offset={{ vertical: 25 }} />
-        <div className={`relative flex h-screen w-full overflow-hidden main-container ${fontSizeCls}`}>
+        <div
+          className={`relative flex h-screen w-full overflow-hidden main-container ${fontSizeCls}`}
+        >
           <AppSidebar />
           <main className="relative px-5 flex h-full w-full flex-col overflow-hidden">
             <Routes>
@@ -159,6 +162,7 @@ export default function FluentApp() {
             />
           </main>
         </div>
+        <ToolSetup />
       </Router>
     </FluentProvider>
   );

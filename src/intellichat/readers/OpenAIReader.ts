@@ -9,7 +9,7 @@ export default class OpenAIReader extends BaseReader implements IChatReader {
   protected parseReply(chunk: string): IChatResponseMessage {
     const data = JSON.parse(chunk);
     if (data.error) {
-      throw new Error(data.error.message);
+      throw new Error(data.error.message || data.error);
     }
     if (data.choices.length === 0) {
       return {

@@ -308,6 +308,94 @@ export default class ModuleContext {
     );
   }
 
+  /**
+   * Checks if a client is connected and attempts to reconnect if it's not.
+   * @param clientKey The key of the client to check
+   * @returns An object indicating success or containing an error
+   */
+  private async checkAndReconnect(
+    clientKey: string,
+  ): Promise<{ success: boolean; error?: any }> {
+    if (!this.clients[clientKey]) {
+      logging.error(`MCP Client ${clientKey} not found`);
+      return {
+        success: false,
+        error: {
+          message: `MCP Client ${clientKey} not found`,
+          code: 'client_not_found',
+        },
+      };
+    }
+
+    try {
+      // Check if client is connected by making a simple ping request
+      // If client is disconnected, this will throw an error
+      await this.clients[clientKey].ping();
+      logging.info(`Client ${clientKey} is connected and responsive.`);
+      return { success: true };
+    } catch (pingError: any) {
+      logging.info(
+        `Client ${clientKey} appears disconnected. Attempting to reconnect...`,
+      );
+
+      try {
+        // Get server config to reconnect
+        const config = this.getConfig();
+        const server = config.mcpServers[clientKey];
+
+        if (!server) {
+          logging.error(`Server configuration for ${clientKey} not found`);
+          return {
+            success: false,
+            error: {
+              message: `Server configuration for ${clientKey} not found`,
+              code: 'server_config_not_found',
+            },
+          };
+        }
+
+        // Close existing client instance if it exists
+        if (this.clients[clientKey]) {
+          try {
+            await this.clients[clientKey].close();
+          } catch (closeErr: any) {
+            logging.error(
+              `Error closing client ${clientKey}: ${closeErr.message}`,
+            );
+            // Continue with reconnection attempt even if close fails
+          }
+        }
+
+        // Attempt to reactivate the server
+        const activationResult = await this.activate(server);
+        if (activationResult.error) {
+          logging.error(
+            `Failed to reconnect client ${clientKey}: ${activationResult.error.message}`,
+          );
+          return {
+            success: false,
+            error: {
+              message: `Failed to reconnect client ${clientKey}: ${activationResult.error.message}`,
+              code: 'reconnect_failed',
+            },
+          };
+        }
+
+        logging.info(`Successfully reconnected client ${clientKey}`);
+        return { success: true };
+      } catch (reconnectError: any) {
+        logging.captureException(reconnectError);
+        return {
+          success: false,
+          error: {
+            message: `Error reconnecting client ${clientKey}: ${reconnectError.message}`,
+            code: 'reconnect_error',
+          },
+        };
+      }
+    }
+  }
+
   public async listTools(key?: string) {
     let allTools: any = [];
     if (key) {
@@ -323,8 +411,28 @@ export default class ModuleContext {
       }
 
       try {
-        const { tools } = await this.clients[key].listTools();
-        allTools = tools.map((tool: any) => {
+        // First check if client is connected and try to reconnect if needed
+        const connectionStatus = await this.checkAndReconnect(key);
+        if (!connectionStatus.success) {
+          return {
+            tools: [],
+            error: connectionStatus.error,
+          };
+        }
+
+        const response = await this.clients[key].listTools();
+        // Check if response has tools property and it's an array
+        if (!response || !response.tools || !Array.isArray(response.tools)) {
+          return {
+            tools: [],
+            error: {
+              message: `Invalid response from client ${key}: missing or invalid tools array`,
+              code: 'invalid_response',
+            },
+          };
+        }
+
+        allTools = response.tools.map((tool: any) => {
           tool.name = `${key}--${tool.name}`;
           return tool;
         });
@@ -347,8 +455,31 @@ export default class ModuleContext {
         async (clientName: string) => {
           logging.info(clientName);
           try {
-            const { tools } = await this.clients[clientName].listTools();
-            return tools.map((tool: any) => {
+            // Try to reconnect if client is disconnected
+            const connectionStatus = await this.checkAndReconnect(clientName);
+            if (!connectionStatus.success) {
+              failedClients.push({
+                client: clientName,
+                error: connectionStatus.error.message,
+              });
+              return [];
+            }
+
+            const response = await this.clients[clientName].listTools();
+            // Check if response has tools property and it's an array
+            if (
+              !response ||
+              !response.tools ||
+              !Array.isArray(response.tools)
+            ) {
+              failedClients.push({
+                client: clientName,
+                error: 'Invalid response: missing or invalid tools array',
+              });
+              return [];
+            }
+
+            return response.tools.map((tool: any) => {
               tool.name = `${clientName}--${tool.name}`;
               return tool;
             });
@@ -391,8 +522,7 @@ export default class ModuleContext {
     name: string;
     args: any;
   }) {
-    const mcpClient = this.clients[client];
-    if (!mcpClient) {
+    if (!this.clients[client]) {
       logging.error(`MCP Client ${client} not found`);
       return {
         isError: true,
@@ -405,6 +535,23 @@ export default class ModuleContext {
       };
     }
 
+    // First check if client is connected and try to reconnect if needed
+    const connectionStatus = await this.checkAndReconnect(client);
+    if (!connectionStatus.success) {
+      return {
+        isError: true,
+        content: [
+          {
+            error: connectionStatus.error.message,
+            code: connectionStatus.error.code,
+            toolName: name,
+            clientName: client,
+          },
+        ],
+      };
+    }
+
+    const mcpClient = this.clients[client];
     logging.debug('Calling:', client, name, args);
 
     try {

@@ -503,7 +503,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
   updateModel: (model: Partial<IChatModelConfig> & { id: string }) => {
     const { provider, updateProvider } = get();
     if (!provider) return;
-    const customProviders = window.electron.store.get('providers');
+    const customProviders = window.electron.store.get('providers') || [];
     const customProvider = customProviders.find(
       (p: IChatProviderConfig) => p.name === provider.name,
     ) || {

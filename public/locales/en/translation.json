@@ -324,5 +324,6 @@
   "Common.HttpHeaders": "Http Headers",
   "Common.Value": "Value",
   "Common.Local": "Local",
-  "Common.Remote": "Remote"
+  "Common.Remote": "Remote",
+  "Knowledge.Notification.ImportError": "Failed to import file {{name}}"
 }

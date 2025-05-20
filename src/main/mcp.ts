@@ -345,6 +345,7 @@ export default class ModuleContext {
       // Get tools from all clients, but don't fail if one client fails
       const clientPromises = Object.keys(this.clients).map(
         async (clientName: string) => {
+          logging.info(clientName);
           try {
             const { tools } = await this.clients[clientName].listTools();
             return tools.map((tool: any) => {
@@ -417,7 +418,7 @@ export default class ModuleContext {
       );
       return {
         isError: false,
-        content: result,
+        ...result,
       };
     } catch (error: any) {
       logging.captureException(error);

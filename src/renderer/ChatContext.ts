@@ -74,14 +74,14 @@ const getMaxTokens = () => {
   const prompt = chat.prompt as IPrompt | null;
   if (
     prompt?.maxTokens != null &&
-    isValidMaxTokens(prompt?.maxTokens, provider.name, model?.name as string)
+    isValidMaxTokens(prompt?.maxTokens, provider?.name, model?.name as string)
   ) {
     maxTokens = prompt?.maxTokens || (prompt?.maxTokens as number);
   }
   console.log('chat?.maxTokens', chat?.maxTokens);
   if (
     chat?.maxTokens != null &&
-    isValidMaxTokens(chat?.maxTokens, provider.name, model.name as string)
+    isValidMaxTokens(chat?.maxTokens, provider?.name, model?.name as string)
   ) {
     maxTokens = chat?.maxTokens as number;
   }

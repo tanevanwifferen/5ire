@@ -312,27 +312,73 @@ export default class ModuleContext {
     let allTools: any = [];
     if (key) {
       if (!this.clients[key]) {
-        throw new Error(`MCP Client ${key} not found`);
+        logging.error(`MCP Client ${key} not found`);
+        return {
+          tools: [],
+          error: {
+            message: `MCP Client ${key} not found`,
+            code: 'client_not_found',
+          },
+        };
       }
-      const { tools } = await this.clients[key].listTools();
-      allTools = tools.map((tool: any) => {
-        tool.name = `${key}--${tool.name}`;
-        return tool;
-      });
+
+      try {
+        const { tools } = await this.clients[key].listTools();
+        allTools = tools.map((tool: any) => {
+          tool.name = `${key}--${tool.name}`;
+          return tool;
+        });
+        return { tools: allTools, error: null };
+      } catch (error: any) {
+        logging.captureException(error);
+        return {
+          tools: [],
+          error: {
+            message: `Error listing tools for client ${key}: ${error.message}`,
+            code: 'list_tools_error',
+          },
+        };
+      }
     } else {
-      await Promise.all(
-        Object.keys(this.clients).map(async (clientName: string) => {
-          const { tools } = await this.clients[clientName].listTools();
-          allTools = allTools.concat(
-            tools.map((tool: any) => {
+      const failedClients: any[] = [];
+
+      // Get tools from all clients, but don't fail if one client fails
+      const clientPromises = Object.keys(this.clients).map(
+        async (clientName: string) => {
+          try {
+            const { tools } = await this.clients[clientName].listTools();
+            return tools.map((tool: any) => {
               tool.name = `${clientName}--${tool.name}`;
               return tool;
-            }),
-          );
-        }),
+            });
+          } catch (error: any) {
+            logging.captureException(error);
+            failedClients.push({
+              client: clientName,
+              error: error.message,
+            });
+            return [];
+          }
+        },
       );
+
+      const results = await Promise.all(clientPromises);
+      results.forEach((tools) => {
+        allTools = allTools.concat(tools);
+      });
+
+      return {
+        tools: allTools,
+        error:
+          failedClients.length > 0
+            ? {
+                message: `Failed to list tools from some clients`,
+                failedClients,
+                code: 'partial_failure',
+              }
+            : null,
+      };
     }
-    return allTools;
   }
 
   public async callTool({
@@ -346,18 +392,47 @@ export default class ModuleContext {
   }) {
     const mcpClient = this.clients[client];
     if (!mcpClient) {
-      throw new Error(`MCP Client ${client} not found`);
+      logging.error(`MCP Client ${client} not found`);
+      return {
+        isError: true,
+        content: [
+          {
+            error: `MCP Client ${client} not found`,
+            code: 'client_not_found',
+          },
+        ],
+      };
     }
+
     logging.debug('Calling:', client, name, args);
-    const result = await mcpClient.callTool(
-      {
-        name,
-        arguments: args,
-      },
-      undefined,
-      { timeout: CONNECT_TIMEOUT },
-    );
-    return result;
+
+    try {
+      const result = await mcpClient.callTool(
+        {
+          name,
+          arguments: args,
+        },
+        undefined,
+        { timeout: CONNECT_TIMEOUT },
+      );
+      return {
+        isError: false,
+        content: result,
+      };
+    } catch (error: any) {
+      logging.captureException(error);
+      return {
+        isError: true,
+        content: [
+          {
+            error: `Error calling tool ${name}: ${error.message}`,
+            code: 'tool_call_error',
+            toolName: name,
+            clientName: client,
+          },
+        ],
+      };
+    }
   }
 
   public getClient(name: string) {

@@ -295,7 +295,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
       models: [],
       disabled: false,
     } as Partial<IChatProviderConfig>;
-    const customProviders = window.electron.store.get('providers');
+    const customProviders = window.electron.store.get('providers') || [];
     const newCustomProviders = (
       [...customProviders, newProvider] as IChatProviderConfig[]
     ).sort(sortByName);

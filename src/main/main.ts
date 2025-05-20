@@ -539,7 +539,7 @@ ipcMain.handle('select-image-with-base64', async () => {
 ipcMain.handle(
   'search-knowledge',
   async (_, collectionIds: string[], query: string) => {
-    const result = await Knowledge.search(collectionIds, query, { limit: 4 });
+    const result = await Knowledge.search(collectionIds, query, { limit: 6 });
     return JSON.stringify(result);
   },
 );

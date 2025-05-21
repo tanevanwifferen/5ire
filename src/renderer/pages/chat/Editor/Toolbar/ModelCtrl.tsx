@@ -62,7 +62,7 @@ export default function ModelCtrl({
       setCurModel(defaultModel);
       setIsModelsLoaded(true);
     },
-    [chat.id, getModels, ctx],
+    [chat.id, getModels],
   );
 
   useEffect(() => {
@@ -87,7 +87,6 @@ export default function ModelCtrl({
   }, [curProvider?.name]);
 
   useEffect(() => {
-    console.log(curProvider?.name, '==', chat.provider);
     if (chat.provider !== '' && curProvider?.name !== chat.provider) {
       return;
     }

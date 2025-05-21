@@ -38,18 +38,18 @@ export default function ModelCtrl({
   const [isModelsLoaded, setIsModelsLoaded] = useState(false);
   const [menuModelOpen, setMenuModelOpen] = useState(false);
   const [menuProviderOpen, setMenuProviderOpen] = useState(false);
-  let abortController: AbortController | null = null;
+  const abortController = useRef<AbortController | null>(null);
 
   const loadModels = useCallback(
     async function (provider: IChatProviderConfig) {
       setIsModelsLoaded(false);
-      if (abortController) {
-        abortController.abort();
+      if (abortController.current) {
+        abortController.current.abort();
       }
-      abortController = new AbortController();
+      abortController.current = new AbortController();
       try {
         const $models = await getModels(provider, {
-          signal: abortController.signal,
+          signal: abortController.current.signal,
         });
         setModels($models);
         const defaultModel = find($models, { isDefault: true }) || $models[0];

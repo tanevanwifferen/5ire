@@ -14,6 +14,7 @@ import { IChatModelConfig, IChatProviderConfig } from 'providers/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ToolStatusIndicator from 'renderer/components/ToolStatusIndicator';
+import { captureException } from 'renderer/logging';
 import useChatStore from 'stores/useChatStore';
 import useProviderStore from 'stores/useProviderStore';
 
@@ -39,28 +40,41 @@ export default function ModelCtrl({
   const [menuProviderOpen, setMenuProviderOpen] = useState(false);
 
   const loadModels = useCallback(
-    async (provider: IChatProviderConfig) => {
+    async function (provider: IChatProviderConfig) {
       setIsModelsLoaded(false);
-      const $models = await getModels(provider);
-      setModels($models);
-      const defaultModel = find($models, { isDefault: true }) || $models[0];
-      const ctxProvider = ctx.getProvider();
-      const ctxModel = ctx.getModel();
-      if (ctxProvider.name === provider.name) {
-        const $model = find($models, { name: ctxModel.name });
-        if ($model) {
-          setCurModel($model);
-          setIsModelsLoaded(true);
+      const abortController = new AbortController();
+      try {
+        const $models = await getModels(provider, {
+          signal: abortController.signal,
+        });
+        setModels($models);
+        const defaultModel = find($models, { isDefault: true }) || $models[0];
+        const ctxProvider = ctx.getProvider();
+        const ctxModel = ctx.getModel();
+        if (ctxProvider.name === provider.name) {
+          const $model = find($models, { name: ctxModel.name });
+          if ($model) {
+            setCurModel($model);
+            setIsModelsLoaded(true);
+            return;
+          }
+        } else {
+          editStage(chat.id, {
+            provider: provider.name,
+            model: defaultModel.name,
+          });
+        }
+        setCurModel(defaultModel);
+        setIsModelsLoaded(true);
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
           return;
         }
-      } else {
-        editStage(chat.id, {
-          provider: provider.name,
-          model: defaultModel.name,
-        });
+        captureException(err);
       }
-      setCurModel(defaultModel);
-      setIsModelsLoaded(true);
+      return () => {
+        abortController.abort();
+      };
     },
     [chat.id, getModels],
   );
@@ -79,11 +93,23 @@ export default function ModelCtrl({
   }, [chat.id, chat.provider, chat.model]);
 
   useEffect(() => {
-    if (curProvider) {
-      loadModels(curProvider);
-    } else {
-      setModels([]);
-    }
+    let cleanup: (() => void) | undefined;
+    const onProviderChange = async () => {
+      if (curProvider) {
+        if (cleanup) {
+          cleanup();
+        }
+        cleanup = await loadModels(curProvider);
+      } else {
+        setModels([]);
+      }
+    };
+    onProviderChange();
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
   }, [curProvider?.name]);
 
   useEffect(() => {

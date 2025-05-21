@@ -213,9 +213,9 @@ export default class AnthropicChatService
       payload.max_tokens = this.context.getMaxTokens();
     }
     if (this.isToolsEnabled()) {
-      const { tools } = await window.electron.mcp.listTools();
+      const tools = await window.electron.mcp.listTools();
       if (tools) {
-        const unusedTools = tools
+        const unusedTools = tools.tools
           .filter((tool: any) => !this.usedToolNames.includes(tool.name))
           .map((tool: any) => {
             return this.makeTool(tool);

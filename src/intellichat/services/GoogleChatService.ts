@@ -221,10 +221,10 @@ export default class GoogleChatService
       },
     };
     if (this.isToolsEnabled()) {
-      const { tools } = await window.electron.mcp.listTools();
+      const tools = await window.electron.mcp.listTools();
       if (tools) {
         // eslint-disable-next-line no-underscore-dangle
-        const _tools = tools
+        const _tools = tools.tools
           .filter((tool: any) => !this.usedToolNames.includes(tool.name))
           .map((tool: any) => {
             return this.makeTool(tool);

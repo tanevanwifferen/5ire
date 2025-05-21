@@ -341,6 +341,9 @@ export default class ModuleContext {
     if (!this.clients[clientKey])
       throw new Error(`Client ${clientKey} not found`);
     try {
+      if (!timeoutMs) {
+        return await fn();
+      }
       const res = await Promise.race([
         fn(),
         new Promise<any>((resolve, reject) => {
@@ -363,14 +366,11 @@ export default class ModuleContext {
     const results = await Promise.all(
       clients.map(async (clientKey) => {
         try {
-          const res = await Promise.race([
-            this.safeCall(clientKey, () => this.clients[clientKey].listTools()),
-            new Promise<any>((resolve, reject) => {
-              setTimeout(() => {
-                reject(new Error('invalid_connection'));
-              }, timeoutMs);
-            }),
-          ]);
+          const res = await this.safeCall(
+            clientKey,
+            () => this.clients[clientKey].listTools(),
+            timeoutMs,
+          );
           if (!res?.tools || !Array.isArray(res.tools))
             throw new Error('invalid_response');
           // tag and return successful tools

@@ -230,9 +230,9 @@ export default class OpenAIChatService
       stream: !model.noStreaming,
     };
     if (this.isToolsEnabled()) {
-      const { tools } = await window.electron.mcp.listTools();
+      const tools = await window.electron.mcp.listTools();
       if (tools) {
-        const $tools = tools.map((tool: any) => {
+        const $tools = tools.tools.map((tool: any) => {
           return this.makeTool(tool);
         });
         if ($tools.length > 0) {

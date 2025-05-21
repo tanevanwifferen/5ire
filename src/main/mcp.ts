@@ -313,6 +313,7 @@ export default class ModuleContext {
    * Close & reactivate a client without ping
    */
   private async reconnect(key: string) {
+    logging.info(`Reconnecting MCP Client ${key}`);
     const cfg = this.getConfig();
     const server = cfg.mcpServers[key];
     if (!server) throw new Error(`Server ${key} not found`);
@@ -331,14 +332,24 @@ export default class ModuleContext {
    * Executes an MCP client call, reconnecting once on failure and retrying.
    */
   // helper to retry a client call once after reconnect
+  // optional timeoutMs to set a timeout for the call
   private async safeCall(
     clientKey: string,
     fn: () => Promise<any>,
+    timeoutMs?: number,
   ): Promise<any> {
     if (!this.clients[clientKey])
       throw new Error(`Client ${clientKey} not found`);
     try {
-      return await fn();
+      const res = await Promise.race([
+        fn(),
+        new Promise<any>((resolve, reject) => {
+          setTimeout(() => {
+            reject(new Error('invalid_connection'));
+          }, timeoutMs);
+        }),
+      ]);
+      return res;
     } catch {
       await this.reconnect(clientKey);
       return fn();

@@ -39,7 +39,7 @@ export default function ToolDetailDialog(options: {
         window.electron.mcp
           .listTools(server.key)
           .then((_tools) => {
-            setTools(_tools);
+            setTools(_tools.tools);
             return _tools;
           })
           .catch((error) => {

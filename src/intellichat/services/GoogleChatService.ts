@@ -47,6 +47,7 @@ export default class GoogleChatService
     return GoogleReader;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   protected makeToolMessages(
     tool: ITool,
     toolResult: any,
@@ -83,6 +84,7 @@ export default class GoogleChatService
     ];
   }
 
+  // eslint-disable-next-line class-methods-use-this
   protected makeTool(
     tool: IMCPTool,
   ): IOpenAITool | IAnthropicTool | IGoogleTool {
@@ -93,6 +95,7 @@ export default class GoogleChatService
       };
     }
     const properties: any = {};
+    // eslint-disable-next-line no-restricted-syntax, guard-for-in
     for (const key in tool.inputSchema.properties) {
       let prop = tool.inputSchema.properties[key];
       /**
@@ -126,12 +129,14 @@ export default class GoogleChatService
     if (this.context.getModel().capabilities?.vision?.enabled) {
       const items = splitByImg(content, false);
       const result: IGeminiChatRequestMessagePart[] = [];
+      // eslint-disable-next-line no-restricted-syntax
       for (const item of items) {
         if (item.type === 'image') {
           if (item.dataType === 'URL') {
             result.push({
               inline_data: {
                 mimeType: item.mimeType,
+                // eslint-disable-next-line no-await-in-loop
                 data: await getBase64(item.data),
               },
             });
@@ -148,7 +153,6 @@ export default class GoogleChatService
             text: item.data,
           });
         } else {
-          console.error('Unknown message type', item);
           throw new Error('Unknown message type');
         }
       }
@@ -173,6 +177,7 @@ export default class GoogleChatService
         parts: [{ text: systemMessage as string }],
       });
     }
+    // eslint-disable-next-line no-restricted-syntax
     for (const msg of this.context.getCtxMessages(msgId)) {
       result.push({
         role: 'user',
@@ -187,10 +192,12 @@ export default class GoogleChatService
         ],
       });
     }
+    // eslint-disable-next-line no-restricted-syntax
     for (const msg of messages) {
       if (typeof msg.content === 'string') {
         result.push({
           role: msg.role,
+          // eslint-disable-next-line no-await-in-loop
           parts: await this.convertPromptContent(msg.content),
         });
       } else {
@@ -214,8 +221,9 @@ export default class GoogleChatService
       },
     };
     if (this.isToolsEnabled()) {
-      const tools = await window.electron.mcp.listTools();
+      const { tools } = await window.electron.mcp.listTools();
       if (tools) {
+        // eslint-disable-next-line no-underscore-dangle
         const _tools = tools
           .filter((tool: any) => !this.usedToolNames.includes(tool.name))
           .map((tool: any) => {

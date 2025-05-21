@@ -38,11 +38,15 @@ export default function ModelCtrl({
   const [isModelsLoaded, setIsModelsLoaded] = useState(false);
   const [menuModelOpen, setMenuModelOpen] = useState(false);
   const [menuProviderOpen, setMenuProviderOpen] = useState(false);
+  let abortController: AbortController | null = null;
 
   const loadModels = useCallback(
     async function (provider: IChatProviderConfig) {
       setIsModelsLoaded(false);
-      const abortController = new AbortController();
+      if (abortController) {
+        abortController.abort();
+      }
+      abortController = new AbortController();
       try {
         const $models = await getModels(provider, {
           signal: abortController.signal,
@@ -68,13 +72,11 @@ export default function ModelCtrl({
         setIsModelsLoaded(true);
       } catch (err: any) {
         if (err.name === 'AbortError') {
+          console.log('>>>>>>>>>>>>Aborted');
           return;
         }
         captureException(err);
       }
-      return () => {
-        abortController.abort();
-      };
     },
     [chat.id, getModels],
   );
@@ -93,23 +95,11 @@ export default function ModelCtrl({
   }, [chat.id, chat.provider, chat.model]);
 
   useEffect(() => {
-    let cleanup: (() => void) | undefined;
-    const onProviderChange = async () => {
-      if (curProvider) {
-        if (cleanup) {
-          cleanup();
-        }
-        cleanup = await loadModels(curProvider);
-      } else {
-        setModels([]);
-      }
-    };
-    onProviderChange();
-    return () => {
-      if (cleanup) {
-        cleanup();
-      }
-    };
+    if (curProvider) {
+      loadModels(curProvider);
+    } else {
+      setModels([]);
+    }
   }, [curProvider?.name]);
 
   useEffect(() => {

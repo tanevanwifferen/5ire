@@ -5,7 +5,7 @@ import {
   AccordionPanel,
   Button,
 } from '@fluentui/react-components';
-import { PlayCircleHint16Regular } from '@fluentui/react-icons';
+import { ArrowForwardFilled } from '@fluentui/react-icons';
 import useMarkdown from 'hooks/useMarkdown';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -64,7 +64,7 @@ export default function Sidebar({ chatId }: { chatId: string }) {
               return item.message === '' ? (
                 <div className="pl-4 mt-2" key={`${chatId}-${item.id}`}>
                   <span className="-ml-1 inline-block pt-0 py-0.5 rounded truncate text-ellipsis overflow-hidden w-52 font-bold text-gray-400 dark:text-gray-400">
-                    <PlayCircleHint16Regular />
+                    <ArrowForwardFilled />
                     &nbsp;{item.label}
                   </span>
                 </div>

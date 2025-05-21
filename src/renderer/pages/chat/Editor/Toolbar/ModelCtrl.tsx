@@ -96,13 +96,6 @@ export default function ModelCtrl({
       curProvider &&
       curModel &&
       models.some((m) => m.name === curModel.name);
-    console.log('shouldTriggerChange', shouldTriggerChange, {
-      curProvider: curProvider?.name,
-      curModel: curModel?.name,
-      chatProvider: chat.provider,
-      chatModel: chat.model,
-      isModelsLoaded,
-    });
     if (shouldTriggerChange && isChanged.current) {
       editStage(chat.id, {
         provider: curProvider.name,

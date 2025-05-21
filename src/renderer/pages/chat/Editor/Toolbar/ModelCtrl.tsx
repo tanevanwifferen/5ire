@@ -87,7 +87,8 @@ export default function ModelCtrl({
   }, [curProvider?.name]);
 
   useEffect(() => {
-    if (curProvider?.name !== chat.provider) {
+    console.log(curProvider?.name, '==', chat.provider);
+    if (chat.provider !== '' && curProvider?.name !== chat.provider) {
       return;
     }
     const shouldTriggerChange =
@@ -95,8 +96,16 @@ export default function ModelCtrl({
       curProvider &&
       curModel &&
       models.some((m) => m.name === curModel.name);
+    console.log('shouldTriggerChange', shouldTriggerChange, {
+      curProvider: curProvider?.name,
+      curModel: curModel?.name,
+      chatProvider: chat.provider,
+      chatModel: chat.model,
+      isModelsLoaded,
+    });
     if (shouldTriggerChange && isChanged.current) {
       editStage(chat.id, {
+        provider: curProvider.name,
         model: curModel.name,
       });
       isChanged.current = false;

@@ -330,7 +330,7 @@ export default class ModuleContext {
     try {
       // Check if client is connected by making a simple ping request
       // If client is disconnected, this will throw an error
-      await this.clients[clientKey].ping();
+      logging.info(await this.clients[clientKey].ping());
       logging.info(`Client ${clientKey} is connected and responsive.`);
       return { success: true };
     } catch (pingError: any) {
@@ -396,121 +396,85 @@ export default class ModuleContext {
     }
   }
 
-  public async listTools(key?: string) {
-    let allTools: any = [];
-    if (key) {
-      if (!this.clients[key]) {
-        logging.error(`MCP Client ${key} not found`);
-        return {
-          tools: [],
-          error: {
-            message: `MCP Client ${key} not found`,
-            code: 'client_not_found',
-          },
-        };
-      }
-
+  /**
+   * Close & reactivate a client without ping
+   */
+  private async reconnect(key: string) {
+    const cfg = this.getConfig();
+    const server = cfg.mcpServers[key];
+    if (!server) throw new Error(`Server ${key} not found`);
+    if (this.clients[key]) {
       try {
-        // First check if client is connected and try to reconnect if needed
-        const connectionStatus = await this.checkAndReconnect(key);
-        if (!connectionStatus.success) {
-          return {
-            tools: [],
-            error: connectionStatus.error,
-          };
-        }
-
-        const response = await this.clients[key].listTools();
-        // Check if response has tools property and it's an array
-        if (!response || !response.tools || !Array.isArray(response.tools)) {
-          return {
-            tools: [],
-            error: {
-              message: `Invalid response from client ${key}: missing or invalid tools array`,
-              code: 'invalid_response',
-            },
-          };
-        }
-
-        allTools = response.tools.map((tool: any) => {
-          tool.name = `${key}--${tool.name}`;
-          return tool;
-        });
-        return { tools: allTools, error: null };
-      } catch (error: any) {
-        logging.captureException(error);
-        return {
-          tools: [],
-          error: {
-            message: `Error listing tools for client ${key}: ${error.message}`,
-            code: 'list_tools_error',
-          },
-        };
+        await this.clients[key].close();
+      } catch {
+        // ignore error
       }
-    } else {
-      const failedClients: any[] = [];
-
-      // Get tools from all clients, but don't fail if one client fails
-      const clientPromises = Object.keys(this.clients).map(
-        async (clientName: string) => {
-          logging.info(clientName);
-          try {
-            // Try to reconnect if client is disconnected
-            const connectionStatus = await this.checkAndReconnect(clientName);
-            if (!connectionStatus.success) {
-              failedClients.push({
-                client: clientName,
-                error: connectionStatus.error.message,
-              });
-              return [];
-            }
-
-            const response = await this.clients[clientName].listTools();
-            // Check if response has tools property and it's an array
-            if (
-              !response ||
-              !response.tools ||
-              !Array.isArray(response.tools)
-            ) {
-              failedClients.push({
-                client: clientName,
-                error: 'Invalid response: missing or invalid tools array',
-              });
-              return [];
-            }
-
-            return response.tools.map((tool: any) => {
-              tool.name = `${clientName}--${tool.name}`;
-              return tool;
-            });
-          } catch (error: any) {
-            logging.captureException(error);
-            failedClients.push({
-              client: clientName,
-              error: error.message,
-            });
-            return [];
-          }
-        },
-      );
-
-      const results = await Promise.all(clientPromises);
-      results.forEach((tools) => {
-        allTools = allTools.concat(tools);
-      });
-
-      return {
-        tools: allTools,
-        error:
-          failedClients.length > 0
-            ? {
-                message: `Failed to list tools from some clients`,
-                failedClients,
-                code: 'partial_failure',
-              }
-            : null,
-      };
     }
+    const { error } = await this.activate(server);
+    if (error) throw error;
+  }
+
+  /**
+   * Executes an MCP client call, reconnecting once on failure and retrying.
+   */
+  // helper to retry a client call once after reconnect
+  private async safeCall(
+    clientKey: string,
+    fn: () => Promise<any>,
+  ): Promise<any> {
+    if (!this.clients[clientKey])
+      throw new Error(`Client ${clientKey} not found`);
+    try {
+      return await fn();
+    } catch {
+      await this.reconnect(clientKey);
+      return fn();
+    }
+  }
+
+  public async listTools(key?: string) {
+    const clients = key ? [key] : Object.keys(this.clients);
+    // perform listTools on all clients in parallel
+    const results = await Promise.all(
+      clients.map(async (clientKey) => {
+        try {
+          const res = await this.safeCall(clientKey, () =>
+            this.clients[clientKey].listTools(),
+          );
+          if (!res?.tools || !Array.isArray(res.tools))
+            throw new Error('invalid_response');
+          // tag and return successful tools
+          return {
+            client: clientKey,
+            tools: res.tools.map((t: any) => ({
+              ...t,
+              name: `${clientKey}--${t.name}`,
+            })),
+            error: null,
+          };
+        } catch (err: any) {
+          // capture failure for this client
+          return { client: clientKey, tools: [], error: err.message };
+        }
+      }),
+    );
+    // flatten tools and collect failures
+    const tools = results.flatMap((r) => r.tools);
+    const failedClients = results
+      .filter((r) => r.error)
+      .map((r) => ({ client: r.client, error: r.error! }));
+    return {
+      tools,
+      error: failedClients.length
+        ? {
+            message: key
+              ? `Failed to list tools for ${key}`
+              : 'Partial failure listing tools',
+            code: key ? 'list_tools_failed' : 'partial_failure',
+            failedClients,
+          }
+        : null,
+    };
   }
 
   public async callTool({
@@ -523,60 +487,34 @@ export default class ModuleContext {
     args: any;
   }) {
     if (!this.clients[client]) {
-      logging.error(`MCP Client ${client} not found`);
       return {
         isError: true,
         content: [
           {
             error: `MCP Client ${client} not found`,
             code: 'client_not_found',
-          },
-        ],
-      };
-    }
-
-    // First check if client is connected and try to reconnect if needed
-    const connectionStatus = await this.checkAndReconnect(client);
-    if (!connectionStatus.success) {
-      return {
-        isError: true,
-        content: [
-          {
-            error: connectionStatus.error.message,
-            code: connectionStatus.error.code,
-            toolName: name,
             clientName: client,
+            toolName: name,
           },
         ],
       };
     }
-
-    const mcpClient = this.clients[client];
-    logging.debug('Calling:', client, name, args);
-
+    const callFn = () =>
+      this.clients[client].callTool({ name, arguments: args }, undefined, {
+        timeout: CONNECT_TIMEOUT,
+      });
     try {
-      const result = await mcpClient.callTool(
-        {
-          name,
-          arguments: args,
-        },
-        undefined,
-        { timeout: CONNECT_TIMEOUT },
-      );
-      return {
-        isError: false,
-        ...result,
-      };
-    } catch (error: any) {
-      logging.captureException(error);
+      const result = await this.safeCall(client, callFn);
+      return { isError: false, ...result };
+    } catch (err: any) {
       return {
         isError: true,
         content: [
           {
-            error: `Error calling tool ${name}: ${error.message}`,
+            error: `Error calling tool ${name}: ${err.message}`,
             code: 'tool_call_error',
-            toolName: name,
             clientName: client,
+            toolName: name,
           },
         ],
       };

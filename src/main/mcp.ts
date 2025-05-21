@@ -7,6 +7,7 @@ import { purifyServer } from 'utils/mcp';
 import * as logging from './logging';
 
 const CONNECT_TIMEOUT = 60 * 1000 * 5; // 5 minutes
+const LIST_TOOLS_TIMEOUT = 15 * 1000; // 15 seconds
 
 export const DEFAULT_INHERITED_ENV_VARS =
   process.platform === 'win32'
@@ -309,94 +310,6 @@ export default class ModuleContext {
   }
 
   /**
-   * Checks if a client is connected and attempts to reconnect if it's not.
-   * @param clientKey The key of the client to check
-   * @returns An object indicating success or containing an error
-   */
-  private async checkAndReconnect(
-    clientKey: string,
-  ): Promise<{ success: boolean; error?: any }> {
-    if (!this.clients[clientKey]) {
-      logging.error(`MCP Client ${clientKey} not found`);
-      return {
-        success: false,
-        error: {
-          message: `MCP Client ${clientKey} not found`,
-          code: 'client_not_found',
-        },
-      };
-    }
-
-    try {
-      // Check if client is connected by making a simple ping request
-      // If client is disconnected, this will throw an error
-      logging.info(await this.clients[clientKey].ping());
-      logging.info(`Client ${clientKey} is connected and responsive.`);
-      return { success: true };
-    } catch (pingError: any) {
-      logging.info(
-        `Client ${clientKey} appears disconnected. Attempting to reconnect...`,
-      );
-
-      try {
-        // Get server config to reconnect
-        const config = this.getConfig();
-        const server = config.mcpServers[clientKey];
-
-        if (!server) {
-          logging.error(`Server configuration for ${clientKey} not found`);
-          return {
-            success: false,
-            error: {
-              message: `Server configuration for ${clientKey} not found`,
-              code: 'server_config_not_found',
-            },
-          };
-        }
-
-        // Close existing client instance if it exists
-        if (this.clients[clientKey]) {
-          try {
-            await this.clients[clientKey].close();
-          } catch (closeErr: any) {
-            logging.error(
-              `Error closing client ${clientKey}: ${closeErr.message}`,
-            );
-            // Continue with reconnection attempt even if close fails
-          }
-        }
-
-        // Attempt to reactivate the server
-        const activationResult = await this.activate(server);
-        if (activationResult.error) {
-          logging.error(
-            `Failed to reconnect client ${clientKey}: ${activationResult.error.message}`,
-          );
-          return {
-            success: false,
-            error: {
-              message: `Failed to reconnect client ${clientKey}: ${activationResult.error.message}`,
-              code: 'reconnect_failed',
-            },
-          };
-        }
-
-        logging.info(`Successfully reconnected client ${clientKey}`);
-        return { success: true };
-      } catch (reconnectError: any) {
-        logging.captureException(reconnectError);
-        return {
-          success: false,
-          error: {
-            message: `Error reconnecting client ${clientKey}: ${reconnectError.message}`,
-            code: 'reconnect_error',
-          },
-        };
-      }
-    }
-  }
-
-  /**
    * Close & reactivate a client without ping
    */
   private async reconnect(key: string) {
@@ -434,13 +347,19 @@ export default class ModuleContext {
 
   public async listTools(key?: string) {
     const clients = key ? [key] : Object.keys(this.clients);
+    const timeoutMs = LIST_TOOLS_TIMEOUT;
     // perform listTools on all clients in parallel
     const results = await Promise.all(
       clients.map(async (clientKey) => {
         try {
-          const res = await this.safeCall(clientKey, () =>
-            this.clients[clientKey].listTools(),
-          );
+          const res = await Promise.race([
+            this.safeCall(clientKey, () => this.clients[clientKey].listTools()),
+            new Promise<any>((resolve, reject) => {
+              setTimeout(() => {
+                reject(new Error('invalid_connection'));
+              }, timeoutMs);
+            }),
+          ]);
           if (!res?.tools || !Array.isArray(res.tools))
             throw new Error('invalid_response');
           // tag and return successful tools

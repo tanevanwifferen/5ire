@@ -43,6 +43,7 @@ export default function ModelCtrl({
   const loadModels = useCallback(
     async function (provider: IChatProviderConfig) {
       setIsModelsLoaded(false);
+      setModels([]);
       if (abortController.current) {
         abortController.current.abort();
       }
@@ -55,7 +56,7 @@ export default function ModelCtrl({
         const defaultModel = find($models, { isDefault: true }) || $models[0];
         const ctxProvider = ctx.getProvider();
         const ctxModel = ctx.getModel();
-        if (ctxProvider.name === provider.name) {
+        if (ctxProvider?.name === provider.name) {
           const $model = find($models, { name: ctxModel.name });
           if ($model) {
             setCurModel($model);
@@ -72,10 +73,10 @@ export default function ModelCtrl({
         setIsModelsLoaded(true);
       } catch (err: any) {
         if (err.name === 'AbortError') {
-          console.log('>>>>>>>>>>>>Aborted');
           return;
         }
         captureException(err);
+        setIsModelsLoaded(false);
       }
     },
     [chat.id, getModels],
@@ -183,6 +184,7 @@ export default function ModelCtrl({
                 disabled={!provider.isReady}
                 onClick={() => {
                   isChanged.current = true;
+                  setIsModelsLoaded(false);
                   setCurProvider(provider);
                 }}
               >

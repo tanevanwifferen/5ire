@@ -2,12 +2,41 @@ import { IServiceProvider } from './types';
 
 const chatModels = [
   {
-    id: 'claude-3.7-sonnet',
-    name: 'claude-3-7-sonnet-20250219',
-    label: 'claude-3.7-sonnet',
+    id: 'claude-opus-4',
+    name: 'claude-opus-4-20250514',
+    label: 'claude-opus-4',
     contextWindow: 200000,
-    maxTokens: 8192,
-    defaultMaxTokens: 8000,
+    maxTokens: 32000,
+    defaultMaxTokens: 10000,
+    inputPrice: 0.015,
+    outputPrice: 0.075,
+    capabilities: {
+      json: {
+        enabled: true,
+      },
+      tools: {
+        enabled: true,
+      },
+      vision: {
+        enabled: true,
+        allowBase64: true,
+        allowedMimeTypes: [
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+        ],
+      },
+    },
+    description: `Highest level of intelligence and capability`,
+  },
+  {
+    id: 'claude-sonnet-4',
+    name: 'claude-sonnet-4-20250514',
+    label: 'claude-sonnet-4',
+    contextWindow: 200000,
+    maxTokens: 64000,
+    defaultMaxTokens: 10000,
     inputPrice: 0.003,
     outputPrice: 0.015,
     capabilities: {
@@ -28,8 +57,36 @@ const chatModels = [
         ],
       },
     },
-    description: `Highest level of intelligence and capability with toggleable extended thinking`,
-    group: 'Claude-Sonnet',
+    description: `High intelligence and balanced performance`,
+  },
+  {
+    id: 'claude-3.7-sonnet',
+    name: 'claude-3-7-sonnet-20250219',
+    label: 'claude-3.7-sonnet',
+    contextWindow: 200000,
+    maxTokens: 64000,
+    defaultMaxTokens: 10000,
+    inputPrice: 0.003,
+    outputPrice: 0.015,
+    capabilities: {
+      json: {
+        enabled: true,
+      },
+      tools: {
+        enabled: true,
+      },
+      vision: {
+        enabled: true,
+        allowBase64: true,
+        allowedMimeTypes: [
+          'image/jpeg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+        ],
+      },
+    },
+    description: `High intelligence with toggleable extended thinking`,
   },
   {
     id: 'claude-3-5-sonnet',
@@ -67,8 +124,8 @@ const chatModels = [
     contextWindow: 200000,
     maxTokens: 8192,
     defaultMaxTokens: 8000,
-    inputPrice: 0.001,
-    outputPrice: 0.005,
+    inputPrice: 0.0008,
+    outputPrice: 0.004,
     description: `The fastest model of Anthropic, Intelligence at blazing speeds`,
     capabilities: {
       json: {

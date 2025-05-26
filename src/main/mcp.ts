@@ -7,6 +7,7 @@ import { purifyServer } from 'utils/mcp';
 import * as logging from './logging';
 
 const CONNECT_TIMEOUT = 60 * 1000 * 5; // 5 minutes
+const LIST_TOOLS_TIMEOUT = 15 * 1000; // 15 seconds
 
 export const DEFAULT_INHERITED_ENV_VARS =
   process.platform === 'win32'
@@ -308,31 +309,102 @@ export default class ModuleContext {
     );
   }
 
-  public async listTools(key?: string) {
-    let allTools: any = [];
-    if (key) {
-      if (!this.clients[key]) {
-        throw new Error(`MCP Client ${key} not found`);
+  /**
+   * Close & reactivate a client without ping
+   */
+  private async reconnect(key: string) {
+    logging.info(`Reconnecting MCP Client ${key}`);
+    const cfg = this.getConfig();
+    const server = cfg.mcpServers[key];
+    if (!server) throw new Error(`Server ${key} not found`);
+    if (this.clients[key]) {
+      try {
+        await this.clients[key].close();
+      } catch {
+        // ignore error
       }
-      const { tools } = await this.clients[key].listTools();
-      allTools = tools.map((tool: any) => {
-        tool.name = `${key}--${tool.name}`;
-        return tool;
-      });
-    } else {
-      await Promise.all(
-        Object.keys(this.clients).map(async (clientName: string) => {
-          const { tools } = await this.clients[clientName].listTools();
-          allTools = allTools.concat(
-            tools.map((tool: any) => {
-              tool.name = `${clientName}--${tool.name}`;
-              return tool;
-            }),
-          );
-        }),
-      );
     }
-    return allTools;
+    const { error } = await this.activate(server);
+    if (error) throw error;
+  }
+
+  /**
+   * Executes an MCP client call, reconnecting once on failure and retrying.
+   */
+  // helper to retry a client call once after reconnect
+  // optional timeoutMs to set a timeout for the call
+  private async safeCall(
+    clientKey: string,
+    fn: () => Promise<any>,
+    timeoutMs?: number,
+  ): Promise<any> {
+    if (!this.clients[clientKey])
+      throw new Error(`Client ${clientKey} not found`);
+    try {
+      if (!timeoutMs) {
+        return await fn();
+      }
+      const res = await Promise.race([
+        fn(),
+        new Promise<any>((resolve, reject) => {
+          setTimeout(() => {
+            reject(new Error('invalid_connection'));
+          }, timeoutMs);
+        }),
+      ]);
+      return res;
+    } catch {
+      await this.reconnect(clientKey);
+      return fn();
+    }
+  }
+
+  public async listTools(key?: string) {
+    const clients = key ? [key] : Object.keys(this.clients);
+    const timeoutMs = LIST_TOOLS_TIMEOUT;
+    // perform listTools on all clients in parallel
+    const results = await Promise.all(
+      clients.map(async (clientKey) => {
+        try {
+          const res = await this.safeCall(
+            clientKey,
+            () => this.clients[clientKey].listTools(),
+            timeoutMs,
+          );
+          if (!res?.tools || !Array.isArray(res.tools))
+            throw new Error('invalid_response');
+          // tag and return successful tools
+          return {
+            client: clientKey,
+            tools: res.tools.map((t: any) => ({
+              ...t,
+              name: `${clientKey}--${t.name}`,
+            })),
+            error: null,
+          };
+        } catch (err: any) {
+          // capture failure for this client
+          return { client: clientKey, tools: [], error: err.message };
+        }
+      }),
+    );
+    // flatten tools and collect failures
+    const tools = results.flatMap((r) => r.tools);
+    const failedClients = results
+      .filter((r) => r.error)
+      .map((r) => ({ client: r.client, error: r.error! }));
+    return {
+      tools,
+      error: failedClients.length
+        ? {
+            message: key
+              ? `Failed to list tools for ${key}`
+              : 'Partial failure listing tools',
+            code: key ? 'list_tools_failed' : 'partial_failure',
+            failedClients,
+          }
+        : null,
+    };
   }
 
   public async callTool({
@@ -344,20 +416,39 @@ export default class ModuleContext {
     name: string;
     args: any;
   }) {
-    const mcpClient = this.clients[client];
-    if (!mcpClient) {
-      throw new Error(`MCP Client ${client} not found`);
+    if (!this.clients[client]) {
+      return {
+        isError: true,
+        content: [
+          {
+            error: `MCP Client ${client} not found`,
+            code: 'client_not_found',
+            clientName: client,
+            toolName: name,
+          },
+        ],
+      };
     }
-    logging.debug('Calling:', client, name, args);
-    const result = await mcpClient.callTool(
-      {
-        name,
-        arguments: args,
-      },
-      undefined,
-      { timeout: CONNECT_TIMEOUT },
-    );
-    return result;
+    const callFn = () =>
+      this.clients[client].callTool({ name, arguments: args }, undefined, {
+        timeout: CONNECT_TIMEOUT,
+      });
+    try {
+      const result = await this.safeCall(client, callFn);
+      return { isError: false, ...result };
+    } catch (err: any) {
+      return {
+        isError: true,
+        content: [
+          {
+            error: `Error calling tool ${name}: ${err.message}`,
+            code: 'tool_call_error',
+            clientName: client,
+            toolName: name,
+          },
+        ],
+      };
+    }
   }
 
   public getClient(name: string) {

@@ -3,13 +3,13 @@ import { IServiceProvider } from './types';
 const chatModels = [
   {
     id: 'gemini-2.5-pro-exp',
-    name: 'gemini-2.5-pro-exp-03-25',
-    label: 'gemini-2.5-pro-exp',
+    name: 'gemini-2.5-pro-preview-05-06',
+    label: 'gemini-2.5-pro-preview',
     contextWindow: 1000000,
     maxTokens: 64000,
     defaultMaxTokens: 32000,
-    inputPrice: 0.0001,
-    outputPrice: 0.0004,
+    inputPrice: 0.00125,
+    outputPrice: 0.01,
     capabilities: {
       tools: {
         enabled: true,
@@ -27,12 +27,12 @@ const chatModels = [
   },
   {
     id: 'gemini-2.5-flash',
-    name: 'gemini-2.0-flash-001',
-    label: 'gemini-2.0-flash',
+    name: 'gemini-2.5-flash-preview-05-20',
+    label: 'gemini-2.5-flash-preview',
     contextWindow: 1048576,
-    maxTokens: 8192,
+    maxTokens: 65536,
     defaultMaxTokens: 8000,
-    inputPrice: 0.0001,
+    inputPrice: 0.00015,
     outputPrice: 0.0004,
     capabilities: {
       tools: {
@@ -50,32 +50,8 @@ const chatModels = [
     description: `Next generation features, superior speed, native tool use, and multimodal generation`,
   },
   {
-    id: 'gemini-2.0-pro-exp',
-    name: 'gemini-2.0-pro-exp-02-05',
-    label: 'gemini-2.0-pro-exp-02-05',
-    contextWindow: 1048576,
-    maxTokens: 8192,
-    defaultMaxTokens: 8000,
-    inputPrice: 0.0001,
-    outputPrice: 0.0004,
-    capabilities: {
-      tools: {
-        enabled: true,
-      },
-      json: {
-        enabled: true,
-      },
-      vision: {
-        enabled: true,
-        allowBase64: true,
-        allowUrl: true,
-      },
-    },
-    description: `The quality has improved, especially for world knowledge, code, and long contexts.`,
-  },
-  {
-    id: 'gemini-2.0-flash-thinking-exp',
-    name: 'gemini-2.0-flash-thinking-exp',
+    id: 'gemini-2.0-flash',
+    name: 'gemini-2.0-flash',
     contextWindow: 1048576,
     maxTokens: 8192,
     defaultMaxTokens: 8000,
@@ -95,7 +71,7 @@ const chatModels = [
   },
   {
     id: 'gemini-2.0-flash-lite',
-    name: 'gemini-2.0-flash-lite-preview-02-05',
+    name: 'gemini-2.0-flash-lite',
     label: 'gemini-2.0-flash-lite',
     contextWindow: 1048576,
     maxTokens: 8192,

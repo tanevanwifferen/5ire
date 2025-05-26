@@ -251,7 +251,7 @@ export interface IProviderStore {
   ) => IChatModelConfig[];
   getModels: (
     provider: IChatProviderConfig,
-    options?: { withDisabled?: boolean },
+    options?: { withDisabled?: boolean, signal?: AbortSignal },
   ) => Promise<IChatModelConfig[]>;
   getGroupedModelOptions: () => Promise<{
     [key: string]: ModelOption[];
@@ -421,7 +421,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
   },
   getModels: async (
     provider: IChatProviderConfig,
-    options?: { withDisabled?: boolean },
+    options?: { withDisabled?: boolean, signal?: AbortSignal },
   ) => {
     let $models: IChatModelConfig[] = [];
     if (provider.modelsEndpoint) {
@@ -434,6 +434,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
             headers: {
               'Content-Type': 'application/json',
             },
+            signal: options?.signal,
           },
         );
         const data = await resp.json();

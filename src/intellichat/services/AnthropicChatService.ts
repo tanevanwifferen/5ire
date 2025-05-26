@@ -22,7 +22,8 @@ import { ITool } from 'intellichat/readers/IChatReader';
 import INextChatService from './INextCharService';
 import NextChatService from './NextChatService';
 import Anthropic from '../../providers/Anthropic';
-import {  isPlainObject, omit } from 'lodash';
+// eslint-disable-next-line import/order
+import { isPlainObject, omit } from 'lodash';
 
 const debug = Debug('5ire:intellichat:AnthropicChatService');
 
@@ -214,7 +215,7 @@ export default class AnthropicChatService
     if (this.isToolsEnabled()) {
       const tools = await window.electron.mcp.listTools();
       if (tools) {
-        const unusedTools = tools
+        const unusedTools = tools.tools
           .filter((tool: any) => !this.usedToolNames.includes(tool.name))
           .map((tool: any) => {
             return this.makeTool(tool);

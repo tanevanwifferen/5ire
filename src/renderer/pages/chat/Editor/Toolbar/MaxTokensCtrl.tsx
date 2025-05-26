@@ -54,10 +54,10 @@ export default function MaxTokens({
   }, [chat.model]);
 
   const curMaxTokens = useMemo<number>(() => {
-    return chat.maxTokens || modelMaxTokens;
+    return Math.min(chat.maxTokens || MAX_TOKENS, modelMaxTokens);
   }, [chat.id, chat.model]);
 
-  const [maxTokens, setMaxTokens] = useState<number>(DEFAULT_MAX_TOKENS);
+  const [maxTokens, setMaxTokens] = useState<number>(curMaxTokens);
 
   useEffect(() => {
     Mousetrap.bind('mod+shift+4', () => {

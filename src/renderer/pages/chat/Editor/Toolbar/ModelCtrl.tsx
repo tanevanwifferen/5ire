@@ -14,6 +14,7 @@ import { IChatModelConfig, IChatProviderConfig } from 'providers/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ToolStatusIndicator from 'renderer/components/ToolStatusIndicator';
+import { captureException } from 'renderer/logging';
 import useChatStore from 'stores/useChatStore';
 import useProviderStore from 'stores/useProviderStore';
 
@@ -37,32 +38,48 @@ export default function ModelCtrl({
   const [isModelsLoaded, setIsModelsLoaded] = useState(false);
   const [menuModelOpen, setMenuModelOpen] = useState(false);
   const [menuProviderOpen, setMenuProviderOpen] = useState(false);
+  const abortController = useRef<AbortController | null>(null);
 
   const loadModels = useCallback(
-    async (provider: IChatProviderConfig) => {
+    async function (provider: IChatProviderConfig) {
       setIsModelsLoaded(false);
-      const $models = await getModels(provider);
-      setModels($models);
-      const defaultModel = find($models, { isDefault: true }) || $models[0];
-      const ctxProvider = ctx.getProvider();
-      const ctxModel = ctx.getModel();
-      if (ctxProvider.name === provider.name) {
-        const $model = find($models, { name: ctxModel.name });
-        if ($model) {
-          setCurModel($model);
-          setIsModelsLoaded(true);
+      setModels([]);
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+      abortController.current = new AbortController();
+      try {
+        const $models = await getModels(provider, {
+          signal: abortController.current.signal,
+        });
+        setModels($models);
+        const defaultModel = find($models, { isDefault: true }) || $models[0];
+        const ctxProvider = ctx.getProvider();
+        const ctxModel = ctx.getModel();
+        if (ctxProvider?.name === provider.name) {
+          const $model = find($models, { name: ctxModel.name });
+          if ($model) {
+            setCurModel($model);
+            setIsModelsLoaded(true);
+            return;
+          }
+        } else {
+          editStage(chat.id, {
+            provider: provider.name,
+            model: defaultModel.name,
+          });
+        }
+        setCurModel(defaultModel);
+        setIsModelsLoaded(true);
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
           return;
         }
-      } else {
-        editStage(chat.id, {
-          provider: provider.name,
-          model: defaultModel.name,
-        });
+        captureException(err);
+        setIsModelsLoaded(false);
       }
-      setCurModel(defaultModel);
-      setIsModelsLoaded(true);
     },
-    [chat.id, getModels, ctx],
+    [chat.id, getModels],
   );
 
   useEffect(() => {
@@ -87,7 +104,7 @@ export default function ModelCtrl({
   }, [curProvider?.name]);
 
   useEffect(() => {
-    if (curProvider?.name !== chat.provider) {
+    if (chat.provider !== '' && curProvider?.name !== chat.provider) {
       return;
     }
     const shouldTriggerChange =
@@ -97,6 +114,7 @@ export default function ModelCtrl({
       models.some((m) => m.name === curModel.name);
     if (shouldTriggerChange && isChanged.current) {
       editStage(chat.id, {
+        provider: curProvider.name,
         model: curModel.name,
       });
       isChanged.current = false;
@@ -166,6 +184,7 @@ export default function ModelCtrl({
                 disabled={!provider.isReady}
                 onClick={() => {
                   isChanged.current = true;
+                  setIsModelsLoaded(false);
                   setCurProvider(provider);
                 }}
               >

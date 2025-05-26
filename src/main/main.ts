@@ -584,12 +584,36 @@ ipcMain.handle('mcp-deactivate', async (_, clientName: string) => {
   return await mcp.deactivate(clientName);
 });
 ipcMain.handle('mcp-list-tools', async (_, name: string) => {
-  return await mcp.listTools(name);
+  try {
+    return await mcp.listTools(name);
+  } catch (error: any) {
+    logging.error('Error listing MCP tools:', error);
+    return {
+      tools: [],
+      error: {
+        message: error.message || 'Unknown error listing tools',
+        code: 'unexpected_error',
+      },
+    };
+  }
 });
 ipcMain.handle(
   'mcp-call-tool',
   async (_, args: { client: string; name: string; args: any }) => {
-    return await mcp.callTool(args);
+    try {
+      return await mcp.callTool(args);
+    } catch (error: any) {
+      logging.error('Error invoking MCP tool:', error);
+      return {
+        isError: true,
+        content: [
+          {
+            error: error.message || 'Unknown error calling tool',
+            code: 'unexpected_error',
+          },
+        ],
+      };
+    }
   },
 );
 ipcMain.handle('mcp-get-config', () => {

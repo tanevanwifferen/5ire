@@ -31,3 +31,42 @@ export interface IMCPConfig {
   };
   updated?: number;
 }
+
+export interface IMCPPromptArgument {
+  name: string;
+  description?: string;
+  required: boolean;
+}
+
+export interface IMCPPromptListItemData {
+  name: string;
+  description?: string;
+  arguments?: IMCPPromptArgument[];
+}
+
+export interface IMCPPromptListItem {
+  client: string;
+  prompts: IMCPPromptListItemData[];
+  error: string | null;
+}
+
+export interface IMCPPromptMessageContent {
+  type: 'text' | 'resource';
+  text?: string;
+  resource?: {
+    description?: string;
+    uri: string;
+    mimeType?: string;
+    text?: string;
+    blob?: string;
+  };
+}
+
+export interface IMCPPromptMessageItem {
+  role: 'user' | 'assistant' | 'system';
+  content: IMCPPromptMessageContent[];
+}
+
+export interface IMCPPrompt {
+  messages: IMCPPromptMessageItem[];
+}

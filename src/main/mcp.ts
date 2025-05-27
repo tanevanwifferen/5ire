@@ -8,6 +8,7 @@ import * as logging from './logging';
 
 const CONNECT_TIMEOUT = 60 * 1000 * 5; // 5 minutes
 const LIST_TOOLS_TIMEOUT = 15 * 1000; // 15 seconds
+const RETRIEVE_PROMPTS_TIMEOUT = 15 * 1000; // 15 seconds
 
 export const DEFAULT_INHERITED_ENV_VARS =
   process.platform === 'win32'
@@ -43,6 +44,20 @@ export function getDefaultEnvironment() {
     env[key] = value;
   });
   return env;
+}
+
+/**
+ * Checks if the client has tools capability.
+ * @param client - The MCP client instance.
+ * @returns {boolean} - True if the client has tools, false otherwise.
+ */
+function hasCapability(client: any, capability: string): boolean {
+  try {
+    const capabilities = client.getServerCapabilities();
+    return !!capabilities[capability];
+  } catch {
+    return false;
+  }
 }
 
 export default class ModuleContext {
@@ -359,6 +374,85 @@ export default class ModuleContext {
     }
   }
 
+  public async listPrompts(key?: string) {
+    const clients = key ? [key] : Object.keys(this.clients);
+    const timeoutMs = RETRIEVE_PROMPTS_TIMEOUT;
+    const results = await Promise.all(
+      clients.map(async (clientKey) => {
+        try {
+          const client = this.clients[clientKey];
+          if (!hasCapability(client, 'prompts')) {
+            return null;
+          }
+          const res = await this.safeCall(
+            clientKey,
+            () => client.listPrompts(),
+            timeoutMs,
+          );
+          if (!res?.prompts || !Array.isArray(res.prompts))
+            throw new Error('invalid_response');
+          return {
+            client: clientKey,
+            prompts: res.prompts.map((p: any) => ({
+              ...p,
+              name: p.name,
+            })),
+            error: null,
+          };
+        } catch (err: any) {
+          logging.captureException(err);
+          return { client: clientKey, prompts: [], error: err.message };
+        }
+      }),
+    );
+    return results.filter((r) => r !== null);
+  }
+
+  public async getPrompt(key: string, name: string, args?: any) {
+    if (!this.clients[key]) {
+      return {
+        isError: true,
+        content: [
+          {
+            error: `MCP Client ${key} not found`,
+            code: 'client_not_found',
+            clientName: key,
+            promptName: name,
+          },
+        ],
+      };
+    }
+    const callFn = async () => {
+      const params = {
+        name,
+      } as {
+        name: string;
+        arguments?: any;};
+      if (args) {
+        params.arguments = args;
+      }
+      return this.clients[key].getPrompt(params, {
+        timeout: RETRIEVE_PROMPTS_TIMEOUT,
+      });
+    };
+    try {
+      const result = await this.safeCall(key, callFn);
+      return { isError: false, ...result };
+    } catch (err: any) {
+      return {
+        isError: true,
+        content: [
+          {
+            error: `Error getting prompt ${name}: ${err.message}`,
+            code: 'prompt_get_error',
+            clientName: key,
+            promptName: name,
+          },
+        ],
+      };
+    }
+  }
+
   public async listTools(key?: string) {
     const clients = key ? [key] : Object.keys(this.clients);
     const timeoutMs = LIST_TOOLS_TIMEOUT;
@@ -366,9 +460,13 @@ export default class ModuleContext {
     const results = await Promise.all(
       clients.map(async (clientKey) => {
         try {
+          const client = this.clients[clientKey];
+          if (!hasCapability(client, 'tools')) {
+            return { client: clientKey, tools: [], error: null };
+          }
           const res = await this.safeCall(
             clientKey,
-            () => this.clients[clientKey].listTools(),
+            () => client.listTools(),
             timeoutMs,
           );
           if (!res?.tools || !Array.isArray(res.tools))

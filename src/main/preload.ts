@@ -76,9 +76,23 @@ const electronHandler = {
     }: {
       client: string;
       name: string;
-      args: any;
+      args?: any;
     }) {
       return ipcRenderer.invoke('mcp-call-tool', { client, name, args });
+    },
+    listPrompts(name?: string) {
+      return ipcRenderer.invoke('mcp-list-prompts', name);
+    },
+    getPrompt({
+      client,
+      name,
+      args,
+    }: {
+      client: string;
+      name: string;
+      args?: any;
+    }): Promise<any> {
+      return ipcRenderer.invoke('mcp-get-prompt', { client, name, args });
     },
     getConfig(): Promise<any> {
       return ipcRenderer.invoke('mcp-get-config');

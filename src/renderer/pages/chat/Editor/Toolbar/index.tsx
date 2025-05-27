@@ -9,6 +9,7 @@ import MaxTokensCtrl from './MaxTokensCtrl';
 import ImgCtrl from './ImgCtrl';
 import KnowledgeCtrl from './KnowledgeCtrl';
 import CtxNumCtrl from './CtxNumCtrl';
+import McpPromptCtrl from './McpPromptCtrl';
 
 export default function EditorToolbar({
   isReady,
@@ -28,6 +29,7 @@ export default function EditorToolbar({
         <ModelCtrl ctx={ChatContext} chat={chat} />
         <div className="flex justify-start items-center gap-2.5 -ml-2">
           <PromptCtrl ctx={ChatContext} chat={chat} disabled={!isReady} />
+          <McpPromptCtrl chat={chat} disabled={!isReady} />
           <KnowledgeCtrl ctx={ChatContext} chat={chat} disabled={!isReady} />
           <MaxTokensCtrl
             ctx={ChatContext}

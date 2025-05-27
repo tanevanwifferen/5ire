@@ -616,6 +616,41 @@ ipcMain.handle(
     }
   },
 );
+ipcMain.handle('mcp-list-prompts', async (_, name: string) => {
+  try {
+    return await mcp.listPrompts(name);
+  } catch (error: any) {
+    logging.error('Error listing MCP prompts:', error);
+    return {
+      prompts: [],
+      error: {
+        message: error.message || 'Unknown error listing prompts',
+        code: 'unexpected_error',
+      },
+    };
+  }
+});
+
+ipcMain.handle(
+  'mcp-get-prompt',
+  async (_, args: { client: string; name: string; args?: any }) => {
+    try {
+      return await mcp.getPrompt(args.client, args.name, args.args);
+    } catch (error: any) {
+      logging.error('Error getting MCP prompt:', error);
+      return {
+        isError: true,
+        content: [
+          {
+            error: error.message || 'Unknown error getting prompt',
+            code: 'unexpected_error',
+          },
+        ],
+      };
+    }
+  },
+);
+
 ipcMain.handle('mcp-get-config', () => {
   return mcp.getConfig();
 });

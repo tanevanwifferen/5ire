@@ -60,7 +60,7 @@ export default function PromptVariableDialog(args: {
               </DialogTrigger>
             }
           >
-            {t('Fill Variables')}
+            {t('Prompt.FillVariables')}
           </DialogTitle>
           <DialogContent>
             <div>
@@ -123,7 +123,7 @@ export default function PromptVariableDialog(args: {
               </Button>
             </DialogTrigger>
             <Button appearance="primary" onClick={handleConfirm}>
-              {t('OK')}
+              {t('Common.OK')}
             </Button>
           </DialogActions>
         </DialogBody>

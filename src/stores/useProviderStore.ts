@@ -251,7 +251,7 @@ export interface IProviderStore {
   ) => IChatModelConfig[];
   getModels: (
     provider: IChatProviderConfig,
-    options?: { withDisabled?: boolean, signal?: AbortSignal },
+    options?: { withDisabled?: boolean; signal?: AbortSignal },
   ) => Promise<IChatModelConfig[]>;
   getGroupedModelOptions: () => Promise<{
     [key: string]: ModelOption[];
@@ -364,7 +364,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
     const enabledProviders = providers.filter(
       (p) => withDisabled || !p.disabled,
     );
-    const { session } = useAuthStore.getState();
+    const session = useAuthStore.getState().getSession();
     if (session) return enabledProviders;
     return enabledProviders.filter((p) => !p.isPremium);
   },
@@ -421,7 +421,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
   },
   getModels: async (
     provider: IChatProviderConfig,
-    options?: { withDisabled?: boolean, signal?: AbortSignal },
+    options?: { withDisabled?: boolean; signal?: AbortSignal },
   ) => {
     let $models: IChatModelConfig[] = [];
     if (provider.modelsEndpoint) {

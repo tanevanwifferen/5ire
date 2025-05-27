@@ -19,6 +19,7 @@ export interface IAuthStore {
     accessToken: string;
     refreshToken: string;
   }) => Promise<AuthResponse>;
+  getSession: () => Session | null;
   signInWithEmailAndPassword: (
     email: string,
     password: string,
@@ -58,7 +59,6 @@ const useAuthStore = create<IAuthStore>((set, get) => ({
         error,
       } as AuthResponse;
     }
-
     debug('loadSession', session);
     if (session) {
       if ((session.expires_at as number) >= Date.now()) {
@@ -93,6 +93,23 @@ const useAuthStore = create<IAuthStore>((set, get) => ({
       user: resp.data.user,
     });
     return resp;
+  },
+
+  getSession: () => {
+    const localKey = `sb-${window.envVars.SUPA_PROJECT_ID}-auth-token`;
+    const sessionString = localStorage.getItem(localKey);
+    let session = null;
+    if (sessionString) {
+      try {
+        session = JSON.parse(sessionString);
+        if ((session.expires_at as number) >= Date.now()) {
+          session = null;
+        }
+      } catch (err) {
+        debug('getLocalSession error', err);
+      }
+    }
+    return session;
   },
 
   onAuthStateChange: (callback?: (event: any, session: any) => void) => {

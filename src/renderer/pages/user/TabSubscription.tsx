@@ -43,7 +43,7 @@ export default function TabSubscription() {
 
   const loadUsage = async (userId: string) => {
     try {
-      const resp = await fetch('https://skyfire.agisurge.com/v1/usage', {
+      const resp = await fetch('https://openai.5ireai.com/v1/usage', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

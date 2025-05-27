@@ -34,6 +34,9 @@ export default function Message({ message }: { message: IChatMessage }) {
   const { showCitation } = useKnowledgeStore();
   const { renderMermaid } = useMermaid();
   const { initECharts, disposeECharts } = useECharts({ message });
+  const [deferredReply, setDeferredReply] = useState('');
+  const [deferredReasoning, setDeferredReasoning] = useState('');
+
   const keyword = useMemo(
     () => keywords[message.chatId],
     [keywords, message.chatId],
@@ -42,7 +45,6 @@ export default function Message({ message }: { message: IChatMessage }) {
     () => JSON.parse(message.citedFiles || '[]'),
     [message.citedFiles],
   );
-
 
   const citedChunks = useMemo(() => {
     return JSON.parse(message.citedChunks || '[]');
@@ -93,6 +95,7 @@ export default function Message({ message }: { message: IChatMessage }) {
     [onCitationClick, renderECharts, renderMermaid],
   );
 
+
   useEffect(() => {
     const promptNode = document.querySelector(`#${message.id} .msg-prompt`);
     if (promptNode) {
@@ -132,6 +135,16 @@ export default function Message({ message }: { message: IChatMessage }) {
     () => getReasoningContent(message.reply, message.reasoning),
     [message.reply, message.reasoning],
   );
+
+  useEffect(() => {
+    // 使用 requestAnimationFrame 来优化渲染
+    const frameId = requestAnimationFrame(() => {
+      setDeferredReply(reply);
+      setDeferredReasoning(reasoning);
+    });
+
+    return () => cancelAnimationFrame(frameId);
+  }, [reply, reasoning]);
 
   useEffect(() => {
     replyRef.current = reply;
@@ -223,8 +236,8 @@ export default function Message({ message }: { message: IChatMessage }) {
                     dangerouslySetInnerHTML={{
                       __html: render(
                         `${
-                          highlight(reasoning, keyword) || ''
-                        }${isReasoning && reasoning ? '<span class="blinking-cursor" /></span>' : ''}`,
+                          highlight(deferredReasoning, keyword) || ''
+                        }${isReasoning && deferredReasoning ? '<span class="blinking-cursor" /></span>' : ''}`,
                       ),
                     }}
                   />
@@ -237,8 +250,8 @@ export default function Message({ message }: { message: IChatMessage }) {
               dangerouslySetInnerHTML={{
                 __html: render(
                   `${
-                    highlight(reply, keyword) || ''
-                  }${isLoading && reply ? '<span class="blinking-cursor" /></span>' : ''}`,
+                    highlight(deferredReply, keyword) || ''
+                  }${isLoading && deferredReply ? '<span class="blinking-cursor" /></span>' : ''}`,
                 ),
               }}
             />

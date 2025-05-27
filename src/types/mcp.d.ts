@@ -64,7 +64,7 @@ export interface IMCPPromptMessageContent {
 
 export interface IMCPPromptMessageItem {
   role: 'user' | 'assistant' | 'system';
-  content: IMCPPromptMessageContent[];
+  content: IMCPPromptMessageContent;
 }
 
 export interface IMCPPrompt {

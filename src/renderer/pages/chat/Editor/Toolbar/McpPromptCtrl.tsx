@@ -28,6 +28,7 @@ import {
   IMCPPromptArgument,
   IMCPPromptListItem,
   IMCPPromptListItemData,
+  IMCPPromptMessageItem,
 } from 'types/mcp';
 import McpPromptVariableDialog from '../McpPromptVariableDialog';
 import useToast from 'hooks/useToast';
@@ -177,6 +178,20 @@ export default function McpPromptCtrl({
     ));
   }, [loadingList, options]);
 
+  const renderPrompt = useCallback(() => {
+    if (!prompt) {
+      return <div className='py-6 px-1 tips'>{t('Common.NoPromptSelected')}</div>;
+    }
+    return prompt.messages.map((message:IMCPPromptMessageItem)=>{
+      return (
+        <fieldset className='border border-neutral-200 dark:border-neutral-700 rounded p-1 my-2 bg-neutral-50 dark:bg-neutral-800' key={`${message.role}-${message.content.text}`}>
+          <legend className="text-base font-semibold px-1 ml-2">{message.role}&nbsp;<span className='text-sm text-neutral-500'>({message.content.type})</span></legend>
+          <pre>{message.content.text||''}</pre>
+        </fieldset>
+      )
+    })
+  }, [prompt, t]);
+
   return (
     <>
       <Dialog open={open} onOpenChange={(_, data) => setOpen(data.open)}>
@@ -207,7 +222,7 @@ export default function McpPromptCtrl({
                 </DialogTrigger>
               }
             >
-              MCP {t('Common.Prompts')}
+              <div className='flex justify-start items-center gap-1 font-semibold font-sans'>MCP<span className='separator'>/</span> {t('Common.Prompts')}</div>
             </DialogTitle>
             <DialogContent>
               <Combobox
@@ -242,18 +257,7 @@ export default function McpPromptCtrl({
                 )}
               </Combobox>
               <div>
-                {prompt ? (
-                  <div
-                    className="text-xs bg-neutral-50 dark:bg-neutral-800 p-2 rounded-md mt-2"
-                    dangerouslySetInnerHTML={{
-                      __html: render(
-                        `\`\`\`json\n${JSON.stringify({ messages: prompt?.messages }, null, 2)}\n\`\`\``,
-                      ),
-                    }}
-                  />
-                ) : (
-                  <div className="h-12"></div>
-                )}
+                {renderPrompt()}
               </div>
             </DialogContent>
             <DialogActions>

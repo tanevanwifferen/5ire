@@ -137,7 +137,6 @@ export default function Message({ message }: { message: IChatMessage }) {
   );
 
   useEffect(() => {
-    // 使用 requestAnimationFrame 来优化渲染
     const frameId = requestAnimationFrame(() => {
       setDeferredReply(reply);
       setDeferredReasoning(reasoning);

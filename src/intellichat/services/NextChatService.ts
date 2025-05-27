@@ -19,11 +19,21 @@ import { raiseError, stripHtmlTags } from 'utils/util';
 const debug = Debug('5ire:intellichat:NextChatService');
 
 export default abstract class NextCharService {
-  name: string;
-  abortController: AbortController;
-  context: IChatContext;
-  provider: IServiceProvider;
+  protected updateBuffer: string = '';
 
+  protected reasoningBuffer: string = '';
+
+  protected lastUpdateTime: number = 0;
+
+  protected readonly UPDATE_INTERVAL: number = 100; // 100ms
+
+  name: string;
+
+  abortController: AbortController;
+
+  context: IChatContext;
+
+  provider: IServiceProvider;
 
   protected abstract getReaderType(): new (
     reader: ReadableStreamDefaultReader<Uint8Array>,
@@ -46,8 +56,8 @@ export default abstract class NextCharService {
   protected traceTool: (chatId: string, label: string, msg: string) => void;
 
   protected getSystemRoleName() {
-    if(this.name === OpenAI.name){
-      return 'developer'
+    if (this.name === OpenAI.name) {
+      return 'developer';
     }
     return 'system';
   }
@@ -197,12 +207,32 @@ export default abstract class NextCharService {
           this.onErrorCallback(err, !!signal?.aborted);
         },
         onProgress: (replyChunk: string, reasoningChunk?: string) => {
+          const now = Date.now();
           reply += replyChunk;
           reasoning += reasoningChunk || '';
-          this.onReadingCallback(replyChunk, reasoningChunk);
+
+          // 将新内容添加到缓冲区
+          this.updateBuffer += replyChunk;
+          this.reasoningBuffer += reasoningChunk || '';
+
+          // 检查是否需要更新
+          if (now - this.lastUpdateTime >= this.UPDATE_INTERVAL) {
+            // 发送缓冲区内容并清空
+            if (this.updateBuffer || this.reasoningBuffer) {
+              this.onReadingCallback(this.updateBuffer, this.reasoningBuffer);
+              this.updateBuffer = '';
+              this.reasoningBuffer = '';
+              this.lastUpdateTime = now;
+            }
+          }
         },
         onToolCalls: this.onToolCallsCallback,
       });
+      if (this.updateBuffer || this.reasoningBuffer) {
+        this.onReadingCallback(this.updateBuffer, this.reasoningBuffer);
+        this.updateBuffer = '';
+        this.reasoningBuffer = '';
+      }
       if (readResult?.inputTokens) {
         this.inputTokens += readResult.inputTokens;
       }

@@ -146,7 +146,10 @@ export default function ToolEditDialog(options: {
       setName(server.name || '');
       setKey(server.key);
       setDescription(server.description || '');
-      setCommand([server.command, ...(server.args || [])].join(' '));
+      const $args = (server.args || []).map((arg) =>
+        arg.includes(' ') ? `'${arg}'` : arg,
+      );
+      setCommand([server.command, ...$args].join(' '));
       setEnv(server.env || {});
     }
 

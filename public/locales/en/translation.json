@@ -328,5 +328,6 @@
   "Knowledge.Notification.ImportError": "Failed to import file {{name}}",
   "Prompt.FillVariables": "Fill variables",
   "Common.NoPrompts": "No Prompts",
-  "Common.NoPromptSelected": "No prompt selected"
+  "Common.NoPromptSelected": "No prompt selected",
+  "Common.Citation": "Citation"
 }

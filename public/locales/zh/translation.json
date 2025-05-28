@@ -317,5 +317,6 @@
   "Common.Remote": "远程",
   "Prompt.FillVariables": "填写参数",
   "Common.NoPrompts": "无可用提示词",
-  "Common.NoPromptSelected": "尚未选择提示词"
+  "Common.NoPromptSelected": "尚未选择提示词",
+  "Common.Citation": "引用"
 }

@@ -54,19 +54,30 @@ export default function Message({ message }: { message: IChatMessage }) {
 
   const onCitationClick = useCallback(
     (event: any) => {
-      const url = new URL(event.target?.href);
-      if (url.pathname === '/citation' || url.protocol.startsWith('file:')) {
-        event.preventDefault();
-        const chunkId = url.hash.replace('#', '');
-        const chunk = citedChunks.find((i: any) => i.id === chunkId);
-        if (chunk) {
-          showCitation(chunk.content);
-        } else {
-          notifyInfo(t('Knowledge.Notification.CitationNotFound'));
+      try {
+        // 确保有 href
+        if (!event.target?.href) {
+          event.preventDefault();
+          return;
         }
+
+        const url = new URL(event.target.href);
+        if (url.pathname === '/citation' || url.protocol.startsWith('file:')) {
+          event.preventDefault();
+          const chunkId = url.hash.replace('#', '');
+          const chunk = citedChunks.find((i: any) => i.id === chunkId);
+          if (chunk) {
+            showCitation(chunk.content);
+          } else {
+            notifyInfo(t('Knowledge.Notification.CitationNotFound'));
+          }
+        }
+      } catch (error) {
+        console.error('Citation click error:', error);
+        event.preventDefault();
       }
     },
-    [citedChunks, showCitation],
+    [citedChunks, showCitation, t, notifyInfo],
   );
 
   const renderECharts = useCallback(
@@ -80,38 +91,6 @@ export default function Message({ message }: { message: IChatMessage }) {
     },
     [initECharts],
   );
-
-  const replyRender = useCallback(
-    (prefix: string, msgDom: Element) => {
-      const links = msgDom.querySelectorAll('a');
-      if (links.length > 0) {
-        links.forEach((link) => {
-          link.addEventListener('click', onCitationClick);
-        });
-      }
-      renderECharts(prefix, msgDom);
-      renderMermaid();
-    },
-    [onCitationClick, renderECharts, renderMermaid],
-  );
-
-
-  useEffect(() => {
-    const promptNode = document.querySelector(`#${message.id} .msg-prompt`);
-    if (promptNode) {
-      renderECharts('prompt', promptNode);
-    }
-    const replyNode = document.querySelector(`#${message.id} .msg-reply`);
-    if (!replyNode) return;
-    replyRender('reply', replyNode);
-    return () => {
-      disposeECharts();
-      const links = replyNode?.querySelectorAll('a');
-      links?.forEach((link) => {
-        link.removeEventListener('click', onCitationClick);
-      });
-    };
-  }, [message.id, message.isActive]);
 
   const [isReasoning, setIsReasoning] = useState(true);
   const [reasoningSeconds, setReasoningSeconds] = useState(0);
@@ -141,7 +120,6 @@ export default function Message({ message }: { message: IChatMessage }) {
       setDeferredReply(reply);
       setDeferredReasoning(reasoning);
     });
-
     return () => cancelAnimationFrame(frameId);
   }, [reply, reasoning]);
 
@@ -149,6 +127,34 @@ export default function Message({ message }: { message: IChatMessage }) {
     replyRef.current = reply;
     reasoningRef.current = reasoning;
   }, [reply, reasoning]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const promptNode = document.querySelector(`#${message.id} .msg-prompt`);
+      if (promptNode) {
+        renderECharts('prompt', promptNode);
+      }
+      const replyNode = document.querySelector(`#${message.id} .msg-reply`);
+      if (!replyNode) return;
+      const links = replyNode.querySelectorAll('a');
+      links.forEach((link) => {
+        link.removeEventListener('click', onCitationClick);
+        link.addEventListener('click', onCitationClick);
+      });
+      renderECharts('reply', replyNode);
+      renderMermaid();
+    }, 10);
+
+    return () => {
+      clearTimeout(timer);
+      const replyNode = document.querySelector(`#${message.id} .msg-reply`);
+      const links = replyNode?.querySelectorAll('a');
+      links?.forEach((link) => {
+        link.removeEventListener('click', onCitationClick);
+      });
+      disposeECharts();
+    };
+  }, [message.id, message.isActive]);
 
   function monitorThinkStatus() {
     // 清除之前的计时器

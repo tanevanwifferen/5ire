@@ -325,5 +325,6 @@
   "Common.Value": "Value",
   "Common.Local": "Local",
   "Common.Remote": "Remote",
-  "Knowledge.Notification.ImportError": "Failed to import file {{name}}"
+  "Knowledge.Notification.ImportError": "Failed to import file {{name}}",
+  "Common.Citation": "Citation"
 }

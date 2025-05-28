@@ -29,18 +29,18 @@ export default function ToolStatusIndicator(
     return (
       <div
         className={`flex text-center justify-center items-center rounded-full border ${originalSupport ? ' border-green-400 dark:border-green-800' : 'border-gray-300 dark:border-neutral-600'}`}
-        style={{ width: 14, height: 14, borderStyle: 'solid' }}
+        style={{ width: 12, height: 12, borderStyle: 'solid' }}
       >
         {actualSupport ? (
           <div
             className="rounded-full bg-green-400 dark:bg-green-600"
-            style={{ width: 10, height: 10 }}
+            style={{ width: 8, height: 8 }}
             {...rest}
           />
         ) : (
           <div
             className="rounded-full bg-neutral-300  dark:bg-neutral-600"
-            style={{ width: 10, height: 10 }}
+            style={{ width: 8, height: 8 }}
             {...rest}
           />
         )}

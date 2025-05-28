@@ -215,9 +215,6 @@ export default function Grid({
     }),
     createTableColumn<IMCPServer>({
       columnId: 'key',
-      compare: (a: IMCPServer, b: IMCPServer) => {
-        return a.key.localeCompare(b.key);
-      },
       renderHeaderCell: () => {
         return '';
       },

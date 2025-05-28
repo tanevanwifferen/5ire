@@ -3,7 +3,7 @@ import { IChatModelConfig } from 'providers/types';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function CapabilityTag(
+export default function ModelCapabilityTag(
   props: {
     model: IChatModelConfig;
     capability: 'json' | 'tools' | 'vision';

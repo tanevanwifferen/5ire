@@ -21,7 +21,7 @@ import TooltipIcon from 'renderer/components/TooltipIcon';
 import useProviderStore from 'stores/useProviderStore';
 import { ERROR_MODEL } from 'consts';
 import ModelFormDrawer from './ModelFormDrawer';
-import CapabilityTag from './CapabilityTag';
+import ModelCapabilityTag from './ModelCapabilityTag';
 
 const AddIcon = bundleIcon(AddCircleFilled, AddCircleRegular);
 
@@ -185,8 +185,8 @@ export default function ModelList({ height = 400 }: { height?: number }) {
                         </div>
                       </div>
                       <div className="flex justify-end gap-1">
-                        <CapabilityTag model={model} capability="vision" />
-                        <CapabilityTag model={model} capability="tools" />
+                        <ModelCapabilityTag model={model} capability="vision" />
+                        <ModelCapabilityTag model={model} capability="tools" />
                       </div>
                     </div>
                   </div>

@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'node:fs';
 import { app } from 'electron';
-import { IMCPConfig, IMCPServer } from 'types/mcp';
+import { IMCPConfig, IMCPServer, MCPServerCapability } from 'types/mcp';
 import { isUndefined, keyBy, omitBy } from 'lodash';
 import { purifyServer } from 'utils/mcp';
 import * as logging from './logging';
@@ -173,6 +173,12 @@ export default class ModuleContext {
             server.type = 'remote';
           } else {
             server.type = 'local';
+          }
+          const client = this.getClient(server.key);
+          if (client) {
+            server.capabilities = Object.keys(
+              client.getServerCapabilities(),
+            ) as MCPServerCapability[];
           }
         },
       );
@@ -427,7 +433,8 @@ export default class ModuleContext {
         name,
       } as {
         name: string;
-        arguments?: any;};
+        arguments?: any;
+      };
       if (args) {
         params.arguments = args;
       }

@@ -1,4 +1,5 @@
 export type MCPServerType = 'local' | 'remote';
+export type MCPServerCapability = 'tools' | 'prompts' | 'resources';
 export interface IMCPServer {
   key: string;
   type: MCPServerType;
@@ -11,6 +12,7 @@ export interface IMCPServer {
   headers?: Record<string, string>;
   isActive: boolean;
   homepage?: string;
+  capabilities: MCPServerCapability[];
 }
 
 export type MCPArgType = 'string' | 'list' | 'number';

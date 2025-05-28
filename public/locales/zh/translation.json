@@ -276,6 +276,8 @@
   "Common.InputPrice": "输入价格",
   "Tags.Vision": "视觉",
   "Tags.Tools": "工具",
+  "Tags.Prompts": "提示词",
+  "Tags.Resources": "资源",
   "Common.Enabled": "启用",
   "Provider.Model.Edit": "编辑模型",
   "Provider.Model.New": "添加模型",
@@ -318,5 +320,6 @@
   "Prompt.FillVariables": "填写参数",
   "Common.NoPrompts": "无可用提示词",
   "Common.NoPromptSelected": "尚未选择提示词",
-  "Common.Citation": "引用"
+  "Common.Citation": "引用",
+  "Common.Capabilities": "能力"
 }

@@ -49,6 +49,7 @@ import useMCPStore from 'stores/useMCPStore';
 import useToast from 'hooks/useToast';
 import { IMCPServer } from 'types/mcp';
 import useMarkdown from 'hooks/useMarkdown';
+import ToolCapabilityTag from './ToolCapabilityTag';
 
 const EditIcon = bundleIcon(EditFilled, EditRegular);
 const DeleteIcon = bundleIcon(DeleteFilled, DeleteRegular);
@@ -145,7 +146,7 @@ export default function Grid({
                           dangerouslySetInnerHTML={{
                             __html: render(
                               `\`\`\`json\n${JSON.stringify(item, null, 2)}\n\`\`\``,
-                            )
+                            ),
                           }}
                         />
                       </PopoverSurface>
@@ -189,6 +190,40 @@ export default function Grid({
                 </div>
               </div>
             </TableCellLayout>
+          </TableCell>
+        );
+      },
+    }),
+    createTableColumn<IMCPServer>({
+      columnId: 'capabilities',
+      renderHeaderCell: () => {
+        return t('Common.Capabilities');
+      },
+      renderCell: (item) => {
+        return (
+          <TableCell>
+            <TableCellLayout truncate style={{ display: 'block' }}>
+              <div className="flex justify-start items-center gap-1 ml-2">
+                <ToolCapabilityTag capability="tools" server={item} />
+                <ToolCapabilityTag capability="prompts" server={item} />
+                <ToolCapabilityTag capability="resources" server={item} />
+              </div>
+            </TableCellLayout>
+          </TableCell>
+        );
+      },
+    }),
+    createTableColumn<IMCPServer>({
+      columnId: 'key',
+      compare: (a: IMCPServer, b: IMCPServer) => {
+        return a.key.localeCompare(b.key);
+      },
+      renderHeaderCell: () => {
+        return '';
+      },
+      renderCell: (item) => {
+        return (
+          <TableCell>
             <TableCellActions>
               <Switch
                 disabled={loading[item.key]}

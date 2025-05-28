@@ -285,6 +285,8 @@
   "Common.OutputPrice": "Output Price",
   "Tags.Vision": "vision",
   "Tags.Tools": "tools",
+  "Tags.Prompts": "prompts",
+  "Tags.Resources": "resources",
   "Common.Enabled": "Enabled",
   "Provider.Model.Edit": "Edit Model",
   "Provider.Model.New": "New Model",
@@ -329,5 +331,6 @@
   "Prompt.FillVariables": "Fill variables",
   "Common.NoPrompts": "No Prompts",
   "Common.NoPromptSelected": "No prompt selected",
-  "Common.Citation": "Citation"
+  "Common.Citation": "Citation",
+  "Common.Capabilities": "Capabilities"
 }

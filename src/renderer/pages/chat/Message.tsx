@@ -100,6 +100,7 @@ export default function Message({ message }: { message: IChatMessage }) {
   const reasoningInterval = useRef<number | null>(null);
   const reasoningRef = useRef('');
   const replyRef = useRef('');
+  const hasStartedReasoning = useRef(false);
 
   useEffect(() => {
     messageRef.current = message;
@@ -116,17 +117,23 @@ export default function Message({ message }: { message: IChatMessage }) {
   );
 
   useEffect(() => {
+    if(reasoning) {
+      setIsReasoning(true);
+    }else{
+      setIsReasoning(false);
+    }
+  }, [reasoning]);
+
+  useEffect(() => {
     const frameId = requestAnimationFrame(() => {
+      replyRef.current = reply;
+      reasoningRef.current = reasoning;
       setDeferredReply(reply);
       setDeferredReasoning(reasoning);
     });
     return () => cancelAnimationFrame(frameId);
   }, [reply, reasoning]);
 
-  useEffect(() => {
-    replyRef.current = reply;
-    reasoningRef.current = reasoning;
-  }, [reply, reasoning]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -157,14 +164,14 @@ export default function Message({ message }: { message: IChatMessage }) {
   }, [message.id, message.isActive]);
 
   function monitorThinkStatus() {
-    // 清除之前的计时器
+
     if (reasoningInterval.current) {
       clearInterval(reasoningInterval.current);
     }
 
     reasoningInterval.current = setInterval(() => {
       if (isReasoningRef.current && messageRef.current.isActive) {
-        setReasoningSeconds((prev) => prev + 1); // 每秒增加
+        setReasoningSeconds((prev) => prev + 1);
       }
 
       if (
@@ -172,9 +179,8 @@ export default function Message({ message }: { message: IChatMessage }) {
         isReasoningRef.current &&
         messageRef.current.isActive
       ) {
-        clearInterval(reasoningInterval.current as number); // 停止计时
+        clearInterval(reasoningInterval.current as number);
         setIsReasoning(false);
-
         debug('Reasoning ended');
         debug(`Total thinking time: ${reasoningSeconds} seconds`);
       }
@@ -182,17 +188,28 @@ export default function Message({ message }: { message: IChatMessage }) {
   }
 
   useEffect(() => {
-    if (message.isActive) {
+    if (reasoning && !hasStartedReasoning.current && message.isActive) {
+      hasStartedReasoning.current = true;
+      setIsReasoning(true);
       setIsReasoningShow(true);
       monitorThinkStatus();
-    } else {
+    } else if (!reasoning) {
+      hasStartedReasoning.current = false;
+      setIsReasoning(false);
+    }
+  }, [reasoning, message.isActive]);
+
+  useEffect(() => {
+    if (!message.isActive) {
+      hasStartedReasoning.current = false;
       setIsReasoning(false);
     }
     return () => {
       clearInterval(reasoningInterval.current as number);
-      setReasoningSeconds(0);
+      hasStartedReasoning.current = false;
+      setIsReasoning(false);
     };
-  }, [message.isActive]);
+  }, [message.id, message.isActive]);
 
   const toggleThink = useCallback(() => {
     setIsReasoningShow(!isReasoningShow);

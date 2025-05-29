@@ -18,7 +18,7 @@ import { useState, ChangeEvent, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import useChatStore from 'stores/useChatStore';
 // import Debug from 'debug';
-import { IChat } from 'intellichat/types';
+import { IChat, IChatContext } from 'intellichat/types';
 import Mousetrap from 'mousetrap';
 import { isNumber } from 'lodash';
 import { MIN_CTX_MESSAGES, MAX_CTX_MESSAGES, NUM_CTX_MESSAGES } from 'consts';
@@ -28,9 +28,11 @@ import { MIN_CTX_MESSAGES, MAX_CTX_MESSAGES, NUM_CTX_MESSAGES } from 'consts';
 const AttacheTextIcon = bundleIcon(AttachText20Filled, AttachText20Regular);
 
 export default function CtxNumCtrl({
+  ctx,
   chat,
   disabled,
 }: {
+  ctx:IChatContext,
   chat: IChat;
   disabled: boolean;
 }) {

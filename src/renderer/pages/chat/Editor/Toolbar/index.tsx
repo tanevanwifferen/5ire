@@ -1,7 +1,6 @@
 import { Toolbar } from '@fluentui/react-components';
 import useChatStore from 'stores/useChatStore';
-import { IChat } from 'intellichat/types';
-import ChatContext from '../../../../ChatContext';
+import { IChat, IChatContext } from 'intellichat/types';
 import ModelCtrl from './ModelCtrl';
 import PromptCtrl from './PromptCtrl';
 import TemperatureCtrl from './TemperatureCtrl';
@@ -11,9 +10,11 @@ import KnowledgeCtrl from './KnowledgeCtrl';
 import CtxNumCtrl from './CtxNumCtrl';
 
 export default function EditorToolbar({
+  ctx,
   isReady,
   onConfirm,
 }: {
+  ctx: IChatContext;
   isReady: boolean;
   onConfirm: () => void;
 }) {
@@ -25,27 +26,23 @@ export default function EditorToolbar({
         size="small"
         className="flex items-center gap-2 ml-2 editor-toolbar"
       >
-        <ModelCtrl ctx={ChatContext} chat={chat} />
+        <ModelCtrl ctx={ctx} chat={chat} />
         <div className="flex justify-start items-center gap-2.5 -ml-2">
-          <PromptCtrl ctx={ChatContext} chat={chat} disabled={!isReady} />
-          <KnowledgeCtrl ctx={ChatContext} chat={chat} disabled={!isReady} />
+          <PromptCtrl ctx={ctx} chat={chat} disabled={!isReady} />
+          <KnowledgeCtrl ctx={ctx} chat={chat} disabled={!isReady} />
           <MaxTokensCtrl
-            ctx={ChatContext}
+            ctx={ctx}
             chat={chat}
             onConfirm={onConfirm}
             disabled={!isReady}
           />
           <div className="-ml-[4px]">
-            <TemperatureCtrl
-              ctx={ChatContext}
-              chat={chat}
-              disabled={!isReady}
-            />
+            <TemperatureCtrl ctx={ctx} chat={chat} disabled={!isReady} />
           </div>
           <div className="-ml-[4px]">
-            <CtxNumCtrl chat={chat} disabled={!isReady} />
+            <CtxNumCtrl ctx={ctx} chat={chat} disabled={!isReady} />
           </div>
-          <ImgCtrl ctx={ChatContext} chat={chat} disabled={!isReady} />
+          <ImgCtrl ctx={ctx} chat={chat} disabled={!isReady} />
         </div>
       </Toolbar>
     </div>

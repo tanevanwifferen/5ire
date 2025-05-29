@@ -17,7 +17,7 @@ import useChatStore from 'stores/useChatStore';
 import { useTranslation } from 'react-i18next';
 import ConfirmDialog from 'renderer/components/ConfirmDialog';
 
-import { tempChatId } from 'consts';
+import { TEMP_CHAT_ID } from 'consts';
 import useNav from 'hooks/useNav';
 import useToast from 'hooks/useToast';
 import { IChatFolder } from 'intellichat/types';
@@ -50,7 +50,7 @@ export default function Header() {
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 
   const chatFolder: Partial<IChatFolder> = useMemo(() => {
-    if (activeChat.id !== tempChatId) {
+    if (activeChat.id !== TEMP_CHAT_ID) {
       if (activeChat.folderId) {
         return folders[activeChat.folderId] || {};
       }
@@ -65,7 +65,7 @@ export default function Header() {
 
   const onDeleteChat = async () => {
     await deleteChat();
-    navigate(`/chats/${tempChatId}`);
+    navigate(`/chats/${TEMP_CHAT_ID}`);
     notifySuccess(t('Chat.Notification.Deleted'));
   };
 
@@ -78,7 +78,7 @@ export default function Header() {
 
   useEffect(() => {
     Mousetrap.bind('mod+d', () => {
-      if (activeChat?.id !== tempChatId) {
+      if (activeChat?.id !== TEMP_CHAT_ID) {
         setDelConfirmDialogOpen(true);
       }
     });
@@ -114,7 +114,7 @@ export default function Header() {
             onClick={toggleChatSidebarVisibility}
           />
         </div>
-        {activeChat?.id && activeChat.id !== tempChatId ? (
+        {activeChat?.id && activeChat.id !== TEMP_CHAT_ID ? (
           <>
             <Button
               icon={<DeleteIcon className="text-color-tertiary" />}

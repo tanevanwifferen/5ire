@@ -1,4 +1,4 @@
-import { tempChatId } from 'consts';
+import { TEMP_CHAT_ID } from 'consts';
 import { IChat, IPromptDef } from 'intellichat/types';
 import { isArray, isNull } from 'lodash';
 import DOMPurify from 'dompurify';
@@ -77,7 +77,7 @@ export function str2int(str: string, defaultValue: number | null = null) {
 }
 
 export function isPersistedChat(chat: Partial<IChat>): boolean {
-  return !!chat.id && chat.id !== tempChatId;
+  return !!chat.id && chat.id !== TEMP_CHAT_ID;
 }
 export function fmtDate(date: Date) {
   const year = date.getFullYear();

@@ -13,12 +13,15 @@ import { removeTagsExceptImg, setCursorToEnd } from 'utils/util';
 import { debounce } from 'lodash';
 import Spinner from '../../../components/Spinner';
 import Toolbar from './Toolbar';
+import { IChatContext } from 'intellichat/types';
 
 export default function Editor({
+  ctx,
   isReady,
   onSubmit,
   onAbort,
 }: {
+  ctx: IChatContext;
   isReady: boolean;
   onSubmit: (prompt: string) => Promise<void> | undefined;
   onAbort: () => void;
@@ -191,7 +194,7 @@ export default function Editor({
           </Button>
         </div>
       ) : null}
-      <Toolbar onConfirm={onToolbarActionConfirm} isReady={isReady} />
+      <Toolbar onConfirm={onToolbarActionConfirm} isReady={isReady} ctx={ctx} />
       {!isReady && (
         <div className="absolute top-[40px] max-w-md right-0 left-0 z-10 tips px-2.5">
           <p>{t('Notification.APINotReady')}</p>

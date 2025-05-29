@@ -79,7 +79,7 @@ export default function Chat() {
   const {
     fetchMessages,
     initChat,
-    loadChat,
+    getChat,
     updateChat,
     updateStates,
     getCurFolderSettings,
@@ -146,7 +146,7 @@ export default function Chat() {
       setIsLoading(true);
       try {
         if (activeChatId !== TEMP_CHAT_ID) {
-          return await loadChat(activeChatId);
+          return await getChat(activeChatId);
         }
         if (folder) {
           return initChat(getCurFolderSettings());

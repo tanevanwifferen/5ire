@@ -90,9 +90,9 @@ export interface IChatStore {
   ) => Promise<IChat>;
   updateChat: (chat: { id: string } & Partial<IChat>) => Promise<boolean>;
   deleteChat: () => Promise<boolean>;
-  fetchChat: (limit?: number) => Promise<IChat[]>;
+  fetchChats: (limit?: number) => Promise<IChat[]>;
   getChat: (id: string) => Promise<IChat>;
-  loadChat: (id: string) => Promise<IChat>;
+  fetchChat: (id: string) => Promise<IChat>;
   // message
   createMessage: (message: Partial<IChatMessage>) => Promise<IChatMessage>;
   appendReply: (chatId: string, reply: string, reasoning: string) => void;
@@ -526,13 +526,19 @@ const useChatStore = create<IChatStore>((set, get) => ({
     }
     return false;
   },
+  fetchChat: async (id: string) => {
+    const chat = (await window.electron.db.get(
+      'SELECT id, name, summary, provider, model, systemMessage, maxTokens, temperature, context, maxCtxMessages, stream, prompt, input, folderId, createdAt FROM chats where id = ?',
+      id,
+    )) as IChat;
+    debug('Fetch chat:', chat);
+    return chat;
+  },
   getChat: async (id: string) => {
-    let chat = get().chats.find((c) => c.id === id);
+    const { fetchChat, chats } = get();
+    let chat = chats.find((c) => c.id === id);
     if (!chat) {
-      chat = (await window.electron.db.get(
-        'SELECT id, name, summary, provider, model, systemMessage, maxTokens, temperature, context, maxCtxMessages, stream, prompt, input, folderId, createdAt FROM chats where id = ?',
-        id,
-      )) as IChat;
+      chat = await fetchChat(id);
     }
     if (chat) {
       try {
@@ -542,15 +548,10 @@ const useChatStore = create<IChatStore>((set, get) => ({
       }
     }
     debug('Get chat:', chat);
-    return chat;
-  },
-  loadChat: async (id: string) => {
-    const { getChat } = get();
-    const chat = await getChat(id);
     set({ chat });
     return chat;
   },
-  fetchChat: async (limit: number = 300, offset = 0) => {
+  fetchChats: async (limit: number = 300, offset = 0) => {
     const rows = (await window.electron.db.all(
       'SELECT id, name, summary, folderId, provider, model, systemMessage, maxTokens, temperature, maxCtxMessages, stream, prompt, input, createdAt FROM chats ORDER BY createdAt DESC limit ? offset ?',
       [limit, offset],

@@ -14,7 +14,10 @@ const createChatContext = (chatId?: string): IChatContext => {
   const getActiveChat = () => {
     if (chatId && chatId !== TEMP_CHAT_ID) {
       const { chats } = useChatStore.getState();
-      return chats?.find(c => c.id === chatId) as IChat;
+      const chat = chats?.find((c) => c.id === chatId) as IChat;
+      if (chat) {
+        return chat;
+      }
     }
 
     const { chat } = useChatStore.getState();
@@ -165,7 +168,6 @@ const createChatContext = (chatId?: string): IChatContext => {
     isReady,
   } as IChatContext;
 };
-
 
 export default createChatContext();
 

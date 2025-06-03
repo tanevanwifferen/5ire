@@ -23,7 +23,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import useChatStore from 'stores/useChatStore';
 import useAuthStore from 'stores/useAuthStore';
 import { IChatModelConfig, IChatProviderConfig } from 'providers/types';
-import { DEFAULT_TEMPERATURE, ERROR_MODEL, tempChatId } from 'consts';
+import { DEFAULT_TEMPERATURE, ERROR_MODEL, TEMP_CHAT_ID } from 'consts';
 import useProviderStore from 'stores/useProviderStore';
 import { find } from 'lodash';
 import ToolStatusIndicator from './ToolStatusIndicator';
@@ -93,7 +93,7 @@ export default function FolderSettingsDialog({
       temperature: folderTemperature,
       systemMessage: folderSystemMessage,
     });
-    if (chat.id === tempChatId) {
+    if (chat.id === TEMP_CHAT_ID) {
       await editStage(chat.id, {
         provider: folderProvider,
         model: folderModel,

@@ -411,10 +411,12 @@ export default class ModuleContext {
     client,
     name,
     args,
+    signal
   }: {
     client: string;
     name: string;
     args: any;
+    signal?: AbortSignal;
   }) {
     if (!this.clients[client]) {
       return {
@@ -432,6 +434,7 @@ export default class ModuleContext {
     const callFn = () =>
       this.clients[client].callTool({ name, arguments: args }, undefined, {
         timeout: CONNECT_TIMEOUT,
+        signal,
       });
     try {
       const result = await this.safeCall(client, callFn);

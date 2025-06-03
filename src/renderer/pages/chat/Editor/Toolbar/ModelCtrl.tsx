@@ -241,8 +241,10 @@ export default function ModelCtrl({
                 >
                   <div className="flex justify-start items-center gap-1 text-sm py-1">
                     <ToolStatusIndicator model={model} withTooltip />
-                    <span> {model.label || model.name}</span>
-                    {curModel?.name === model.name && <span>✓</span>}
+                    <div className="-mt-[3px]">
+                      <span> {model.label || model.name}</span>
+                      {curModel?.name === model.name && <span>✓</span>}
+                    </div>
                   </div>
                 </MenuItem>
               ))

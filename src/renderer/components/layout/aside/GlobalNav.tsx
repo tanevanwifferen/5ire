@@ -19,7 +19,7 @@ import {
 } from '@fluentui/react-icons';
 import { useTranslation } from 'react-i18next';
 import useNav from 'hooks/useNav';
-import { tempChatId } from 'consts';
+import { TEMP_CHAT_ID } from 'consts';
 import useMCPStore from 'stores/useMCPStore';
 import { useEffect, useMemo } from 'react';
 import Spinner from 'renderer/components/Spinner';
@@ -75,7 +75,7 @@ export default function GlobalNav({ collapsed }: { collapsed: boolean }) {
     Mousetrap.bind('alt+1', () => navigate('/tool'));
     Mousetrap.bind('alt+2', () => navigate('/knowledge'));
     Mousetrap.bind('alt+3', () => navigate('/bookmarks'));
-    Mousetrap.bind('mod+n', () => navigate(`/chats/${tempChatId}`));
+    Mousetrap.bind('mod+n', () => navigate(`/chats/${TEMP_CHAT_ID}`));
     if (numOfActiveServers === 0) {
       loadConfig(true);
     }
@@ -165,7 +165,7 @@ export default function GlobalNav({ collapsed }: { collapsed: boolean }) {
           title="Mod+n"
           icon={<ChatAddIcon />}
           className="w-full mx-auto justify-start flex-grow"
-          onClick={async () => navigate(`/chats/${tempChatId}`)}
+          onClick={async () => navigate(`/chats/${TEMP_CHAT_ID}`)}
         >
           {collapsed ? null : t('Chat.New')}
         </Button>

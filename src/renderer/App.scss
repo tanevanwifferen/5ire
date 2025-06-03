@@ -73,6 +73,9 @@ body {
   -webkit-font-smoothing: antialiased;
   background: transparent;
 }
+pre,code{
+  word-break: break-all;
+}
 code,
 code * {
   font-family: 'JetBrains Mono', monospace;

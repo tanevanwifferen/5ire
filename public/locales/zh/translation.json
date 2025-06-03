@@ -314,5 +314,6 @@
   "Common.HttpHeaders": "请求头",
   "Common.Value": "值",
   "Common.Local": "Local",
-  "Common.Remote": "远程"
+  "Common.Remote": "远程",
+  "Common.Citation": "引用"
 }

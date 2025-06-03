@@ -73,12 +73,19 @@ const electronHandler = {
       client,
       name,
       args,
+      signal,
     }: {
       client: string;
       name: string;
       args: any;
+      signal?: AbortSignal;
     }) {
-      return ipcRenderer.invoke('mcp-call-tool', { client, name, args });
+      return ipcRenderer.invoke('mcp-call-tool', {
+        client,
+        name,
+        args,
+        signal,
+      });
     },
     getConfig(): Promise<any> {
       return ipcRenderer.invoke('mcp-get-config');

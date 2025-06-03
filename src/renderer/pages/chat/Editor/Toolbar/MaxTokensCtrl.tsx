@@ -30,7 +30,7 @@ const NumberSymbolSquareIcon = bundleIcon(
   NumberSymbolSquare20Regular,
 );
 
-export default function MaxTokens({
+export default function MaxTokensCtrl({
   ctx,
   chat,
   onConfirm,

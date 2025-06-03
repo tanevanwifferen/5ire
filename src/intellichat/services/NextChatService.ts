@@ -19,11 +19,22 @@ import { raiseError, stripHtmlTags } from 'utils/util';
 const debug = Debug('5ire:intellichat:NextChatService');
 
 export default abstract class NextCharService {
-  name: string;
-  abortController: AbortController;
-  context: IChatContext;
-  provider: IServiceProvider;
+  protected updateBuffer: string = '';
 
+  protected reasoningBuffer: string = '';
+
+  protected lastUpdateTime: number = 0;
+
+  protected readonly UPDATE_INTERVAL: number = 100; // 100ms
+
+  name: string;
+
+  abortController: AbortController;
+  toolAbortController: AbortController | undefined = undefined;
+
+  context: IChatContext;
+
+  provider: IServiceProvider;
 
   protected abstract getReaderType(): new (
     reader: ReadableStreamDefaultReader<Uint8Array>,
@@ -46,8 +57,8 @@ export default abstract class NextCharService {
   protected traceTool: (chatId: string, label: string, msg: string) => void;
 
   protected getSystemRoleName() {
-    if(this.name === OpenAI.name){
-      return 'developer'
+    if (this.name === OpenAI.name) {
+      return 'developer';
     }
     return 'system';
   }
@@ -153,6 +164,7 @@ export default abstract class NextCharService {
 
   public abort() {
     this.abortController?.abort();
+    this.toolAbortController?.abort();
   }
 
   public isToolsEnabled() {
@@ -197,12 +209,27 @@ export default abstract class NextCharService {
           this.onErrorCallback(err, !!signal?.aborted);
         },
         onProgress: (replyChunk: string, reasoningChunk?: string) => {
+          const now = Date.now();
           reply += replyChunk;
           reasoning += reasoningChunk || '';
-          this.onReadingCallback(replyChunk, reasoningChunk);
+          this.updateBuffer += replyChunk;
+          this.reasoningBuffer += reasoningChunk || '';
+          if (now - this.lastUpdateTime >= this.UPDATE_INTERVAL) {
+            if (this.updateBuffer || this.reasoningBuffer) {
+              this.onReadingCallback(this.updateBuffer, this.reasoningBuffer);
+              this.updateBuffer = '';
+              this.reasoningBuffer = '';
+              this.lastUpdateTime = now;
+            }
+          }
         },
         onToolCalls: this.onToolCallsCallback,
       });
+      if (this.updateBuffer || this.reasoningBuffer) {
+        this.onReadingCallback(this.updateBuffer, this.reasoningBuffer);
+        this.updateBuffer = '';
+        this.reasoningBuffer = '';
+      }
       if (readResult?.inputTokens) {
         this.inputTokens += readResult.inputTokens;
       }
@@ -212,11 +239,14 @@ export default abstract class NextCharService {
       if (readResult.tool) {
         const [client, name] = readResult.tool.name.split('--');
         this.traceTool(chatId, name, '');
+        this.toolAbortController = new AbortController();
         const toolCallsResult = await window.electron.mcp.callTool({
           client,
           name,
           args: readResult.tool.args,
+          signal: this.toolAbortController.signal,
         });
+        this.toolAbortController = undefined;
         this.traceTool(
           chatId,
           'arguments',
@@ -255,6 +285,7 @@ export default abstract class NextCharService {
         this.outputTokens = 0;
       }
     } catch (error: any) {
+      this.toolAbortController = undefined;
       this.onErrorCallback(error, !!signal?.aborted);
       await this.onCompleteCallback({
         content: reply,

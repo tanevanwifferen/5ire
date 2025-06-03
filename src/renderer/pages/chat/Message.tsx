@@ -34,6 +34,9 @@ export default function Message({ message }: { message: IChatMessage }) {
   const { showCitation } = useKnowledgeStore();
   const { renderMermaid } = useMermaid();
   const { initECharts, disposeECharts } = useECharts({ message });
+  const [deferredReply, setDeferredReply] = useState('');
+  const [deferredReasoning, setDeferredReasoning] = useState('');
+
   const keyword = useMemo(
     () => keywords[message.chatId],
     [keywords, message.chatId],
@@ -43,7 +46,6 @@ export default function Message({ message }: { message: IChatMessage }) {
     [message.citedFiles],
   );
 
-
   const citedChunks = useMemo(() => {
     return JSON.parse(message.citedChunks || '[]');
   }, [message.citedChunks]);
@@ -52,19 +54,30 @@ export default function Message({ message }: { message: IChatMessage }) {
 
   const onCitationClick = useCallback(
     (event: any) => {
-      const url = new URL(event.target?.href);
-      if (url.pathname === '/citation' || url.protocol.startsWith('file:')) {
-        event.preventDefault();
-        const chunkId = url.hash.replace('#', '');
-        const chunk = citedChunks.find((i: any) => i.id === chunkId);
-        if (chunk) {
-          showCitation(chunk.content);
-        } else {
-          notifyInfo(t('Knowledge.Notification.CitationNotFound'));
+      try {
+        // 确保有 href
+        if (!event.target?.href) {
+          event.preventDefault();
+          return;
         }
+
+        const url = new URL(event.target.href);
+        if (url.pathname === '/citation' || url.protocol.startsWith('file:')) {
+          event.preventDefault();
+          const chunkId = url.hash.replace('#', '');
+          const chunk = citedChunks.find((i: any) => i.id === chunkId);
+          if (chunk) {
+            showCitation(chunk.content);
+          } else {
+            notifyInfo(t('Knowledge.Notification.CitationNotFound'));
+          }
+        }
+      } catch (error) {
+        console.error('Citation click error:', error);
+        event.preventDefault();
       }
     },
-    [citedChunks, showCitation],
+    [citedChunks, showCitation, t, notifyInfo],
   );
 
   const renderECharts = useCallback(
@@ -79,37 +92,6 @@ export default function Message({ message }: { message: IChatMessage }) {
     [initECharts],
   );
 
-  const replyRender = useCallback(
-    (prefix: string, msgDom: Element) => {
-      const links = msgDom.querySelectorAll('a');
-      if (links.length > 0) {
-        links.forEach((link) => {
-          link.addEventListener('click', onCitationClick);
-        });
-      }
-      renderECharts(prefix, msgDom);
-      renderMermaid();
-    },
-    [onCitationClick, renderECharts, renderMermaid],
-  );
-
-  useEffect(() => {
-    const promptNode = document.querySelector(`#${message.id} .msg-prompt`);
-    if (promptNode) {
-      renderECharts('prompt', promptNode);
-    }
-    const replyNode = document.querySelector(`#${message.id} .msg-reply`);
-    if (!replyNode) return;
-    replyRender('reply', replyNode);
-    return () => {
-      disposeECharts();
-      const links = replyNode?.querySelectorAll('a');
-      links?.forEach((link) => {
-        link.removeEventListener('click', onCitationClick);
-      });
-    };
-  }, [message.id, message.isActive]);
-
   const [isReasoning, setIsReasoning] = useState(true);
   const [reasoningSeconds, setReasoningSeconds] = useState(0);
   const [isReasoningShow, setIsReasoningShow] = useState(false);
@@ -118,6 +100,7 @@ export default function Message({ message }: { message: IChatMessage }) {
   const reasoningInterval = useRef<number | null>(null);
   const reasoningRef = useRef('');
   const replyRef = useRef('');
+  const hasStartedReasoning = useRef(false);
 
   useEffect(() => {
     messageRef.current = message;
@@ -134,19 +117,61 @@ export default function Message({ message }: { message: IChatMessage }) {
   );
 
   useEffect(() => {
-    replyRef.current = reply;
-    reasoningRef.current = reasoning;
+    if(reasoning) {
+      setIsReasoning(true);
+    }else{
+      setIsReasoning(false);
+    }
+  }, [reasoning]);
+
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      replyRef.current = reply;
+      reasoningRef.current = reasoning;
+      setDeferredReply(reply);
+      setDeferredReasoning(reasoning);
+    });
+    return () => cancelAnimationFrame(frameId);
   }, [reply, reasoning]);
 
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const promptNode = document.querySelector(`#${message.id} .msg-prompt`);
+      if (promptNode) {
+        renderECharts('prompt', promptNode);
+      }
+      const replyNode = document.querySelector(`#${message.id} .msg-reply`);
+      if (!replyNode) return;
+      const links = replyNode.querySelectorAll('a');
+      links.forEach((link) => {
+        link.removeEventListener('click', onCitationClick);
+        link.addEventListener('click', onCitationClick);
+      });
+      renderECharts('reply', replyNode);
+      renderMermaid();
+    }, 10);
+
+    return () => {
+      clearTimeout(timer);
+      const replyNode = document.querySelector(`#${message.id} .msg-reply`);
+      const links = replyNode?.querySelectorAll('a');
+      links?.forEach((link) => {
+        link.removeEventListener('click', onCitationClick);
+      });
+      disposeECharts();
+    };
+  }, [message.id, message.isActive]);
+
   function monitorThinkStatus() {
-    // 清除之前的计时器
+
     if (reasoningInterval.current) {
       clearInterval(reasoningInterval.current);
     }
 
     reasoningInterval.current = setInterval(() => {
       if (isReasoningRef.current && messageRef.current.isActive) {
-        setReasoningSeconds((prev) => prev + 1); // 每秒增加
+        setReasoningSeconds((prev) => prev + 1);
       }
 
       if (
@@ -154,9 +179,8 @@ export default function Message({ message }: { message: IChatMessage }) {
         isReasoningRef.current &&
         messageRef.current.isActive
       ) {
-        clearInterval(reasoningInterval.current as number); // 停止计时
+        clearInterval(reasoningInterval.current as number);
         setIsReasoning(false);
-
         debug('Reasoning ended');
         debug(`Total thinking time: ${reasoningSeconds} seconds`);
       }
@@ -164,17 +188,28 @@ export default function Message({ message }: { message: IChatMessage }) {
   }
 
   useEffect(() => {
-    if (message.isActive) {
+    if (reasoning && !hasStartedReasoning.current && message.isActive) {
+      hasStartedReasoning.current = true;
+      setIsReasoning(true);
       setIsReasoningShow(true);
       monitorThinkStatus();
-    } else {
+    } else if (!reasoning) {
+      hasStartedReasoning.current = false;
+      setIsReasoning(false);
+    }
+  }, [reasoning, message.isActive]);
+
+  useEffect(() => {
+    if (!message.isActive) {
+      hasStartedReasoning.current = false;
       setIsReasoning(false);
     }
     return () => {
       clearInterval(reasoningInterval.current as number);
-      setReasoningSeconds(0);
+      hasStartedReasoning.current = false;
+      setIsReasoning(false);
     };
-  }, [message.isActive]);
+  }, [message.id, message.isActive]);
 
   const toggleThink = useCallback(() => {
     setIsReasoningShow(!isReasoningShow);
@@ -223,8 +258,8 @@ export default function Message({ message }: { message: IChatMessage }) {
                     dangerouslySetInnerHTML={{
                       __html: render(
                         `${
-                          highlight(reasoning, keyword) || ''
-                        }${isReasoning && reasoning ? '<span class="blinking-cursor" /></span>' : ''}`,
+                          highlight(deferredReasoning, keyword) || ''
+                        }${isReasoning && deferredReasoning ? '<span class="blinking-cursor" /></span>' : ''}`,
                       ),
                     }}
                   />
@@ -237,8 +272,8 @@ export default function Message({ message }: { message: IChatMessage }) {
               dangerouslySetInnerHTML={{
                 __html: render(
                   `${
-                    highlight(reply, keyword) || ''
-                  }${isLoading && reply ? '<span class="blinking-cursor" /></span>' : ''}`,
+                    highlight(deferredReply, keyword) || ''
+                  }${isLoading && deferredReply ? '<span class="blinking-cursor" /></span>' : ''}`,
                 ),
               }}
             />

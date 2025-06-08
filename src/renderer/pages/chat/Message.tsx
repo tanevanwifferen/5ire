@@ -14,6 +14,7 @@ import {
   ChevronDown16Regular,
   ChevronUp16Regular,
 } from '@fluentui/react-icons';
+import useECharts from 'hooks/useECharts';
 import {
   getNormalContent,
   getReasoningContent,
@@ -21,8 +22,6 @@ import {
 } from '../../../utils/util';
 import MessageToolbar from './MessageToolbar';
 import useMermaid from '../../../hooks/useMermaid';
-
-import useECharts from 'hooks/useECharts';
 
 const debug = Debug('5ire:pages:chat:Message');
 
@@ -117,9 +116,9 @@ export default function Message({ message }: { message: IChatMessage }) {
   );
 
   useEffect(() => {
-    if(reasoning) {
+    if (reasoning) {
       setIsReasoning(true);
-    }else{
+    } else {
       setIsReasoning(false);
     }
   }, [reasoning]);
@@ -133,7 +132,6 @@ export default function Message({ message }: { message: IChatMessage }) {
     });
     return () => cancelAnimationFrame(frameId);
   }, [reply, reasoning]);
-
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -164,7 +162,6 @@ export default function Message({ message }: { message: IChatMessage }) {
   }, [message.id, message.isActive]);
 
   function monitorThinkStatus() {
-
     if (reasoningInterval.current) {
       clearInterval(reasoningInterval.current);
     }
@@ -220,9 +217,8 @@ export default function Message({ message }: { message: IChatMessage }) {
     const isEmpty =
       (!message.reply || message.reply === '') &&
       (!message.reasoning || message.reasoning === '');
-    const thinkTitle = `${
-      isReasoning ? t('Reasoning.Thinking') : t('Reasoning.Thought')
-    }${reasoningSeconds > 0 ? ` ${reasoningSeconds}s` : ''}`;
+    const thinkTitle = `${isReasoning ? t('Reasoning.Thinking') : t('Reasoning.Thought')
+      }${reasoningSeconds > 0 ? ` ${reasoningSeconds}s` : ''}`;
     return (
       <div className={`w-full mt-1.5 ${isLoading ? 'is-loading' : ''}`}>
         {message.isActive && states.runningTool ? (
@@ -257,8 +253,7 @@ export default function Message({ message }: { message: IChatMessage }) {
                   <div
                     dangerouslySetInnerHTML={{
                       __html: render(
-                        `${
-                          highlight(deferredReasoning, keyword) || ''
+                        `${highlight(deferredReasoning, keyword) || ''
                         }${isReasoning && deferredReasoning ? '<span class="blinking-cursor" /></span>' : ''}`,
                       ),
                     }}
@@ -268,11 +263,10 @@ export default function Message({ message }: { message: IChatMessage }) {
             ) : null}
             <div
               lang="en"
-              className='break-words hyphens-auto mt-1'
+              className="break-words hyphens-auto mt-1"
               dangerouslySetInnerHTML={{
                 __html: render(
-                  `${
-                    highlight(deferredReply, keyword) || ''
+                  `${highlight(deferredReply, keyword) || ''
                   }${isLoading && deferredReply ? '<span class="blinking-cursor" /></span>' : ''}`,
                 ),
               }}
@@ -297,7 +291,7 @@ export default function Message({ message }: { message: IChatMessage }) {
         >
           <div className="avatar flex-shrink-0 mr-2" />
           <div
-            className='mt-1 break-word'
+            className="mt-1 break-word"
             dangerouslySetInnerHTML={{
               __html: render(highlight(message.prompt, keyword) || ''),
             }}

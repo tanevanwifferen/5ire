@@ -5,7 +5,7 @@ import {
 import { IChat } from 'intellichat/types';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import useChatStore from 'stores/useChatStore';
-import { tempChatId } from 'consts';
+import { TEMP_CHAT_ID } from 'consts';
 import ChatFolder from './ChatFolder';
 
 export default function ChatFolders({
@@ -62,7 +62,7 @@ export default function ChatFolders({
   );
 
   useEffect(() => {
-    if (folder && chat.id === tempChatId) {
+    if (folder && chat.id === TEMP_CHAT_ID) {
       initChat(getCurFolderSettings());
     }
   }, [folder, chat.id]);

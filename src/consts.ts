@@ -1,4 +1,4 @@
-export const tempChatId = 'temp';
+export const TEMP_CHAT_ID = 'temp';
 
 export const EARLIEST_DATE = new Date('2023-08-01');
 export const DEFAULT_PROVIDER = 'OpenAI';

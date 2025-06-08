@@ -26,7 +26,7 @@ import { t } from 'i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Mousetrap from 'mousetrap';
 import useNav from 'hooks/useNav';
-import { tempChatId } from 'consts';
+import { TEMP_CHAT_ID } from 'consts';
 import ConfirmDialog from './ConfirmDialog';
 import FolderSettingsDialog from './FolderSettingsDialog';
 import ChatItem from './ChatItem';
@@ -191,7 +191,7 @@ export default function ChatFolder({
           await deleteFolder(folder.id);
           // If the current chat is in the folder being deleted, navigate to the temp chat
           if (chat.folderId === folder.id) {
-            navigate(`/chats/${tempChatId}`);
+            navigate(`/chats/${TEMP_CHAT_ID}`);
           }
         }}
       />

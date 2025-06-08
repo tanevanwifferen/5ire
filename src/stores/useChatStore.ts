@@ -16,7 +16,7 @@ import {
   DEFAULT_PROVIDER,
   DEFAULT_TEMPERATURE,
   NUM_CTX_MESSAGES,
-  tempChatId,
+  TEMP_CHAT_ID,
 } from 'consts';
 import { date2unix } from 'utils/util';
 import { isBlank, isNotBlank } from 'utils/validators';
@@ -90,9 +90,9 @@ export interface IChatStore {
   ) => Promise<IChat>;
   updateChat: (chat: { id: string } & Partial<IChat>) => Promise<boolean>;
   deleteChat: () => Promise<boolean>;
-  fetchChat: (limit?: number) => Promise<IChat[]>;
+  fetchChats: (limit?: number) => Promise<IChat[]>;
   getChat: (id: string) => Promise<IChat>;
-  loadChat: (id: string) => Promise<IChat>;
+  fetchChat: (id: string) => Promise<IChat>;
   // message
   createMessage: (message: Partial<IChatMessage>) => Promise<IChatMessage>;
   appendReply: (chatId: string, reply: string, reasoning: string) => void;
@@ -123,7 +123,7 @@ const useChatStore = create<IChatStore>((set, get) => ({
   folder: null,
   keywords: {},
   chats: [],
-  chat: { id: tempChatId, ...tempStage },
+  chat: { id: TEMP_CHAT_ID, ...tempStage },
   messages: [],
   states: {},
   // only for temp chat
@@ -323,7 +323,7 @@ const useChatStore = create<IChatStore>((set, get) => ({
       temperature: DEFAULT_TEMPERATURE,
       maxTokens: null,
       maxCtxMessages: NUM_CTX_MESSAGES,
-      id: tempChatId,
+      id: TEMP_CHAT_ID,
       ...get().tempStage,
       ...chat,
     } as IChat;
@@ -526,11 +526,20 @@ const useChatStore = create<IChatStore>((set, get) => ({
     }
     return false;
   },
-  getChat: async (id: string) => {
+  fetchChat: async (id: string) => {
     const chat = (await window.electron.db.get(
       'SELECT id, name, summary, provider, model, systemMessage, maxTokens, temperature, context, maxCtxMessages, stream, prompt, input, folderId, createdAt FROM chats where id = ?',
       id,
     )) as IChat;
+    debug('Fetch chat:', chat);
+    return chat;
+  },
+  getChat: async (id: string) => {
+    const { fetchChat, chats } = get();
+    let chat = chats.find((c) => c.id === id);
+    if (!chat) {
+      chat = await fetchChat(id);
+    }
     if (chat) {
       try {
         chat.prompt = chat.prompt ? JSON.parse(chat.prompt as string) : null;
@@ -539,17 +548,12 @@ const useChatStore = create<IChatStore>((set, get) => ({
       }
     }
     debug('Get chat:', chat);
-    return chat;
-  },
-  loadChat: async (id: string) => {
-    const { getChat } = get();
-    const chat = await getChat(id);
     set({ chat });
     return chat;
   },
-  fetchChat: async (limit: number = 300, offset = 0) => {
+  fetchChats: async (limit: number = 300, offset = 0) => {
     const rows = (await window.electron.db.all(
-      'SELECT id, name, summary, folderId, createdAt FROM chats ORDER BY createdAt DESC limit ? offset ?',
+      'SELECT id, name, summary, folderId, provider, model, systemMessage, maxTokens, temperature, maxCtxMessages, stream, prompt, input, createdAt FROM chats ORDER BY createdAt DESC limit ? offset ?',
       [limit, offset],
     )) as IChat[];
     const chats = rows.map((chat) => {
@@ -566,7 +570,7 @@ const useChatStore = create<IChatStore>((set, get) => ({
   deleteChat: async () => {
     const { chat, initChat } = get();
     try {
-      if (chat.id !== tempChatId) {
+      if (chat.id !== TEMP_CHAT_ID) {
         await window.electron.db.run(`DELETE FROM chats WHERE id = ?`, [
           chat.id,
         ]);
@@ -740,7 +744,7 @@ const useChatStore = create<IChatStore>((set, get) => ({
     offset?: number;
     keyword?: string;
   }) => {
-    if (chatId === tempChatId) {
+    if (chatId === TEMP_CHAT_ID) {
       set({ messages: [] });
       return [];
     }
@@ -769,7 +773,7 @@ const useChatStore = create<IChatStore>((set, get) => ({
     return messages;
   },
   editStage: async (chatId: string, stage: Partial<IStage>) => {
-    if (chatId === tempChatId) {
+    if (chatId === TEMP_CHAT_ID) {
       set(
         produce((state: IChatStore): void => {
           if (!isUndefined(stage.prompt)) {
@@ -818,7 +822,7 @@ const useChatStore = create<IChatStore>((set, get) => ({
         state.tempStage = defaultTempStage;
       }),
     );
-    if (chatId === tempChatId) {
+    if (chatId === TEMP_CHAT_ID) {
       window.electron.store.set('stage', defaultTempStage);
     }
   },

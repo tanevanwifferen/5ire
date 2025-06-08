@@ -599,7 +599,7 @@ ipcMain.handle('mcp-list-tools', async (_, name: string) => {
 });
 ipcMain.handle(
   'mcp-call-tool',
-  async (_, args: { client: string; name: string; args: any }) => {
+  async (_, args: { client: string; name: string; args: any, signal?:AbortSignal }) => {
     try {
       return await mcp.callTool(args);
     } catch (error: any) {
@@ -811,6 +811,6 @@ process.on('uncaughtException', (error) => {
   logging.captureException(error);
 });
 
-process.on('unhandledRejection', (reason: any, promise) => {
+process.on('unhandledRejection', (reason: any) => {
   logging.captureException(reason);
 });

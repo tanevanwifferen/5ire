@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { tempChatId } from 'consts';
+import { TEMP_CHAT_ID } from 'consts';
 import useToast from 'hooks/useToast';
 import useToken from 'hooks/useToken';
 
@@ -35,7 +35,7 @@ import {
 import useAppearanceStore from 'stores/useAppearanceStore';
 import createService from 'intellichat/services';
 import eventBus from 'utils/bus';
-import ChatContext from '../../ChatContext';
+import ChatContext, { createChatContext } from '../../ChatContext';
 import Header from './Header';
 import Messages from './Messages';
 import Editor from './Editor';
@@ -53,7 +53,7 @@ const DEFAULT_SIDEBAR_WIDTH = 250;
 
 export default function Chat() {
   const { t } = useTranslation();
-  const id = useParams().id || tempChatId;
+  const id = useParams().id || TEMP_CHAT_ID;
   const anchor = useParams().anchor || null;
   const bus = useRef(eventBus);
   const navigate = useNav();
@@ -62,6 +62,12 @@ export default function Chat() {
     setActiveChatId(id);
     debug('Set chat id:', id);
   }
+
+  const chatContext = useMemo(() => {
+    return createChatContext(activeChatId);
+  }, [activeChatId]);
+
+
   const [verticalSizes, setVerticalSizes] = useState(['auto', 200]);
   const [horizontalSizes, setHorizontalSizes] = useState(['auto', 0]);
   const ref = useRef<HTMLDivElement>(null);
@@ -73,7 +79,7 @@ export default function Chat() {
   const {
     fetchMessages,
     initChat,
-    loadChat,
+    getChat,
     updateChat,
     updateStates,
     getCurFolderSettings,
@@ -83,9 +89,10 @@ export default function Chat() {
   const chatSidebarShow = useAppearanceStore((state) => state.chatSidebar.show);
   const chatService = useRef<INextChatService>();
   const isReady = useMemo(() => {
-    return ChatContext.isReady();
-  }, [ChatContext.getActiveChat()]);
+    return chatContext.isReady();
+  }, [chatContext, activeChatId]);
   const [isLoading, setIsLoading] = useState(false);
+
   const { notifyError } = useToast();
 
   const isUserScrollingRef = useRef(false);
@@ -138,8 +145,8 @@ export default function Chat() {
     const initializeChat = async () => {
       setIsLoading(true);
       try {
-        if (activeChatId !== tempChatId) {
-          return await loadChat(activeChatId);
+        if (activeChatId !== TEMP_CHAT_ID) {
+          return await getChat(activeChatId);
         }
         if (folder) {
           return initChat(getCurFolderSettings());
@@ -208,16 +215,16 @@ export default function Chat() {
 
   const onSubmit = useCallback(
     async (prompt: string, msgId?: string) => {
-      chatService.current = createService(ChatContext);
+      chatService.current = createService(chatContext);
       if (!chatService.current || prompt.trim() === '') {
         return;
       }
-      const provider = ChatContext.getProvider();
-      const model = ChatContext.getModel();
-      const temperature = ChatContext.getTemperature();
-      const maxTokens = ChatContext.getMaxTokens();
+      const provider = chatContext.getProvider();
+      const model = chatContext.getModel();
+      const temperature = chatContext.getTemperature();
+      const maxTokens = chatContext.getMaxTokens();
       let $chatId = activeChatId;
-      if (activeChatId === tempChatId) {
+      if (activeChatId === TEMP_CHAT_ID) {
         const $chat = await createChat(
           {
             summary: prompt.substring(0, 50),
@@ -228,7 +235,7 @@ export default function Chat() {
           },
           async (newChat: IChat) => {
             const knowledgeCollections = moveChatCollections(
-              tempChatId,
+              TEMP_CHAT_ID,
               newChat.id,
             );
             await setChatCollections(newChat.id, knowledgeCollections);
@@ -240,7 +247,7 @@ export default function Chat() {
         if (folder) {
           openFolder(folder.id);
         }
-        deleteStage(tempChatId);
+        deleteStage(TEMP_CHAT_ID);
       } else {
         if (!msgId) {
           await updateChat({
@@ -426,6 +433,7 @@ ${prompt}
       navigate,
       appendReply,
       notifyError,
+      chatContext,
     ],
   );
 
@@ -475,6 +483,7 @@ ${prompt}
               <Pane minSize={180} maxSize="60%">
                 {!isLoading && (
                   <Editor
+                    ctx={chatContext}
                     isReady={isReady}
                     onSubmit={onSubmit}
                     onAbort={() => {

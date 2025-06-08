@@ -14,6 +14,7 @@ import {
   ChevronDown16Regular,
   ChevronUp16Regular,
 } from '@fluentui/react-icons';
+import useECharts from 'hooks/useECharts';
 import {
   getNormalContent,
   getReasoningContent,
@@ -21,8 +22,6 @@ import {
 } from '../../../utils/util';
 import MessageToolbar from './MessageToolbar';
 import useMermaid from '../../../hooks/useMermaid';
-
-import useECharts from 'hooks/useECharts';
 
 const debug = Debug('5ire:pages:chat:Message');
 
@@ -100,6 +99,7 @@ export default function Message({ message }: { message: IChatMessage }) {
   const reasoningInterval = useRef<number | null>(null);
   const reasoningRef = useRef('');
   const replyRef = useRef('');
+  const hasStartedReasoning = useRef(false);
 
   useEffect(() => {
     messageRef.current = message;
@@ -116,16 +116,21 @@ export default function Message({ message }: { message: IChatMessage }) {
   );
 
   useEffect(() => {
+    if (reasoning) {
+      setIsReasoning(true);
+    } else {
+      setIsReasoning(false);
+    }
+  }, [reasoning]);
+
+  useEffect(() => {
     const frameId = requestAnimationFrame(() => {
+      replyRef.current = reply;
+      reasoningRef.current = reasoning;
       setDeferredReply(reply);
       setDeferredReasoning(reasoning);
     });
     return () => cancelAnimationFrame(frameId);
-  }, [reply, reasoning]);
-
-  useEffect(() => {
-    replyRef.current = reply;
-    reasoningRef.current = reasoning;
   }, [reply, reasoning]);
 
   useEffect(() => {
@@ -157,14 +162,13 @@ export default function Message({ message }: { message: IChatMessage }) {
   }, [message.id, message.isActive]);
 
   function monitorThinkStatus() {
-    // 清除之前的计时器
     if (reasoningInterval.current) {
       clearInterval(reasoningInterval.current);
     }
 
     reasoningInterval.current = setInterval(() => {
       if (isReasoningRef.current && messageRef.current.isActive) {
-        setReasoningSeconds((prev) => prev + 1); // 每秒增加
+        setReasoningSeconds((prev) => prev + 1);
       }
 
       if (
@@ -172,9 +176,8 @@ export default function Message({ message }: { message: IChatMessage }) {
         isReasoningRef.current &&
         messageRef.current.isActive
       ) {
-        clearInterval(reasoningInterval.current as number); // 停止计时
+        clearInterval(reasoningInterval.current as number);
         setIsReasoning(false);
-
         debug('Reasoning ended');
         debug(`Total thinking time: ${reasoningSeconds} seconds`);
       }
@@ -182,17 +185,28 @@ export default function Message({ message }: { message: IChatMessage }) {
   }
 
   useEffect(() => {
-    if (message.isActive) {
+    if (reasoning && !hasStartedReasoning.current && message.isActive) {
+      hasStartedReasoning.current = true;
+      setIsReasoning(true);
       setIsReasoningShow(true);
       monitorThinkStatus();
-    } else {
+    } else if (!reasoning) {
+      hasStartedReasoning.current = false;
+      setIsReasoning(false);
+    }
+  }, [reasoning, message.isActive]);
+
+  useEffect(() => {
+    if (!message.isActive) {
+      hasStartedReasoning.current = false;
       setIsReasoning(false);
     }
     return () => {
       clearInterval(reasoningInterval.current as number);
-      setReasoningSeconds(0);
+      hasStartedReasoning.current = false;
+      setIsReasoning(false);
     };
-  }, [message.isActive]);
+  }, [message.id, message.isActive]);
 
   const toggleThink = useCallback(() => {
     setIsReasoningShow(!isReasoningShow);
@@ -203,9 +217,8 @@ export default function Message({ message }: { message: IChatMessage }) {
     const isEmpty =
       (!message.reply || message.reply === '') &&
       (!message.reasoning || message.reasoning === '');
-    const thinkTitle = `${
-      isReasoning ? t('Reasoning.Thinking') : t('Reasoning.Thought')
-    }${reasoningSeconds > 0 ? ` ${reasoningSeconds}s` : ''}`;
+    const thinkTitle = `${isReasoning ? t('Reasoning.Thinking') : t('Reasoning.Thought')
+      }${reasoningSeconds > 0 ? ` ${reasoningSeconds}s` : ''}`;
     return (
       <div className={`w-full mt-1.5 ${isLoading ? 'is-loading' : ''}`}>
         {message.isActive && states.runningTool ? (
@@ -240,8 +253,7 @@ export default function Message({ message }: { message: IChatMessage }) {
                   <div
                     dangerouslySetInnerHTML={{
                       __html: render(
-                        `${
-                          highlight(deferredReasoning, keyword) || ''
+                        `${highlight(deferredReasoning, keyword) || ''
                         }${isReasoning && deferredReasoning ? '<span class="blinking-cursor" /></span>' : ''}`,
                       ),
                     }}
@@ -251,11 +263,10 @@ export default function Message({ message }: { message: IChatMessage }) {
             ) : null}
             <div
               lang="en"
-              className='break-words hyphens-auto mt-1'
+              className="break-words hyphens-auto mt-1"
               dangerouslySetInnerHTML={{
                 __html: render(
-                  `${
-                    highlight(deferredReply, keyword) || ''
+                  `${highlight(deferredReply, keyword) || ''
                   }${isLoading && deferredReply ? '<span class="blinking-cursor" /></span>' : ''}`,
                 ),
               }}
@@ -280,7 +291,7 @@ export default function Message({ message }: { message: IChatMessage }) {
         >
           <div className="avatar flex-shrink-0 mr-2" />
           <div
-            className='mt-1 break-word'
+            className="mt-1 break-word"
             dangerouslySetInnerHTML={{
               __html: render(highlight(message.prompt, keyword) || ''),
             }}

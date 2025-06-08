@@ -3,12 +3,13 @@
 
 import v8 from 'v8';
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
-// 设置文件描述符限制
+
+// Setting the file descriptor limit
 if (process.platform !== 'win32') {
   process.setFdLimit(4096);
 }
 
-// 设置V8内存限制
+// Setting V8 memory limit
 v8.setFlagsFromString('--max-old-space-size=4096');
 
 export type Channels =
@@ -73,12 +74,19 @@ const electronHandler = {
       client,
       name,
       args,
+      signal,
     }: {
       client: string;
       name: string;
-      args?: any;
+      args: any;
+      signal?: AbortSignal;
     }) {
-      return ipcRenderer.invoke('mcp-call-tool', { client, name, args });
+      return ipcRenderer.invoke('mcp-call-tool', {
+        client,
+        name,
+        args,
+        signal,
+      });
     },
     listPrompts(name?: string) {
       return ipcRenderer.invoke('mcp-list-prompts', name);

@@ -411,7 +411,27 @@ export default class ModuleContext {
         }
       }),
     );
-    return results.filter((r) => r !== null);
+    // flatten prompts and collect failures
+    const prompts = results
+      .flatMap((r) => r?.prompts)
+      .filter((r) => r !== null);
+    // filter out null results (clients without prompts capability)
+    const failedClients = results
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .filter((r) => r.error)
+      .map((r) => ({ client: r.client, error: r.error }));
+    return {
+      prompts,
+      error: failedClients.length
+        ? {
+            message: key
+              ? `Failed to list prompts for ${key}`
+              : 'Partial failure listing prompts',
+            code: key ? 'list_prompts_failed' : 'partial_failure',
+            failedClients,
+          }
+        : null,
+    };
   }
 
   public async getPrompt(key: string, name: string, args?: any) {
@@ -516,7 +536,7 @@ export default class ModuleContext {
     client,
     name,
     args,
-    signal
+    signal,
   }: {
     client: string;
     name: string;

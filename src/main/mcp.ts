@@ -411,17 +411,13 @@ export default class ModuleContext {
         }
       }),
     );
-    // flatten prompts and collect failures
-    const prompts = results
-      .flatMap((r) => r?.prompts)
-      .filter((r) => r !== null);
     // filter out null results (clients without prompts capability)
     const failedClients = results
       .filter((r): r is NonNullable<typeof r> => r !== null)
       .filter((r) => r.error)
       .map((r) => ({ client: r.client, error: r.error }));
     return {
-      prompts,
+      prompts: results.filter((r) => r !== null),
       error: failedClients.length
         ? {
             message: key

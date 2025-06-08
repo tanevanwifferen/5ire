@@ -47,10 +47,12 @@ export default function ToolDetailDialog(options: {
   const loadPrompts = async (svr: IMCPServer) => {
     if (svr.capabilities.includes('prompts')) {
       const res = await window.electron.mcp.listPrompts(svr.key);
-      setPrompts(res.prompts || []);
-    } else {
-      setPrompts([]);
+      if (res.prompts.length) {
+        setPrompts(res.prompts[0].prompts || []);
+        return;
+      }
     }
+    setPrompts([]);
   };
 
   const loadData = async () => {
@@ -135,7 +137,7 @@ export default function ToolDetailDialog(options: {
                                     inputSchema
                                   </legend>
                                   <div
-                                    className="-mt-3 ghost p-2"
+                                    className="-mt-1 ghost p-2"
                                     dangerouslySetInnerHTML={{
                                       __html: render(
                                         `\`\`\`json\n${JSON.stringify(tool.inputSchema, null, 2)}\n\`\`\``,
@@ -180,7 +182,7 @@ export default function ToolDetailDialog(options: {
                                       Arguments
                                     </legend>
                                     <div
-                                      className="-mt-3 ghost p-2"
+                                      className="-mt-1 ghost p-2"
                                       dangerouslySetInnerHTML={{
                                         __html: render(
                                           `\`\`\`json\n${JSON.stringify(prompt.arguments, null, 2)}\n\`\`\``,

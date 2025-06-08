@@ -30,12 +30,15 @@ import {
   IMCPPromptListItemData,
   IMCPPromptMessageItem,
 } from 'types/mcp';
-import McpPromptVariableDialog from '../McpPromptVariableDialog';
 import useToast from 'hooks/useToast';
-import useMarkdown from 'hooks/useMarkdown';
 import Spinner from 'renderer/components/Spinner';
+import { captureException } from 'renderer/logging';
+import McpPromptVariableDialog from '../McpPromptVariableDialog';
 
-const PromptIcon = bundleIcon(CommentMultipleLinkFilled, CommentMultipleLinkRegular);
+const PromptIcon = bundleIcon(
+  CommentMultipleLinkFilled,
+  CommentMultipleLinkRegular,
+);
 
 export default function McpPromptCtrl({
   chat,
@@ -45,7 +48,6 @@ export default function McpPromptCtrl({
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
-  const { render } = useMarkdown();
   const { notifyError } = useToast();
   const [loadingList, setLoadingList] = useState<boolean>(false);
   const [open, setOpen] = useState<boolean>(false);
@@ -67,14 +69,14 @@ export default function McpPromptCtrl({
     setLoadingList(true);
     window.electron.mcp
       .listPrompts()
-      .then((prompts: IMCPPromptListItem[]) => {
-        setOptions(prompts);
+      .then((res: { error?: string; prompts: IMCPPromptListItem[] }) => {
+        setOptions(res.prompts || []);
         setLoadingList(false);
-        return prompts;
+        return res.prompts;
       })
       .catch((error) => {
         setLoadingList(false);
-        console.error('Error fetching prompts:', error);
+        captureException(error);
       });
     Mousetrap.bind('esc', closeDialog);
   };
@@ -180,16 +182,26 @@ export default function McpPromptCtrl({
 
   const renderPrompt = useCallback(() => {
     if (!prompt) {
-      return <div className='py-6 px-1 tips'>{t('Common.NoPromptSelected')}</div>;
-    }
-    return prompt.messages.map((message:IMCPPromptMessageItem)=>{
       return (
-        <fieldset className='border border-neutral-200 dark:border-neutral-700 rounded p-1 my-2 bg-neutral-50 dark:bg-neutral-800' key={`${message.role}-${message.content.text}`}>
-          <legend className="text-base font-semibold px-1 ml-2">{message.role}&nbsp;<span className='text-sm text-neutral-500'>({message.content.type})</span></legend>
-          <pre>{message.content.text||''}</pre>
+        <div className="py-6 px-1 tips">{t('Common.NoPromptSelected')}</div>
+      );
+    }
+    return prompt.messages.map((message: IMCPPromptMessageItem) => {
+      return (
+        <fieldset
+          className="border border-neutral-200 dark:border-neutral-700 rounded p-1 my-2 bg-neutral-50 dark:bg-neutral-800"
+          key={`${message.role}-${message.content.text}`}
+        >
+          <legend className="text-base font-semibold px-1 ml-2">
+            {message.role}&nbsp;
+            <span className="text-sm text-neutral-500">
+              ({message.content.type})
+            </span>
+          </legend>
+          <pre>{message.content.text || ''}</pre>
         </fieldset>
-      )
-    })
+      );
+    });
   }, [prompt, t]);
 
   return (
@@ -206,7 +218,7 @@ export default function McpPromptCtrl({
             className={`flex justify-start items-center text-color-secondary gap-1 ${disabled ? 'opacity-50' : ''}`}
             onClick={openDialog}
             icon={<PromptIcon className="flex-shrink-0" />}
-          ></Button>
+          />
         </DialogTrigger>
         <DialogSurface>
           <DialogBody>
@@ -222,7 +234,9 @@ export default function McpPromptCtrl({
                 </DialogTrigger>
               }
             >
-              <div className='flex justify-start items-center gap-1 font-semibold font-sans'>MCP<span className='separator'>/</span> {t('Common.Prompts')}</div>
+              <div className="flex justify-start items-center gap-1 font-semibold font-sans">
+                MCP<span className="separator">/</span> {t('Common.Prompts')}
+              </div>
             </DialogTitle>
             <DialogContent>
               <Combobox
@@ -232,33 +246,9 @@ export default function McpPromptCtrl({
                   applyPrompt(data.optionValue as string);
                 }}
               >
-                {loadingList ? (
-                  <Option text={t('Common.Loading')} value="" disabled>
-                    <div className="flex justify-start gap-2 items-center">
-                      <Spinner className="w-2 h-2 -ml-4" />
-                      <span>{t('Common.Loading')}</span>
-                    </div>
-                  </Option>
-                ) : (
-                  options.map((option) => (
-                    <OptionGroup label={option.client} key={option.client}>
-                      {option.prompts.map(
-                        (promptOption: IMCPPromptListItemData) => (
-                          <Option
-                            key={`${option.client}-${promptOption.name}`}
-                            value={`${option.client}-${promptOption.name}`}
-                          >
-                            {promptOption.name}
-                          </Option>
-                        ),
-                      )}
-                    </OptionGroup>
-                  ))
-                )}
+                {renderOptions()}
               </Combobox>
-              <div>
-                {renderPrompt()}
-              </div>
+              <div>{renderPrompt()}</div>
             </DialogContent>
             <DialogActions>
               <DialogTrigger disableButtonEnhancement>

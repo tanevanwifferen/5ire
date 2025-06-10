@@ -27,9 +27,7 @@
     <span style="font-size:12px;">/ Azure</span>
     <span style="font-size:12px;">/ Anthropic</span>
     <span style="font-size:12px;">/ Google</span>
-    <span style="font-size:12px;">/ Baidu</span>
     <span style="font-size:12px;">/ Mistral</span>
-    <span style="font-size:12px;">/ Moonshot</span>
     <span style="font-size:12px;">/ Doubao</span>
     <span style="font-size:12px;">/ Grok</span>
     <span style="font-size:12px;">/ DeepSeek</span>
@@ -39,8 +37,6 @@
     <a href="https://x.com/intent/follow?screen_name=1ronben">Twitter</a>
     ·
     <a href="https://github.com/nanbingxyz/5ire/releases/latest">Releases</a>
-     ·
-    <a href="https://5ireai.com">中文官网</a>
   </p>
   <div><a href="https://buymeacoffee.com/ironben"><img src="https://github.com/user-attachments/assets/2265e2d6-2a17-4a48-b779-52a925261135" style="width:200px"/></a></div>
    <br />

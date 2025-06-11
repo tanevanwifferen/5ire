@@ -10,6 +10,7 @@ import {
   Input,
   DialogActions,
 } from '@fluentui/react-components';
+import DOMPurify from 'dompurify';
 import Mousetrap from 'mousetrap';
 import {
   bundleIcon,
@@ -269,7 +270,7 @@ export default function PromptCtrl({
                         <span
                           className="leading-6"
                           dangerouslySetInnerHTML={{
-                            __html: (chat.prompt as IPrompt).systemMessage,
+                            __html:  DOMPurify.sanitize((chat.prompt as IPrompt).systemMessage),
                           }}
                         />
                       </div>

@@ -14,6 +14,7 @@ import { IChatModelConfig, IChatProviderConfig } from 'providers/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ToolStatusIndicator from 'renderer/components/ToolStatusIndicator';
+import { captureException } from 'renderer/logging';
 import useChatStore from 'stores/useChatStore';
 import useProviderStore from 'stores/useProviderStore';
 
@@ -34,27 +35,51 @@ export default function ModelCtrl({
   const [curModel, setCurModel] = useState<IChatModelConfig>();
   const [models, setModels] = useState<IChatModelConfig[]>([]);
   const isChanged = useRef(false);
-
+  const [isModelsLoaded, setIsModelsLoaded] = useState(false);
   const [menuModelOpen, setMenuModelOpen] = useState(false);
   const [menuProviderOpen, setMenuProviderOpen] = useState(false);
+  const abortController = useRef<AbortController | null>(null);
 
   const loadModels = useCallback(
-    async (provider: IChatProviderConfig) => {
-      const $models = await getModels(provider);
-      setModels($models);
-      const defaultModel = find($models, { isDefault: true }) || $models[0];
-      const ctxProvider = ctx.getProvider();
-      const ctxModel = ctx.getModel();
-      if (ctxProvider.name === provider.name) {
-        const $model = find($models, { name: ctxModel.name });
-        if ($model) {
-          setCurModel($model);
+    async function (provider: IChatProviderConfig) {
+      setIsModelsLoaded(false);
+      setModels([]);
+      if (abortController.current) {
+        abortController.current.abort();
+      }
+      abortController.current = new AbortController();
+      try {
+        const $models = await getModels(provider, {
+          signal: abortController.current.signal,
+        });
+        setModels($models);
+        const defaultModel = find($models, { isDefault: true }) || $models[0];
+        const ctxProvider = ctx.getProvider();
+        const ctxModel = ctx.getModel();
+        if (ctxProvider?.name === provider.name) {
+          const $model = find($models, { name: ctxModel.name });
+          if ($model) {
+            setCurModel($model);
+            setIsModelsLoaded(true);
+            return;
+          }
+        } else {
+          editStage(chat.id, {
+            provider: provider.name,
+            model: defaultModel.name,
+          });
+        }
+        setCurModel(defaultModel);
+        setIsModelsLoaded(true);
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
           return;
         }
+        captureException(err);
+        setIsModelsLoaded(false);
       }
-      setCurModel(defaultModel);
     },
-    [chat.id, chat.provider, chat.model],
+    [chat.id, getModels],
   );
 
   useEffect(() => {
@@ -78,19 +103,23 @@ export default function ModelCtrl({
     }
   }, [curProvider?.name]);
 
-  const onModelChange = async () => {
-    if (isChanged.current) {
-      await editStage(chat.id, {
-        provider: curProvider?.name,
-        model: curModel?.name,
+  useEffect(() => {
+    if (chat.provider !== '' && curProvider?.name !== chat.provider) {
+      return;
+    }
+    const shouldTriggerChange =
+      isModelsLoaded &&
+      curProvider &&
+      curModel &&
+      models.some((m) => m.name === curModel.name);
+    if (shouldTriggerChange && isChanged.current) {
+      editStage(chat.id, {
+        provider: curProvider.name,
+        model: curModel.name,
       });
       isChanged.current = false;
     }
-  };
-
-  useEffect(() => {
-    onModelChange();
-  }, [curModel?.name]);
+  }, [curProvider?.name, curModel?.name, isModelsLoaded]);
 
   useEffect(() => {
     Mousetrap.bind('mod+shift+0', () => {
@@ -155,6 +184,7 @@ export default function ModelCtrl({
                 disabled={!provider.isReady}
                 onClick={() => {
                   isChanged.current = true;
+                  setIsModelsLoaded(false);
                   setCurProvider(provider);
                 }}
               >
@@ -211,8 +241,10 @@ export default function ModelCtrl({
                 >
                   <div className="flex justify-start items-center gap-1 text-sm py-1">
                     <ToolStatusIndicator model={model} withTooltip />
-                    <span> {model.label || model.name}</span>
-                    {curModel?.name === model.name && <span>✓</span>}
+                    <div className="-mt-[3px]">
+                      <span> {model.label || model.name}</span>
+                      {curModel?.name === model.name && <span>✓</span>}
+                    </div>
                   </div>
                 </MenuItem>
               ))

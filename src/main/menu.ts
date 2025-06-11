@@ -34,7 +34,14 @@ export default class MenuBuilder {
 
   setupContextMenu(): void {
     this.mainWindow.webContents.on('context-menu', (_, props) => {
-      const menu = new Menu();
+      const template = [
+        { label: 'Copy', role: 'copy' },
+        { label: 'Paste', role: 'paste' },
+        { label: 'Cut', role: 'cut' },
+        { type: 'separator' },
+        { label: 'Select All', role: 'selectAll' },
+      ] as MenuItemConstructorOptions[];
+      const menu = Menu.buildFromTemplate(template);
       // Add each spelling suggestion
       Array.from(props.dictionarySuggestions).forEach((suggestion) => {
         menu.append(

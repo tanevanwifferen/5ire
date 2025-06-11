@@ -19,7 +19,6 @@ import { useTranslation } from 'react-i18next';
 import useChatStore from 'stores/useChatStore';
 import { IChat, IChatContext } from 'intellichat/types';
 import Mousetrap from 'mousetrap';
-import useProviderStore from 'stores/useProviderStore';
 
 // const debug = Debug('5ire:pages:chat:Editor:Toolbar:TemperatureCtrl');
 
@@ -34,7 +33,6 @@ export default function TemperatureCtrl({
   chat: IChat;
   disabled: boolean;
 }) {
-  const { getAvailableProvider } = useProviderStore();
   const { t } = useTranslation();
   const [open, setOpen] = useState<boolean>(false);
   const editStage = useChatStore((state) => state.editStage);
@@ -51,8 +49,8 @@ export default function TemperatureCtrl({
         return !prevOpen;
       }),
     );
-    if (chat.provider) {
-      const provider = getAvailableProvider(chat.provider);
+    const provider = ctx.getProvider();
+    if (provider) {
       setMinTemperature(provider.temperature.min);
       setMaxTemperature(provider.temperature.max);
       setTemperature(ctx.getTemperature());

@@ -1,10 +1,14 @@
+export type MCPServerType = 'local' | 'remote';
 export interface IMCPServer {
   key: string;
+  type: MCPServerType;
   name?: string;
-  command: string;
+  url?: string;
+  command?: string;
   description?: string;
-  args: string[];
+  args?: string[];
   env?: Record<string, string>;
+  headers?: Record<string, string>;
   isActive: boolean;
   homepage?: string;
 }
@@ -21,6 +25,9 @@ export interface IMCPServerParameter {
 }
 
 export interface IMCPConfig {
-  servers: IMCPServer[];
+  servers?: IMCPServer[]; // Deprecated
+  mcpServers: {
+    [key: string]: IMCPServer;
+  };
   updated?: number;
 }

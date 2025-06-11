@@ -30,7 +30,7 @@ const NumberSymbolSquareIcon = bundleIcon(
   NumberSymbolSquare20Regular,
 );
 
-export default function MaxTokens({
+export default function MaxTokensCtrl({
   ctx,
   chat,
   onConfirm,
@@ -54,10 +54,10 @@ export default function MaxTokens({
   }, [chat.model]);
 
   const curMaxTokens = useMemo<number>(() => {
-    return chat.maxTokens || modelMaxTokens;
+    return Math.min(chat.maxTokens || MAX_TOKENS, modelMaxTokens);
   }, [chat.id, chat.model]);
 
-  const [maxTokens, setMaxTokens] = useState<number>(DEFAULT_MAX_TOKENS);
+  const [maxTokens, setMaxTokens] = useState<number>(curMaxTokens);
 
   useEffect(() => {
     Mousetrap.bind('mod+shift+4', () => {
@@ -81,7 +81,7 @@ export default function MaxTokens({
     const value = data.value
       ? data.value
       : str2int(data.displayValue as string);
-    console.log('updateMaxTokens', value);
+    console.log('updateMaxTokens>>>>>>>>>>>>>', value);
     const $maxToken = Math.max(Math.min(value as number, modelMaxTokens), 1);
     await editStage(chat.id, { maxTokens: $maxToken });
     setMaxTokens($maxToken);

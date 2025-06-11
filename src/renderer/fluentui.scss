@@ -35,7 +35,7 @@
   max-width: 400px;
 }
 .fui-Field__validationMessage{
-  @apply flex justify-start items-center;
+  @apply flex justify-start items-start;
 }
 .fui-AccordionHeader__button {
   --fontFamilyBase:

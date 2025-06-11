@@ -251,7 +251,7 @@ export interface IProviderStore {
   ) => IChatModelConfig[];
   getModels: (
     provider: IChatProviderConfig,
-    options?: { withDisabled?: boolean },
+    options?: { withDisabled?: boolean; signal?: AbortSignal },
   ) => Promise<IChatModelConfig[]>;
   getGroupedModelOptions: () => Promise<{
     [key: string]: ModelOption[];
@@ -295,7 +295,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
       models: [],
       disabled: false,
     } as Partial<IChatProviderConfig>;
-    const customProviders = window.electron.store.get('providers');
+    const customProviders = window.electron.store.get('providers') || [];
     const newCustomProviders = (
       [...customProviders, newProvider] as IChatProviderConfig[]
     ).sort(sortByName);
@@ -364,7 +364,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
     const enabledProviders = providers.filter(
       (p) => withDisabled || !p.disabled,
     );
-    const { session } = useAuthStore.getState();
+    const session = useAuthStore.getState().getSession();
     if (session) return enabledProviders;
     return enabledProviders.filter((p) => !p.isPremium);
   },
@@ -421,7 +421,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
   },
   getModels: async (
     provider: IChatProviderConfig,
-    options?: { withDisabled?: boolean },
+    options?: { withDisabled?: boolean; signal?: AbortSignal },
   ) => {
     let $models: IChatModelConfig[] = [];
     if (provider.modelsEndpoint) {
@@ -434,15 +434,20 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
             headers: {
               'Content-Type': 'application/json',
             },
+            signal: options?.signal,
           },
         );
         const data = await resp.json();
-        $models = (data.models || [])
-          .filter((model: { name: string }) => model.name.indexOf('embed') < 0)
-          .map((model: { name: string }) => {
-            const customModel = modelsMap[model.name];
-            delete modelsMap[model.name];
-            return mergeRemoteModel(model.name, {
+        $models = (data.models || data.data || [])
+          .filter(
+            (model: { id?: string; name: string }) =>
+              (model.id || model.name).indexOf('embed') < 0,
+          )
+          .map((model: { id?: string; name: string }) => {
+            const modelName = model.id || model.name;
+            const customModel = modelsMap[modelName];
+            delete modelsMap[modelName];
+            return mergeRemoteModel(modelName, {
               ...customModel,
               isFromApi: true,
             });
@@ -499,7 +504,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
   updateModel: (model: Partial<IChatModelConfig> & { id: string }) => {
     const { provider, updateProvider } = get();
     if (!provider) return;
-    const customProviders = window.electron.store.get('providers');
+    const customProviders = window.electron.store.get('providers') || [];
     const customProvider = customProviders.find(
       (p: IChatProviderConfig) => p.name === provider.name,
     ) || {

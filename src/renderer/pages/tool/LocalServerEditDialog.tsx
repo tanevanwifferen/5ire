@@ -10,6 +10,7 @@ import {
   Input,
   DialogActions,
   InputOnChangeData,
+  InfoLabel,
 } from '@fluentui/react-components';
 import { useTranslation } from 'react-i18next';
 import {
@@ -130,6 +131,7 @@ export default function ToolEditDialog(options: {
       return;
     }
     const upset = server ? updateServer : addServer;
+    config.type = 'local';
     const ok = await upset(config);
     if (ok) {
       setOpen(false);
@@ -144,7 +146,10 @@ export default function ToolEditDialog(options: {
       setName(server.name || '');
       setKey(server.key);
       setDescription(server.description || '');
-      setCommand([server.command, ...(server.args || [])].join(' '));
+      const $args = (server.args || []).map((arg) =>
+        arg.includes(' ') ? `'${arg}'` : arg,
+      );
+      setCommand([server.command, ...$args].join(' '));
       setEnv(server.env || {});
     }
 
@@ -176,18 +181,32 @@ export default function ToolEditDialog(options: {
                 </DialogTrigger>
               }
             >
-              {server ? t('Tools.Edit') : t('Tools.New')}
+              <div className="flex flex-start justify-start items-baseline gap-2">
+                <span>{server ? t('Tools.Edit') : t('Tools.New')}</span>
+                <span className="text-sm text-gray-500">
+                  ({t('Tools.LocalServer')})
+                </span>
+              </div>
             </DialogTitle>
             <DialogContent className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Field
-                    label={t('Tools.Key')}
                     validationState={keyValidationState}
                     validationMessage={
-                      server ? t('Tools.KeyCannotUpdate') : t('Tools.KeyHint')
+                      keyValidationState === 'none'
+                        ? ''
+                        : t('Tools.InvalidMCPServerKey')
                     }
                   >
+                    <InfoLabel
+                      className="mb-[7px]"
+                      info={
+                        server ? t('Tools.KeyCannotUpdate') : t('Tools.KeyHint')
+                      }
+                    >
+                      {t('Tools.Key')}
+                    </InfoLabel>
                     <Input
                       disabled={!!server}
                       className="w-full min-w-fit"

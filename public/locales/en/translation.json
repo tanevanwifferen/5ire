@@ -233,7 +233,7 @@
   "Tools.New": "Add a new tool",
   "Tools.Edit": "Edit tool",
   "Tools.Key": "Tool Key",
-  "Tools.KeyHint": "The tool's key must be unique, containing only letters (both cases) and numbers, and can't start with a digit.",
+  "Tools.KeyHint": "must be globally unique, at least 2 characters long, and contain only letters, digits, and hyphens, starting with a letter and not ending with a hyphen.​",
   "Common.Description": "Description",
   "Tools.Command": "Command",
   "Tools.EnvVars": "Enviroment Variables",
@@ -315,5 +315,16 @@
   "Common.InputUsage": "Input Usage",
   "Common.StartDate": "Start Date",
   "Common.EndDate": "End Date",
-  "Common.ExtraLarge": "Extral Large"
+  "Common.ExtraLarge": "Extral Large",
+  "Tools.InvalidMCPServerKey": "Invalid key, check if the entry is unique and the format is valid",
+  "Tools.LocalServer": "Local Server",
+  "Tools.RemoteServer": "Remote Server",
+  "Common.URL": "URL",
+  "Tools.Hint.UrlIsRequired": "URL is required",
+  "Common.HttpHeaders": "Http Headers",
+  "Common.Value": "Value",
+  "Common.Local": "Local",
+  "Common.Remote": "Remote",
+  "Knowledge.Notification.ImportError": "Failed to import file {{name}}",
+  "Common.Citation": "Citation"
 }

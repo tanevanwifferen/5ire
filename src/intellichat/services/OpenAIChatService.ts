@@ -14,10 +14,10 @@ import { isBlank } from 'utils/validators';
 import { splitByImg, stripHtmlTags, urlJoin } from 'utils/util';
 import OpenAIReader from 'intellichat/readers/OpenAIReader';
 import { ITool } from 'intellichat/readers/IChatReader';
+import Ollama from 'providers/Ollama';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
 import OpenAI from '../../providers/OpenAI';
-import Ollama from 'providers/Ollama';
 
 // const debug = Debug('5ire:intellichat:OpenAIChatService');
 
@@ -31,10 +31,6 @@ export default class OpenAIChatService
       context,
       provider: OpenAI,
     });
-  }
-
-  protected getSystemRoleName() {
-    return 'developer';
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -158,12 +154,11 @@ export default class OpenAIChatService
               role: 'user',
               ...(formattedContent as Partial<IChatRequestMessageContent>),
             };
-          } else {
-            return {
-              role: 'user',
-              content: formattedContent,
-            };
           }
+          return {
+            role: 'user',
+            content: formattedContent,
+          };
         }
         return {
           role: 'user',
@@ -237,7 +232,7 @@ export default class OpenAIChatService
     if (this.isToolsEnabled()) {
       const tools = await window.electron.mcp.listTools();
       if (tools) {
-        const $tools = tools.map((tool: any) => {
+        const $tools = tools.tools.map((tool: any) => {
           return this.makeTool(tool);
         });
         if ($tools.length > 0) {

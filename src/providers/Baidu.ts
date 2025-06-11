@@ -60,7 +60,7 @@ const chatModels = [
     id: 'ERNIE-3.5-8K',
     name: 'ERNIE-3.5-8K',
     contextWindow: 124000,
-    maxTokens: 4096,
+    maxTokens: 2048,
     inputPrice: 0.0008,
     outputPrice: 0.002,
     description: `百度自研的旗舰级大规模⼤语⾔模型，覆盖海量中英文语料，具有强大的通用能力，可满足绝大部分对话问答、创作生成、插件应用场景要求；支持自动对接百度搜索插件，保障问答信息时效。`,
@@ -76,12 +76,11 @@ export default {
     apiKeyCustomizable: true,
   },
   description:
-    '[API 密钥] 和 [API Secret] 的获取参考：https://cloud.baidu.com/doc/Reference/s/9jwvz2egb',
+    '[API key] 的获取参考：https://cloud.baidu.com/doc/qianfan-api/s/ym9chdsy5',
   chat: {
-    apiSchema: ['base', 'key', 'secret'],
+    apiSchema: ['base', 'key'],
     docs: {
-      key: '用户账号->安全认证->[Access Key]',
-      secret: '用户账号->安全认证->[Secret Key]',
+      apiKey: '用户账号->安全认证->[API Key]',
     },
     presencePenalty: { min: 1, max: 2, default: 1 }, // penalty_score
     topP: { min: 0, max: 1, default: 0.8 }, // (0, 1]

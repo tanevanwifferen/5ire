@@ -11,8 +11,4 @@ export default class GrokChatService
     super(name, chatContext);
     this.provider = Grok;
   }
-
-  protected getSystemRoleName(): string {
-    return 'system';
-  }
 }

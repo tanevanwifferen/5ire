@@ -326,5 +326,6 @@
   "Common.Local": "Local",
   "Common.Remote": "Remote",
   "Knowledge.Notification.ImportError": "Failed to import file {{name}}",
-  "Common.Citation": "Citation"
+  "Common.Citation": "Citation",
+  "Common.Action.Rename": "Rename"
 }

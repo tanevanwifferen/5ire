@@ -33,7 +33,9 @@ export type Channels =
   | 'remove-embedding-model'
   | 'close-app'
   | 'mcp-server-loaded'
-  | 'install-tool-listener-ready';
+  | 'install-tool-listener-ready'
+  | 'show-context-menu'
+  | 'context-menu-command';
 
 const electronHandler = {
   upgrade: () => ipcRenderer.invoke('quit-and-upgrade'),

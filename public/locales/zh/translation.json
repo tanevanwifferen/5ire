@@ -315,5 +315,6 @@
   "Common.Value": "值",
   "Common.Local": "Local",
   "Common.Remote": "远程",
-  "Common.Citation": "引用"
+  "Common.Citation": "引用",
+  "Common.Action.Rename": "重命名"
 }

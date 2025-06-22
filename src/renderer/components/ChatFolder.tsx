@@ -68,6 +68,57 @@ export default function ChatFolder({
     Mousetrap.unbind('esc');
   }, [name]);
 
+  const contextMenuHandler = useCallback((e: Event) => {
+    const mouseEvent = e as MouseEvent;
+    mouseEvent.preventDefault();
+    window.electron.ipcRenderer.sendMessage('show-context-menu', {
+      type: 'chat-folder',
+      targetId: (e.currentTarget as HTMLElement)?.id || null,
+      x: mouseEvent.clientX,
+      y: mouseEvent.clientY,
+    });
+  }, []);
+
+  useEffect(() => {
+    const chatDoms = document.querySelectorAll('.chat-folder');
+    chatDoms.forEach((dom) => {
+      dom.removeEventListener('contextmenu', contextMenuHandler);
+      dom.addEventListener('contextmenu', contextMenuHandler);
+    });
+    //window.electron.ipcRenderer.unsubscribeAll('context-menu-command');
+    window.electron.ipcRenderer.on(
+      'context-menu-command',
+      (command: unknown, params: unknown) => {
+        console.log('context-menu-command', command);
+        const folderId = (params as { id: string }).id;
+        if (folderId !== folder.id) {
+          return;
+        }
+        if (command === 'delete-chat-folder') {
+          setConfirmDialogOpen(true);
+        } else if (command === 'folder-chat-settings') {
+          selectFolder(folder.id);
+          setFolderSettingsOpen(true);
+        } else if (command === 'rename-chat-folder') {
+          setEditable(true);
+          setTimeout(() => {
+            inputRef.current?.focus();
+          }, 0);
+        }
+      },
+    );
+  }, [folder.id, contextMenuHandler, markFolderAsOld, selectFolder]);
+
+  useEffect(() => {
+    Mousetrap.bind('esc', () => {
+      setName(folder.name);
+      setEditable(false);
+    });
+    return () => {
+      Mousetrap.unbind('esc');
+    };
+  }, [editable, folder.name]);
+
   useEffect(() => {
     if (folder.isNew) {
       setEditable(true);
@@ -76,7 +127,6 @@ export default function ChatFolder({
       }, 0);
     }
     return () => {
-      Mousetrap.unbind('esc');
       markFolderAsOld(folder.id);
     };
   }, [folder.isNew]);
@@ -85,15 +135,15 @@ export default function ChatFolder({
     (fld: IChatFolder) => {
       if (openFolders.includes(fld.id)) {
         return fld.id === selectedFolder?.id ? (
-          <FolderOpenFilled className='w-5 h-5' />
+          <FolderOpenFilled className="w-5 h-5" />
         ) : (
-          <FolderOpenRegular className='w-5 h-5' />
+          <FolderOpenRegular className="w-5 h-5" />
         );
       }
       return fld.id === selectedFolder?.id ? (
-        <FolderFilled className='w-5 h-5' />
+        <FolderFilled className="w-5 h-5" />
       ) : (
-        <FolderRegular className='w-5 h-5' />
+        <FolderRegular className="w-5 h-5" />
       );
     },
     [openFolders, selectedFolder],
@@ -101,7 +151,12 @@ export default function ChatFolder({
 
   return (
     <div ref={setNodeRef}>
-      <AccordionItem value={folder.id} disabled={editable}>
+      <AccordionItem
+        value={folder.id}
+        disabled={editable}
+        id={folder.id}
+        className="chat-folder"
+      >
         <div className="flex justify-between items-center">
           <AccordionHeader
             style={{ height: 28 }}
@@ -152,6 +207,15 @@ export default function ChatFolder({
               </MenuTrigger>
               <MenuPopover style={{ minWidth: '80px' }}>
                 <MenuList>
+                  <MenuItem
+                    onClick={() => {
+                      setEditable(true);
+                      setTimeout(() => {
+                        inputRef.current?.focus();
+                      }, 0);
+                    }}
+                  ><span className="text-xs">{t('Common.Action.Rename')}</span>
+                  </MenuItem>
                   <MenuItem onClick={() => setConfirmDialogOpen(true)}>
                     <span className="text-xs">{t('Common.Delete')}</span>
                   </MenuItem>

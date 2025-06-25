@@ -13,6 +13,7 @@ import {
   ipcMain,
   nativeTheme,
   MessageBoxOptions,
+  Menu,
 } from 'electron';
 import crypto from 'crypto';
 import { autoUpdater } from 'electron-updater';
@@ -599,7 +600,10 @@ ipcMain.handle('mcp-list-tools', async (_, name: string) => {
 });
 ipcMain.handle(
   'mcp-call-tool',
-  async (_, args: { client: string; name: string; args: any, signal?:AbortSignal }) => {
+  async (
+    _,
+    args: { client: string; name: string; args: any; signal?: AbortSignal },
+  ) => {
     try {
       return await mcp.callTool(args);
     } catch (error: any) {
@@ -660,6 +664,38 @@ ipcMain.handle('mcp-put-config', (_, config) => {
 });
 ipcMain.handle('mcp-get-active-servers', () => {
   return mcp.getClientNames();
+});
+
+ipcMain.on('show-context-menu', (event, params) => {
+  const template = [];
+  if (params.type === 'chat-folder') {
+    template.push({
+      label: 'Rename',
+      click: () => {
+        event.sender.send('context-menu-command', 'rename-chat-folder', {
+          id: params.targetId,
+        });
+      },
+    });
+    template.push({
+      label: 'Settings',
+      click: () => {
+        event.sender.send('context-menu-command', 'folder-chat-settings', {
+          id: params.targetId,
+        });
+      },
+    });
+    template.push({
+      label: 'Delete',
+      click: () => {
+        event.sender.send('context-menu-command', 'delete-chat-folder', {
+          id: params.targetId,
+        });
+      },
+    });
+  }
+  const menu = Menu.buildFromTemplate(template);
+  menu.popup({ window: mainWindow as BrowserWindow, x: params.x, y: params.y });
 });
 
 if (process.env.NODE_ENV === 'production') {

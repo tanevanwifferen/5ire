@@ -333,5 +333,6 @@
   "Common.NoPromptSelected": "No prompt selected",
   "Common.Citation": "Citation",
   "Common.Capabilities": "Capabilities",
-  "Common.Action.Rename": "Rename"
+  "Common.Action.Rename": "Rename",
+  "Common.NoSubtitlesAvailable": "No subtitles available"
 }

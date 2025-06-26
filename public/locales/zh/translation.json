@@ -322,5 +322,6 @@
   "Common.NoPromptSelected": "尚未选择提示词",
   "Common.Citation": "引用",
   "Common.Capabilities": "能力",
-  "Common.Action.Rename": "重命名"
+  "Common.Action.Rename": "重命名",
+  "Common.NoSubtitlesAvailable": "无可用字幕"
 }

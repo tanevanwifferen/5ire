@@ -638,6 +638,7 @@ ipcMain.on('show-context-menu', (event, params) => {
       label: 'Rename',
       click: () => {
         event.sender.send('context-menu-command', 'rename-chat-folder', {
+          type: 'chat-folder',
           id: params.targetId,
         });
       },
@@ -646,6 +647,7 @@ ipcMain.on('show-context-menu', (event, params) => {
       label: 'Settings',
       click: () => {
         event.sender.send('context-menu-command', 'folder-chat-settings', {
+          type: 'chat-folder',
           id: params.targetId,
         });
       },
@@ -654,6 +656,26 @@ ipcMain.on('show-context-menu', (event, params) => {
       label: 'Delete',
       click: () => {
         event.sender.send('context-menu-command', 'delete-chat-folder', {
+          type: 'chat-folder',
+          id: params.targetId,
+        });
+      },
+    });
+  } else if (params.type === 'chat') {
+    template.push({
+      label: 'Rename',
+      click: () => {
+        event.sender.send('context-menu-command', 'rename-chat', {
+          type: 'chat',
+          id: params.targetId,
+        });
+      },
+    });
+    template.push({
+      label: 'Delete',
+      click: () => {
+        event.sender.send('context-menu-command', 'delete-chat', {
+          type: 'chat',
           id: params.targetId,
         });
       },

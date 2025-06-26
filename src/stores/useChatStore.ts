@@ -89,7 +89,7 @@ export interface IChatStore {
     beforeSetCallback?: (chat: IChat) => Promise<void>,
   ) => Promise<IChat>;
   updateChat: (chat: { id: string } & Partial<IChat>) => Promise<boolean>;
-  deleteChat: () => Promise<boolean>;
+  deleteChat: (chatId?: string) => Promise<boolean>;
   fetchChats: (limit?: number) => Promise<IChat[]>;
   getChat: (id: string) => Promise<IChat>;
   fetchChat: (id: string) => Promise<IChat>;
@@ -567,20 +567,21 @@ const useChatStore = create<IChatStore>((set, get) => ({
     set({ chats });
     return chats;
   },
-  deleteChat: async () => {
+  deleteChat: async (chatId?:string) => {
     const { chat, initChat } = get();
+    const id = chatId || chat.id;
     try {
-      if (chat.id !== TEMP_CHAT_ID) {
+      if (id !== TEMP_CHAT_ID) {
         await window.electron.db.run(`DELETE FROM chats WHERE id = ?`, [
-          chat.id,
+          id,
         ]);
         await window.electron.db.run(`DELETE FROM messages WHERE chatId = ?`, [
-          chat.id,
+          id,
         ]);
         set(
           produce((state: IChatStore) => {
             state.messages = [];
-            const index = state.chats.findIndex((i) => i.id === chat.id);
+            const index = state.chats.findIndex((i) => i.id === id);
             if (index > -1) {
               state.chats.splice(index, 1);
             }

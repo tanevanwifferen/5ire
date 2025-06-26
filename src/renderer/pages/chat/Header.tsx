@@ -18,10 +18,9 @@ import { useTranslation } from 'react-i18next';
 import ConfirmDialog from 'renderer/components/ConfirmDialog';
 
 import { TEMP_CHAT_ID } from 'consts';
-import useNav from 'hooks/useNav';
-import useToast from 'hooks/useToast';
 import { IChatFolder } from 'intellichat/types';
 import { isPersistedChat } from 'utils/util';
+import useDeleteChat from 'hooks/useDeleteChat';
 import ChatSettingsDrawer from './ChatSettingsDrawer';
 
 const DeleteIcon = bundleIcon(DeleteFilled, DeleteRegular);
@@ -37,8 +36,6 @@ const InspectorHideIcon = bundleIcon(WindowConsoleRegular, WindowConsoleFilled);
 
 export default function Header() {
   const { t } = useTranslation();
-  const { notifySuccess } = useToast();
-  const navigate = useNav();
   const folder = useChatStore((state) => state.folder);
   const folders = useChatStore((state) => state.folders);
   const activeChat = useChatStore((state) => state.chat);
@@ -48,6 +45,14 @@ export default function Header() {
     (state) => state.toggleChatSidebarVisibility,
   );
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+
+  const {
+    delConfirmDialogOpen,
+    setDelConfirmDialogOpen,
+    showDeleteConfirmation,
+    onDeleteChat,
+    cancelDelete,
+  } = useDeleteChat();
 
   const chatFolder: Partial<IChatFolder> = useMemo(() => {
     if (activeChat.id !== TEMP_CHAT_ID) {
@@ -59,16 +64,6 @@ export default function Header() {
     return folder || {};
   }, [folder, activeChat.id, activeChat.folderId, folders]);
 
-  const [delConfirmDialogOpen, setDelConfirmDialogOpen] =
-    useState<boolean>(false);
-  const deleteChat = useChatStore((state) => state.deleteChat);
-
-  const onDeleteChat = async () => {
-    await deleteChat();
-    navigate(`/chats/${TEMP_CHAT_ID}`);
-    notifySuccess(t('Chat.Notification.Deleted'));
-  };
-
   const getKeyword = useChatStore((state) => state.getKeyword);
   const setKeyword = useChatStore((state) => state.setKeyword);
 
@@ -79,14 +74,14 @@ export default function Header() {
   useEffect(() => {
     Mousetrap.bind('mod+d', () => {
       if (activeChat?.id !== TEMP_CHAT_ID) {
-        setDelConfirmDialogOpen(true);
+        showDeleteConfirmation();
       }
     });
     Mousetrap.bind('mod+shift+r', toggleChatSidebarVisibility);
     return () => {
       Mousetrap.unbind('mod+d');
     };
-  }, [activeChat?.id]);
+  }, [activeChat?.id, showDeleteConfirmation, toggleChatSidebarVisibility]);
 
   return (
     <div
@@ -120,7 +115,7 @@ export default function Header() {
               icon={<DeleteIcon className="text-color-tertiary" />}
               appearance="transparent"
               title="Mod+d"
-              onClick={() => setDelConfirmDialogOpen(true)}
+              onClick={() => showDeleteConfirmation()}
             />
             {keyword ? (
               <Tooltip content={t('Common.ClearFilter')} relationship="label">
@@ -146,6 +141,7 @@ export default function Header() {
         title={t('Chat.DeleteConfirmation')}
         message={t('Chat.DeleteConfirmationInfo')}
         onConfirm={onDeleteChat}
+        onCancel={cancelDelete}
       />
     </div>
   );

@@ -11,6 +11,7 @@ import * as logging from './logging';
 
 import './App.scss';
 import './fluentui.scss';
+import { ContextMenuProvider } from './components/ContextMenuProvider';
 
 if (window.envVars.NODE_ENV === 'development') {
   Debug.enable('5ire:*');
@@ -83,5 +84,9 @@ export default function App() {
     };
   }, [loadAuthData, onAuthStateChange]);
 
-  return <FluentApp />;
+  return (
+    <ContextMenuProvider>
+      <FluentApp />
+    </ContextMenuProvider>
+  );
 }

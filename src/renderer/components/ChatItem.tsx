@@ -3,10 +3,13 @@ import { IChat } from 'intellichat/types';
 import useChatStore from 'stores/useChatStore';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Mousetrap from 'mousetrap';
 import { useTranslation } from 'react-i18next';
+import ConfirmDialog from './ConfirmDialog';
+import useDeleteChat from 'hooks/useDeleteChat';
 import ChatIcon from './ChatIcon';
+import { useContextMenu } from './ContextMenuProvider'; // 修改这里
 
 export default function ChatItem({
   chat,
@@ -29,6 +32,24 @@ export default function ChatItem({
   };
 
   const updateChat = useChatStore((state) => state.updateChat);
+  const {
+    delConfirmDialogOpen,
+    setDelConfirmDialogOpen,
+    showDeleteConfirmation,
+    onDeleteChat,
+    cancelDelete,
+  } = useDeleteChat();
+  const { registerHandler, unregisterHandler } = useContextMenu(); // 修改这里
+
+  useEffect(() => {
+    Mousetrap.bind('esc', () => {
+      setName(chat.name);
+      setEditable(false);
+    });
+    return () => {
+      Mousetrap.unbind('esc');
+    };
+  }, [editable, chat.name]);
 
   const updateChatName = useCallback(
     async (newName: string) => {
@@ -36,14 +57,51 @@ export default function ChatItem({
         await updateChat({ id: chat.id, name: newName.trim() });
       }
       setEditable(false);
-      Mousetrap.unbind('esc');
     },
     [chat.id, chat.name, updateChat],
   );
 
+  const handleContextMenuCommand = useCallback(
+    (command: string, params: any) => {
+      if (command === 'delete-chat') {
+        showDeleteConfirmation(chat);
+      } else if (command === 'rename-chat') {
+        setEditable(true);
+        setTimeout(() => {
+          inputRef.current?.focus();
+          inputRef.current?.select();
+        }, 0);
+      }
+    },
+    [chat, showDeleteConfirmation],
+  );
+
+  useEffect(() => {
+    registerHandler('chat', chat.id, handleContextMenuCommand); // 修改这里
+    return () => {
+      unregisterHandler('chat', chat.id); // 修改这里
+    };
+  }, [chat.id, handleContextMenuCommand, registerHandler, unregisterHandler]);
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      window.electron.ipcRenderer.sendMessage('show-context-menu', {
+        type: 'chat',
+        targetId: chat.id,
+        x: e.clientX,
+        y: e.clientY,
+      });
+    },
+    [chat.id],
+  );
+
   return (
     <div
+      className="chat"
+      id={chat.id}
       key={chat.id}
+      onContextMenu={handleContextMenu}
       onDoubleClick={() => {
         if (!collapsed) {
           setEditable(true);
@@ -62,7 +120,8 @@ export default function ChatItem({
           <Input
             ref={inputRef}
             size="small"
-            value={name}
+            value={name || ''}
+            autoFocus
             placeholder={t('Input.Hint.EnterSubmitEscCancel')}
             className="w-full"
             appearance="underline"
@@ -79,32 +138,42 @@ export default function ChatItem({
           />
         </div>
       ) : (
-        <Button
-          style={style}
-          ref={setNodeRef}
-          {...listeners}
-          {...attributes}
-          icon={
-            <ChatIcon
-              chat={chat}
-              isActive={curChat && curChat.id === chat.id}
-            />
-          }
-          appearance="subtle"
-          className="w-full justify-start latin"
-        >
-          {collapsed ? null : (
-            <div className="text-sm truncate ...">
-              {chat.name?.trim() ||
-                chat.summary
-                  ?.substring(0, 40)
-                  .replace(/&lt;/g, '<')
-                  .replace(/&gt;/g, '>')
-                  .replace(/&amp;/g, '&')}
-            </div>
-          )}
-        </Button>
+        <div className="relative">
+          <Button
+            style={style}
+            ref={setNodeRef}
+            {...listeners}
+            {...attributes}
+            icon={
+              <ChatIcon
+                chat={chat}
+                isActive={curChat && curChat.id === chat.id}
+              />
+            }
+            appearance="subtle"
+            className="w-full justify-start latin"
+          >
+            {collapsed ? null : (
+              <div className="text-sm truncate ...">
+                {chat.name?.trim() ||
+                  chat.summary
+                    ?.substring(0, 40)
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&amp;/g, '&')}
+              </div>
+            )}
+          </Button>
+        </div>
       )}
+      <ConfirmDialog
+        open={delConfirmDialogOpen}
+        setOpen={setDelConfirmDialogOpen}
+        title={t('Chat.DeleteConfirmation')}
+        message={t('Chat.DeleteConfirmationInfo')}
+        onConfirm={onDeleteChat}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }

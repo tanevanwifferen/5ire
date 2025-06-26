@@ -30,6 +30,7 @@ import { TEMP_CHAT_ID } from 'consts';
 import ConfirmDialog from './ConfirmDialog';
 import FolderSettingsDialog from './FolderSettingsDialog';
 import ChatItem from './ChatItem';
+import { useContextMenu } from './ContextMenuProvider';
 
 const MoreVerticalIcon = bundleIcon(MoreVerticalFilled, MoreVerticalRegular);
 
@@ -56,6 +57,7 @@ export default function ChatFolder({
   const { updateFolder, deleteFolder, markFolderAsOld, selectFolder } =
     useChatStore();
   const [folderSettingsOpen, setFolderSettingsOpen] = useState(false);
+  const { registerHandler, unregisterHandler } = useContextMenu();
 
   const saveName = useCallback(() => {
     setEditable(false);
@@ -66,48 +68,45 @@ export default function ChatFolder({
     });
     setName(folderName);
     Mousetrap.unbind('esc');
-  }, [name]);
+  }, [name, folder.id, updateFolder]);
 
-  const contextMenuHandler = useCallback((e: Event) => {
-    const mouseEvent = e as MouseEvent;
-    mouseEvent.preventDefault();
-    window.electron.ipcRenderer.sendMessage('show-context-menu', {
-      type: 'chat-folder',
-      targetId: (e.currentTarget as HTMLElement)?.id || null,
-      x: mouseEvent.clientX,
-      y: mouseEvent.clientY,
-    });
-  }, []);
+  const handleContextMenuCommand = useCallback(
+    (command: string, params: any) => {
+      if (command === 'delete-chat-folder') {
+        setConfirmDialogOpen(true);
+      } else if (command === 'folder-chat-settings') {
+        selectFolder(folder.id);
+        setFolderSettingsOpen(true);
+      } else if (command === 'rename-chat-folder') {
+        setEditable(true);
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+      }
+    },
+    [folder.id, selectFolder],
+  );
 
   useEffect(() => {
-    const chatDoms = document.querySelectorAll('.chat-folder');
-    chatDoms.forEach((dom) => {
-      dom.removeEventListener('contextmenu', contextMenuHandler);
-      dom.addEventListener('contextmenu', contextMenuHandler);
-    });
-    //window.electron.ipcRenderer.unsubscribeAll('context-menu-command');
-    window.electron.ipcRenderer.on(
-      'context-menu-command',
-      (command: unknown, params: unknown) => {
-        console.log('context-menu-command', command);
-        const folderId = (params as { id: string }).id;
-        if (folderId !== folder.id) {
-          return;
-        }
-        if (command === 'delete-chat-folder') {
-          setConfirmDialogOpen(true);
-        } else if (command === 'folder-chat-settings') {
-          selectFolder(folder.id);
-          setFolderSettingsOpen(true);
-        } else if (command === 'rename-chat-folder') {
-          setEditable(true);
-          setTimeout(() => {
-            inputRef.current?.focus();
-          }, 0);
-        }
-      },
-    );
-  }, [folder.id, contextMenuHandler, markFolderAsOld, selectFolder]);
+    registerHandler('chat-folder', folder.id, handleContextMenuCommand);
+    return () => {
+      unregisterHandler('chat-folder', folder.id);
+    };
+  }, [folder.id, handleContextMenuCommand, registerHandler, unregisterHandler]);
+
+  // 右键菜单事件处理
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      window.electron.ipcRenderer.sendMessage('show-context-menu', {
+        type: 'chat-folder',
+        targetId: folder.id,
+        x: e.clientX,
+        y: e.clientY,
+      });
+    },
+    [folder.id],
+  );
 
   useEffect(() => {
     Mousetrap.bind('esc', () => {
@@ -129,7 +128,7 @@ export default function ChatFolder({
     return () => {
       markFolderAsOld(folder.id);
     };
-  }, [folder.isNew]);
+  }, [folder.isNew, folder.id, markFolderAsOld]);
 
   const icon = useCallback(
     (fld: IChatFolder) => {
@@ -156,6 +155,7 @@ export default function ChatFolder({
         disabled={editable}
         id={folder.id}
         className="chat-folder"
+        onContextMenu={handleContextMenu}
       >
         <div className="flex justify-between items-center">
           <AccordionHeader
@@ -214,7 +214,8 @@ export default function ChatFolder({
                         inputRef.current?.focus();
                       }, 0);
                     }}
-                  ><span className="text-xs">{t('Common.Action.Rename')}</span>
+                  >
+                    <span className="text-xs">{t('Common.Action.Rename')}</span>
                   </MenuItem>
                   <MenuItem onClick={() => setConfirmDialogOpen(true)}>
                     <span className="text-xs">{t('Common.Delete')}</span>

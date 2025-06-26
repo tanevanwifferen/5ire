@@ -16,10 +16,11 @@ export default function ConfirmDialog(args: {
   open: boolean;
   setOpen: (open: boolean) => void;
   onConfirm: () => void;
+  onCancel?: () => void;
   title?: string;
   message?: string;
 }) {
-  const { open, setOpen, onConfirm, title, message } = args;
+  const { open, setOpen, onConfirm, onCancel, title, message } = args;
   const confirmButtonRef = React.useRef<HTMLButtonElement | null>(null);
   const { t } = useTranslation();
   const confirm = useCallback(() => {
@@ -52,7 +53,13 @@ export default function ConfirmDialog(args: {
           </DialogContent>
           <DialogActions>
             <DialogTrigger disableButtonEnhancement>
-              <Button appearance="subtle" onClick={() => setOpen(false)}>
+              <Button
+                appearance="subtle"
+                onClick={() => {
+                  setOpen(false);
+                  onCancel?.();
+                }}
+              >
                 {t('Common.Cancel')}
               </Button>
             </DialogTrigger>

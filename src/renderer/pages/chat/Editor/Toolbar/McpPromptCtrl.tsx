@@ -186,6 +186,28 @@ export default function McpPromptCtrl({
         <div className="py-6 px-1 tips">{t('Common.NoPromptSelected')}</div>
       );
     }
+    const renderContent = (message: IMCPPromptMessageItem) => {
+      if (message.content.type === 'image') {
+        return <img src={message.content.data} alt="" className="w-full" />;
+      }
+      if (message.content.type === 'audio') {
+        return (
+          <audio controls>
+            <source
+              src={message.content.data}
+              type={message.content.mimeType}
+            />
+            <track
+              kind="captions"
+              label={t('Common.NoSubtitlesAvailable')}
+              default
+            />
+            Your browser does not support the audio element.
+          </audio>
+        );
+      }
+      return <pre>{message.content.text || ''}</pre>;
+    };
     return prompt.messages.map((message: IMCPPromptMessageItem) => {
       return (
         <fieldset
@@ -198,7 +220,7 @@ export default function McpPromptCtrl({
               ({message.content.type})
             </span>
           </legend>
-          <pre>{message.content.text || ''}</pre>
+          {renderContent(message)}
         </fieldset>
       );
     });

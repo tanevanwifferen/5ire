@@ -53,15 +53,10 @@ export interface IMCPPromptListItem {
 }
 
 export interface IMCPPromptMessageContent {
-  type: 'text' | 'resource';
+  type: 'text' | 'image' | 'audio';
   text?: string;
-  resource?: {
-    description?: string;
-    uri: string;
-    mimeType?: string;
-    text?: string;
-    blob?: string;
-  };
+  data?: string; // Base64
+  mimeType?: string;
 }
 
 export interface IMCPPromptMessageItem {

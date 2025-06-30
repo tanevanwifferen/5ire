@@ -240,6 +240,8 @@ const chatModels = [
 export default {
   name: 'Anthropic',
   apiBase: 'https://api.anthropic.com/v1',
+  // Example proxy configuration - replace with your actual proxy URL
+  proxy: 'http://localhost:8080',
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,

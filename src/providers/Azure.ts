@@ -191,7 +191,7 @@ const chatModels = [
       },
     },
     isDefault: true,
-    description: `GPT-4o (“o” for “omni”) is OpenAI's versatile, high-intelligence flagship model. It accepts both text and image inputs, and produces text outputs (including Structured Outputs). It is the best model for most tasks, and is OpenAI's most capable model outside of it's o-series models.`,
+    description: `GPT-4o ("o" for "omni") is OpenAI's versatile, high-intelligence flagship model. It accepts both text and image inputs, and produces text outputs (including Structured Outputs). It is the best model for most tasks, and is OpenAI's most capable model outside of it's o-series models.`,
   },
   {
     id: 'gpt-4o-mini',
@@ -261,9 +261,15 @@ const chatModels = [
   },
 ];
 
+// Define resourceName and deploymentId from environment variables
+const resourceName = process.env.AZURE_RESOURCE_NAME || '<your-resource-name>';
+const deploymentId = process.env.AZURE_DEPLOYMENT_ID || '<your-deployment-id>';
+
 export default {
   name: 'Azure',
-  apiBase: '',
+  apiBase: `https://${resourceName}.openai.azure.com/openai/deployments/${deploymentId}`,
+  // Example proxy configuration - replace with your actual proxy URL
+  proxy: 'http://localhost:8080',
   apiVersion: '2024-12-01-preview',
   currency: 'USD',
   options: {

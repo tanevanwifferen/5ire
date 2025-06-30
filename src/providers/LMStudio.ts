@@ -2,7 +2,9 @@ import { IServiceProvider } from './types';
 
 export default {
   name: 'LMStudio',
-  apiBase: 'http://127.0.0.1:1234/v1',
+  apiBase: 'http://localhost:1234',
+  // Example proxy configuration - replace with your actual proxy URL
+  proxy: 'http://localhost:8080',
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,
@@ -18,7 +20,7 @@ export default {
       topP: 'An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with topP probability mass.',
     },
     placeholders: {
-      base: ' http://127.0.0.1:1234/v1',
+      base: 'localhost:1234',
     },
     presencePenalty: { min: -2, max: 2, default: 0 },
     topP: { min: 0, max: 1, default: 1 },
@@ -32,7 +34,7 @@ export default {
   embedding: {
     apiSchema: ['base'],
     placeholders: {
-      base: ' http://127.0.0.1:1234/v1',
+      base: 'localhost:1234',
     },
     options: {
       modelCustomizable: true,

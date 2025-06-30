@@ -155,7 +155,7 @@ const chatModels = [
       },
     },
     isDefault: true,
-    description: `GPT-4o (“o” for “omni”) is OpenAI's versatile, high-intelligence flagship model. It accepts both text and image inputs, and produces text outputs (including Structured Outputs). It is the best model for most tasks, and is OpenAI's most capable model outside of it's o-series models.`,
+    description: `GPT-4o ("o" for "omni") is OpenAI's versatile, high-intelligence flagship model. It accepts both text and image inputs, and produces text outputs (including Structured Outputs). It is the best model for most tasks, and is OpenAI's most capable model outside of it's o-series models.`,
   },
   {
     id: 'gpt-4o-mini',
@@ -196,7 +196,9 @@ const chatModels = [
 
 export default {
   name: '5ire',
-  apiBase: 'https://openai.5ireai.com',
+  apiBase: 'https://api.5ire.com/v1',
+  // Example proxy configuration - replace with your actual proxy URL
+  proxy: 'http://localhost:8080',
   currency: 'USD',
   isPremium: true,
   options: {

@@ -45,7 +45,9 @@ const chatModels = [
 
 export default {
   name: 'Moonshot',
-  apiBase: 'https://api.moonshot.cn/v1',
+  apiBase: 'https://api.moonshot.com/v1',
+  // Example proxy configuration - replace with your actual proxy URL
+  proxy: 'http://localhost:8080',
   currency: 'CNY',
   options: {
     apiBaseCustomizable: true,

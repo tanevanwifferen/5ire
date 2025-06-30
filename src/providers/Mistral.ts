@@ -102,13 +102,15 @@ const chatModels = [
         enabled: true,
       },
     },
-    description: `World’s best edge model`,
+    description: `World's best edge model`,
   },
 ];
 
 export default {
   name: 'Mistral',
   apiBase: 'https://api.mistral.ai/v1',
+  // Example proxy configuration - replace with your actual proxy URL
+  proxy: 'http://localhost:8080',
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,

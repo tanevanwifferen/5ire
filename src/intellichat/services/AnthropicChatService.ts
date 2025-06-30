@@ -24,6 +24,7 @@ import NextChatService from './NextChatService';
 import Anthropic from '../../providers/Anthropic';
 // eslint-disable-next-line import/order
 import { isPlainObject, omit } from 'lodash';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 const debug = Debug('5ire:intellichat:AnthropicChatService');
 
@@ -243,6 +244,16 @@ export default class AnthropicChatService
     debug('About to make a request, payload:\r\n', payload);
     const provider = this.context.getProvider();
     const url = urlJoin('/messages', provider.apiBase.trim());
+    // Proxy support: if provider.proxy is set, use https-proxy-agent
+    let agent;
+    if (provider.proxy) {
+      try {
+        agent = new HttpsProxyAgent(provider.proxy);
+      } catch (error) {
+        console.error(`Invalid proxy URL for provider: ${provider.proxy}`, error);
+        throw error;
+      }
+    }
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -252,6 +263,7 @@ export default class AnthropicChatService
       },
       body: JSON.stringify(payload),
       signal: this.abortController.signal,
+      ...(agent ? { agent } : {}),
     });
     return response;
   }

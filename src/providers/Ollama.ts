@@ -2,7 +2,9 @@ import { IServiceProvider } from './types';
 
 export default {
   name: 'Ollama',
-  apiBase: 'http://127.0.0.1:11434',
+  apiBase: 'http://localhost:11434',
+  // Example proxy configuration - replace with your actual proxy URL
+  proxy: 'http://localhost:8080',
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,

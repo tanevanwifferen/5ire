@@ -168,6 +168,8 @@ const chatModels = [
 export default {
   name: 'Google',
   apiBase: 'https://generativelanguage.googleapis.com',
+  // Example proxy configuration - replace with your actual proxy URL
+  proxy: 'http://localhost:8080',
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,

@@ -248,6 +248,7 @@ export default class AnthropicChatService
       'anthropic-version': '2023-06-01',
       'x-api-key': provider.apiKey.trim(),
     };
-    return this.makeHttpRequest(url, headers, payload, true);
+    const isStream = this.context.isStream();
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

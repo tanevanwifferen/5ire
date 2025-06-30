@@ -268,6 +268,7 @@ export default class GoogleChatService
     const headers = {
       'Content-Type': 'application/json',
     };
-    return this.makeHttpRequest(url, headers, payload, true);
+
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

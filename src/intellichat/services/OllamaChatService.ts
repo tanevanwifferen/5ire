@@ -124,6 +124,7 @@ export default class OllamaChatService
     const headers = {
       'Content-Type': 'application/json',
     };
-    return this.makeHttpRequest(url, headers, payload, true);
+    const isStream = this.context.isStream();
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

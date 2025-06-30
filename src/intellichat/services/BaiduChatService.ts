@@ -32,6 +32,7 @@ export default class BaiduChatService
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     };
-    return this.makeHttpRequest(url, headers, payload, true);
+    const isStream = this.context.isStream();
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

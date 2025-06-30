@@ -23,7 +23,8 @@ export default class DeepSeekChatService
       'Content-Type': 'application/json',
       Authorization: `Bearer ${provider.apiKey.trim()}`,
     };
+    const isStream = this.context.isStream();
     const payload = await this.makePayload(messages, msgId);
-    return this.makeHttpRequest(url, headers, payload, true);
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

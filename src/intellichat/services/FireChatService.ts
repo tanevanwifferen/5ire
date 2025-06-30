@@ -42,6 +42,7 @@ export default class FireChatService
       'Content-Type': 'application/json',
       Authorization: `Bearer ${key}`,
     };
-    return this.makeHttpRequest(url, headers, payload, true);
+    const isStream = this.context.isStream();
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

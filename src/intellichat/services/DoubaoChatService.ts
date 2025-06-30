@@ -28,6 +28,7 @@ export default class DoubaoChatService
       'Content-Type': 'application/json',
       Authorization: `Bearer ${provider.apiKey.trim()}`,
     };
-    return this.makeHttpRequest(url, headers, payload, true);
+    const isStream = this.context.isStream();
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

@@ -39,6 +39,15 @@ export type Channels =
 
 const electronHandler = {
   upgrade: () => ipcRenderer.invoke('quit-and-upgrade'),
+  request: (options: {
+    url: string;
+    method: string;
+    headers?: Record<string, string>;
+    body?: string;
+    proxy?: string;
+    isStream?: boolean;
+  }) => ipcRenderer.invoke('request', options),
+  cancelRequest: (requestId: string) => ipcRenderer.invoke('cancel-request', requestId),
   store: {
     get(key: string, defaultValue?: any | undefined): any {
       return ipcRenderer.sendSync('get-store', key, defaultValue);

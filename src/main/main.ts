@@ -4,6 +4,8 @@ import os from 'node:os';
 import fs from 'node:fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
+import { ReadableStreamDefaultReader } from 'stream/web';
 import {
   app,
   dialog,
@@ -15,9 +17,11 @@ import {
   MessageBoxOptions,
   Menu,
 } from 'electron';
+import { ReadableStream } from 'node:stream/web';
 import crypto from 'crypto';
 import { autoUpdater } from 'electron-updater';
 import Store from 'electron-store';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import * as logging from './logging';
 import axiom from '../vendors/axiom';
 import MenuBuilder from './menu';
@@ -190,12 +194,12 @@ const openSafeExternal = (url: string) => {
     const parsedUrl = new URL(url);
     const allowedProtocols = ['http:', 'https:', 'mailto:'];
     if (!allowedProtocols.includes(parsedUrl.protocol)) {
-      console.warn(`Blocked unsafe protocol: ${parsedUrl.protocol}`);
+      logging.warn(`Blocked unsafe protocol: ${parsedUrl.protocol}`);
       return;
     }
     shell.openExternal(url);
   } catch (e) {
-    console.warn('Invalid URL:', url);
+    logging.warn('Invalid URL:', url);
   }
 };
 
@@ -291,6 +295,105 @@ ipcMain.on('install-tool-listener-ready', () => {
     mainWindow?.webContents.send('install-tool', pendingInstallTool);
     pendingInstallTool = null;
   }
+});
+
+const activeRequests = new Map<string, AbortController>();
+
+ipcMain.handle('request', async (event, options) => {
+  const { url, method, headers, body, proxy, isStream } = options;
+
+  const requestId = Math.random().toString(36).substr(2, 9);
+  const abortController = new AbortController();
+  activeRequests.set(requestId, abortController);
+  try {
+    let agent;
+    if (proxy) {
+      try {
+        agent = new HttpsProxyAgent(proxy);
+        logging.info(`Using proxy: ${proxy}`);
+      } catch (error) {
+        logging.error(`Invalid proxy URL: ${proxy}`, error);
+      }
+    }
+
+    const fetchOptions: any = {
+      method,
+      headers,
+      signal: abortController.signal,
+      ...(agent && { agent }),
+    };
+
+    if (body && method !== 'GET') {
+      fetchOptions.body = body;
+    }
+
+    const response = await fetch(url, fetchOptions);
+    activeRequests.delete(requestId);
+    if (isStream) {
+      const reader = (
+        response.body as unknown as ReadableStream
+      )?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
+      const stream = new ReadableStream({
+        start(controller) {
+          function pump(): any {
+            return reader?.read().then(({ done, value }) => {
+              if (abortController.signal.aborted) {
+                controller.close();
+                return;
+              }
+              if (done) {
+                controller.close();
+                return;
+              }
+              controller.enqueue(value);
+              return pump();
+            });
+          }
+          return pump();
+        },
+      });
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        body: stream,
+        requestId,
+      };
+    } else {
+      const text = await response.text();
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        text,
+        requestId,
+      };
+    }
+  } catch (error: unknown) {
+    activeRequests.delete(requestId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      logging.info(`Request ${requestId} was cancelled`);
+    } else {
+      logging.error('Request failed:', error);
+    }
+    throw error;
+  }
+});
+
+// 处理取消请求
+ipcMain.handle('cancel-request', async (event, requestId: string) => {
+  const controller = activeRequests.get(requestId);
+  if (controller) {
+    console.log(`Cancelling request ${requestId}`);
+    controller.abort(); // 真正取消网络请求
+    activeRequests.delete(requestId);
+    return true;
+  }
+  console.warn(`Request ${requestId} not found or already completed`);
+  return false;
 });
 
 ipcMain.on('ipc-5ire', async (event) => {

@@ -1,7 +1,6 @@
 import useAppearanceStore from 'stores/useAppearanceStore';
 // @ts-ignore
 import * as echarts from 'echarts';
-import { IChatMessage } from 'intellichat/types';
 import { useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -39,7 +38,7 @@ export default function useECharts({ message }: { message: { id: string } }) {
     const encodedConfig = container.getAttribute('data-echarts-config');
     if (!encodedConfig) return;
     try {
-      let config = decodeURIComponent(encodedConfig);
+      const config = decodeURIComponent(encodedConfig);
       const option = parseOption(config);
       const chart = echarts.init(container, theme);
       chart.setOption(option);

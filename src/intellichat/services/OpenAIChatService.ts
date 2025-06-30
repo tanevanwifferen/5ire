@@ -18,7 +18,6 @@ import Ollama from 'providers/Ollama';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
 import OpenAI from '../../providers/OpenAI';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 
 // const debug = Debug('5ire:intellichat:OpenAIChatService');
 
@@ -265,27 +264,12 @@ export default class OpenAIChatService
     const payload = await this.makePayload(messages, msgId);
     const provider = this.context.getProvider();
     const url = urlJoin('/chat/completions', provider.apiBase.trim());
-    // Proxy support: if provider.proxy is set, use https-proxy-agent
-    let agent;
-    if (provider.proxy) {
-      try {
-        agent = new HttpsProxyAgent(provider.proxy);
-      } catch (error) {
-        console.error(`Invalid proxy URL for provider: ${provider.proxy}`, error);
-        // Fallback: continue without agent for direct connection
-        agent = undefined;
-      }
-    }
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${provider.apiKey.trim()}`,
-      },
-      body: JSON.stringify(payload),
-      signal: this.abortController.signal,
-      ...(agent ? { agent } : {}),
-    });
-    return response;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${provider.apiKey.trim()}`,
+    };
+
+    return this.makeHttpRequest(url, headers, payload, true);
   }
 }

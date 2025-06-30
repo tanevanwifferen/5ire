@@ -19,16 +19,14 @@ import { raiseError, stripHtmlTags } from 'utils/util';
 const debug = Debug('5ire:intellichat:NextChatService');
 
 export default abstract class NextCharService {
+
   protected updateBuffer: string = '';
-
   protected reasoningBuffer: string = '';
-
   protected lastUpdateTime: number = 0;
-
   protected readonly UPDATE_INTERVAL: number = 100; // 100ms
+  protected currentRequestId?: string;
 
   name: string;
-
   abortController: AbortController;
   toolAbortController: AbortController | undefined = undefined;
 
@@ -162,9 +160,67 @@ export default abstract class NextCharService {
     return stripHtmlTags(content);
   }
 
+  protected async makeHttpRequest(
+    url: string,
+    headers: Record<string, string>,
+    payload: any,
+    isStream: boolean = true,
+  ): Promise<Response> {
+    const provider = this.context.getProvider();
+
+    if (provider.proxy) {
+      // 使用 electron.request 处理代理
+      const requestPromise = window.electron.request({
+        url,
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        proxy: provider.proxy,
+        isStream,
+      }).then((response: any) => {
+        this.currentRequestId = response.requestId;
+        return response;
+      });
+
+      // 创建 abort promise 监听取消信号
+      const abortPromise = new Promise((_, reject) => {
+        this.abortController.signal.addEventListener('abort', async () => {
+          if (this.currentRequestId) {
+            await window.electron.cancelRequest(this.currentRequestId);
+          }
+          reject(new DOMException('Request aborted', 'AbortError'));
+        });
+      });
+
+      try {
+        const response = await Promise.race([requestPromise, abortPromise]);
+        return new Response(response.text || response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: new Headers(response.headers),
+        });
+      } catch (error) {
+        if (this.currentRequestId) {
+          await window.electron.cancelRequest(this.currentRequestId);
+          this.currentRequestId = undefined;
+        }
+        throw error;
+      }
+    }
+
+    // 没有代理的情况，使用原生 fetch
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: this.abortController.signal,
+    });
+    return response;
+  }
+
   public abort() {
-    this.abortController?.abort();
-    this.toolAbortController?.abort();
+    this.abortController.abort();
+    this.currentRequestId = undefined;
   }
 
   public isToolsEnabled() {

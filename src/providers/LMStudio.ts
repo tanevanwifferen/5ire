@@ -3,8 +3,6 @@ import { IServiceProvider } from './types';
 export default {
   name: 'LMStudio',
   apiBase: 'http://localhost:1234',
-  // Example proxy configuration - replace with your actual proxy URL
-  proxy: 'http://localhost:8080',
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,

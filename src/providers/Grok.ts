@@ -105,8 +105,6 @@ const chatModels = [
 export default {
   name: 'Grok',
   apiBase: 'https://api.grok.com/v1',
-  // Example proxy configuration - replace with your actual proxy URL
-  proxy: 'http://localhost:8080',
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,

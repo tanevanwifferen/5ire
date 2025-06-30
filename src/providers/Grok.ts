@@ -104,7 +104,7 @@ const chatModels = [
 
 export default {
   name: 'Grok',
-  apiBase: 'https://api.grok.com/v1',
+  apiBase: 'https://api.x.ai/v1',
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,

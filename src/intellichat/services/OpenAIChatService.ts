@@ -272,7 +272,8 @@ export default class OpenAIChatService
         agent = new HttpsProxyAgent(provider.proxy);
       } catch (error) {
         console.error(`Invalid proxy URL for provider: ${provider.proxy}`, error);
-        throw error;
+        // Fallback: continue without agent for direct connection
+        agent = undefined;
       }
     }
     const response = await fetch(url, {

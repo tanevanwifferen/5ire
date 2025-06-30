@@ -20,7 +20,7 @@ export default {
       topP: 'An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with topP probability mass.',
     },
     placeholders: {
-      base: ' http://127.0.0.1:11434',
+      base: 'localhost:11434',
     },
     presencePenalty: { min: -2, max: 2, default: 0 },
     topP: { min: 0, max: 1, default: 1 },
@@ -34,7 +34,7 @@ export default {
   embedding: {
     apiSchema: ['base'],
     placeholders: {
-      base: ' http://127.0.0.1:11434',
+      base: 'localhost:11434',
     },
     options: {
       modelCustomizable: true,

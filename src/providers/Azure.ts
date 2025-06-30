@@ -261,9 +261,13 @@ const chatModels = [
   },
 ];
 
+// Define resourceName and deploymentId from environment variables
+const resourceName = process.env.AZURE_RESOURCE_NAME || '<your-resource-name>';
+const deploymentId = process.env.AZURE_DEPLOYMENT_ID || '<your-deployment-id>';
+
 export default {
   name: 'Azure',
-  apiBase: 'https://api.openai.azure.com/v1',
+  apiBase: `https://${resourceName}.openai.azure.com/openai/deployments/${deploymentId}`,
   // Example proxy configuration - replace with your actual proxy URL
   proxy: 'http://localhost:8080',
   apiVersion: '2024-12-01-preview',

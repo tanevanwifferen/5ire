@@ -263,9 +263,7 @@ const chatModels = [
 
 export default {
   name: 'Azure',
-  apiBase: `https://{resourceName}.openai.azure.com/openai/deployments/{deploymentId}`,
-  // Example proxy configuration - replace with your actual proxy URL
-  proxy: 'http://localhost:8080',
+  apiBase: '',
   apiVersion: '2024-12-01-preview',
   currency: 'USD',
   options: {
@@ -276,6 +274,8 @@ export default {
     apiSchema: ['base', 'key', 'version'],
     modelExtras: ['deploymentId'],
     docs: {
+      apiBase:
+        'https://{resourceName}.openai.azure.com/openai/deployments/{deploymentId}',
       deploymentId: 'The deployment name you chose when you deployed the model',
       temperature:
         'Higher values will make the output more creative and unpredictable, while lower values will make it more precise.',

@@ -273,6 +273,16 @@ export default class ModuleContext {
           PATH: process.env.PATH,
           ...(proxy
             ? {
+                // Basic validation: ensure proxy URL looks valid
+                ...((() => {
+                  try {
+                    new URL(proxy);
+                  } catch (error) {
+                    logging.error(`Invalid proxy URL: ${proxy}`, error);
+                    throw new Error(`Invalid proxy URL: ${proxy}`);
+                  }
+                  return {};
+                })()),
                 HTTP_PROXY: proxy,
                 HTTPS_PROXY: proxy,
                 ALL_PROXY: proxy,

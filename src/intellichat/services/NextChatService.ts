@@ -20,15 +20,12 @@ const debug = Debug('5ire:intellichat:NextChatService');
 
 export default abstract class NextCharService {
   protected updateBuffer: string = '';
-
   protected reasoningBuffer: string = '';
-
   protected lastUpdateTime: number = 0;
-
   protected readonly UPDATE_INTERVAL: number = 100; // 100ms
+  protected currentRequestId?: string;
 
   name: string;
-
   abortController: AbortController;
   toolAbortController: AbortController | undefined = undefined;
 
@@ -162,9 +159,123 @@ export default abstract class NextCharService {
     return stripHtmlTags(content);
   }
 
+  protected async makeHttpRequest(
+    url: string,
+    headers: Record<string, string>,
+    payload: any,
+    isStream: boolean = true,
+  ): Promise<Response> {
+    const provider = this.context.getProvider();
+
+    if (provider.proxy) {
+      // 使用 electron.request 处理代理
+      const requestPromise = window.electron
+        .request({
+          url,
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          proxy: provider.proxy,
+          isStream,
+        })
+        .then((response: any) => {
+          this.currentRequestId = response.requestId;
+
+          if (isStream && response.isStream) {
+            const stream = new ReadableStream({
+              start(controller) {
+                const handleData = (...args: unknown[]) => {
+                  const [requestId, chunk] = args as [string, Uint8Array];
+                  if (requestId === response.requestId) {
+                    controller.enqueue(chunk);
+                  }
+                };
+
+                const handleEnd = (...args: unknown[]) => {
+                  const [requestId] = args as [string];
+                  if (requestId === response.requestId) {
+                    controller.close();
+                    cleanup();
+                  }
+                };
+
+                const handleError = (...args: unknown[]) => {
+                  const [requestId, errorMessage] = args as [string, string];
+                  if (requestId === response.requestId) {
+                    controller.error(new Error(errorMessage));
+                    cleanup();
+                  }
+                };
+
+                const cleanup = () => {
+                  window.electron.ipcRenderer.unsubscribe(
+                    'stream-data',
+                    handleData,
+                  );
+                  window.electron.ipcRenderer.unsubscribe(
+                    'stream-end',
+                    handleEnd,
+                  );
+                  window.electron.ipcRenderer.unsubscribe(
+                    'stream-error',
+                    handleError,
+                  );
+                };
+
+                window.electron.ipcRenderer.on('stream-data', handleData);
+                window.electron.ipcRenderer.on('stream-end', handleEnd);
+                window.electron.ipcRenderer.on('stream-error', handleError);
+              },
+            });
+
+            return new Response(stream, {
+              status: response.status,
+              statusText: response.statusText,
+              headers: new Headers(response.headers),
+            });
+          } else {
+            // 非流响应，直接返回文本内容
+            return new Response(response.text || '', {
+              status: response.status,
+              statusText: response.statusText,
+              headers: new Headers(response.headers),
+            });
+          }
+        });
+
+      const abortPromise = new Promise<never>((_, reject) => {
+        this.abortController.signal.addEventListener('abort', async () => {
+          if (this.currentRequestId) {
+            await window.electron.cancelRequest(this.currentRequestId);
+          }
+          reject(new DOMException('Request aborted', 'AbortError'));
+        });
+      });
+
+      try {
+        const response = await Promise.race([requestPromise, abortPromise]);
+        return response;
+      } catch (error) {
+        if (this.currentRequestId) {
+          await window.electron.cancelRequest(this.currentRequestId);
+          this.currentRequestId = undefined;
+        }
+        throw error;
+      }
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: this.abortController.signal,
+    });
+    return response;
+  }
+
   public abort() {
-    this.abortController?.abort();
-    this.toolAbortController?.abort();
+    this.abortController.abort();
+    this.currentRequestId = undefined;
   }
 
   public isToolsEnabled() {
@@ -239,41 +350,59 @@ export default abstract class NextCharService {
       if (readResult.tool) {
         const [client, name] = readResult.tool.name.split('--');
         this.traceTool(chatId, name, '');
-        this.toolAbortController = new AbortController();
-        const toolCallsResult = await window.electron.mcp.callTool({
-          client,
-          name,
-          args: readResult.tool.args,
-          signal: this.toolAbortController.signal,
-        });
-        this.toolAbortController = undefined;
-        this.traceTool(
-          chatId,
-          'arguments',
-          JSON.stringify(readResult.tool.args, null, 2),
-        );
-        if (toolCallsResult.isError) {
-          const toolError =
-            toolCallsResult.content.length > 0
-              ? toolCallsResult.content[0]
-              : { error: 'Unknown error' };
-          this.traceTool(chatId, 'error', JSON.stringify(toolError, null, 2));
-        } else {
+
+        // 生成唯一的请求ID
+        const toolRequestId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // 监听主控制器取消事件
+        const abortHandler = async () => {
+          // 通知主进程取消工具调用
+          await window.electron.mcp.cancelToolCall(toolRequestId);
+        };
+
+        this.abortController.signal.addEventListener('abort', abortHandler);
+
+        try {
+          const toolCallsResult = await window.electron.mcp.callTool({
+            client,
+            name,
+            args: readResult.tool.args,
+            requestId: toolRequestId,
+          });
+
+          this.abortController.signal.removeEventListener('abort', abortHandler);
+
           this.traceTool(
             chatId,
-            'response',
-            JSON.stringify(toolCallsResult, null, 2),
+            'arguments',
+            JSON.stringify(readResult.tool.args, null, 2),
           );
+          if (toolCallsResult.isError) {
+            const toolError =
+              toolCallsResult.content.length > 0
+                ? toolCallsResult.content[0]
+                : { error: 'Unknown error' };
+            this.traceTool(chatId, 'error', JSON.stringify(toolError, null, 2));
+          } else {
+            this.traceTool(
+              chatId,
+              'response',
+              JSON.stringify(toolCallsResult, null, 2),
+            );
+          }
+          const messagesWithTool = [
+            ...messages,
+            ...this.makeToolMessages(
+              readResult.tool,
+              toolCallsResult,
+              readResult.content,
+            ),
+          ] as IChatRequestMessage[];
+          await this.chat(messagesWithTool);
+        } catch (error) {
+          this.abortController.signal.removeEventListener('abort', abortHandler);
+          throw error;
         }
-        const messagesWithTool = [
-          ...messages,
-          ...this.makeToolMessages(
-            readResult.tool,
-            toolCallsResult,
-            readResult.content,
-          ),
-        ] as IChatRequestMessage[];
-        await this.chat(messagesWithTool);
       } else {
         await this.onCompleteCallback({
           content: reply,

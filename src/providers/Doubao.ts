@@ -261,7 +261,7 @@ const chatModels = [
 
 export default {
   name: 'Doubao',
-  apiBase: 'https://ark.cn-beijing.volces.com/api/v3',
+  apiBase: 'https://api.doubao.com/v1',
   currency: 'CNY',
   options: {
     apiBaseCustomizable: true,

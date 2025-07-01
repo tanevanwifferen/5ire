@@ -164,4 +164,5 @@ export interface IChatProviderConfig {
   modelExtras?: string[];
   modelsEndpoint?: string;
   models: IChatModelConfig[];
+  proxy?: string;
 }

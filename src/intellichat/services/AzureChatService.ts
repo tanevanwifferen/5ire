@@ -24,15 +24,12 @@ export default class AzureChatService
       `/openai/deployments/${deploymentId}/chat/completions?api-version=${provider.apiVersion}`,
       provider.apiBase.trim(),
     );
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': provider.apiKey,
-      },
-      body: JSON.stringify(await this.makePayload(messages, msgId)),
-      signal: this.abortController.signal,
-    });
-    return response;
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${provider.apiKey.trim()}`,
+    };
+    const isStream = this.context.isStream();
+    const payload = await this.makePayload(messages, msgId);
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

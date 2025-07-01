@@ -102,7 +102,7 @@ const chatModels = [
         enabled: true,
       },
     },
-    description: `World’s best edge model`,
+    description: `World's best edge model`,
   },
 ];
 

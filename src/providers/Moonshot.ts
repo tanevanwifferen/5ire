@@ -45,7 +45,7 @@ const chatModels = [
 
 export default {
   name: 'Moonshot',
-  apiBase: 'https://api.moonshot.cn/v1',
+  apiBase: 'https://api.moonshot.com/v1',
   currency: 'CNY',
   options: {
     apiBaseCustomizable: true,

@@ -35,7 +35,7 @@ const chatModels = [
 
 export default {
   name: 'DeepSeek',
-  apiBase: 'https://api.deepseek.com',
+  apiBase: 'https://api.deepseek.com/v1',
   currency: 'CNY',
   options: {
     apiBaseCustomizable: true,

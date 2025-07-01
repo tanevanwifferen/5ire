@@ -121,14 +121,10 @@ export default class OllamaChatService
     debug('Send Request, payload:\r\n', payload);
     const provider = this.context.getProvider();
     const url = urlJoin('/api/chat', provider.apiBase.trim());
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      signal: this.abortController.signal,
-    });
-    return response;
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    const isStream = this.context.isStream();
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

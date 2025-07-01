@@ -37,10 +37,22 @@ export type Channels =
   | 'mcp-server-loaded'
   | 'install-tool-listener-ready'
   | 'show-context-menu'
-  | 'context-menu-command';
+  | 'context-menu-command'
+  | 'stream-data'
+  | 'stream-end'
+  | 'stream-error';
 
 const electronHandler = {
   upgrade: () => ipcRenderer.invoke('quit-and-upgrade'),
+  request: (options: {
+    url: string;
+    method: string;
+    headers?: Record<string, string>;
+    body?: string;
+    proxy?: string;
+    isStream?: boolean;
+  }) => ipcRenderer.invoke('request', options),
+  cancelRequest: (requestId: string) => ipcRenderer.invoke('cancel-request', requestId),
   store: {
     get(key: string, defaultValue?: any | undefined): any {
       return ipcRenderer.sendSync('get-store', key, defaultValue);
@@ -77,19 +89,22 @@ const electronHandler = {
       client,
       name,
       args,
-      signal,
+      requestId,
     }: {
       client: string;
       name: string;
       args: any;
-      signal?: AbortSignal;
+      requestId?: string;
     }) {
       return ipcRenderer.invoke('mcp-call-tool', {
         client,
         name,
         args,
-        signal,
+        requestId,
       });
+    },
+    cancelToolCall(requestId: string): Promise<void> {
+      return ipcRenderer.invoke('mcp-cancel-tool', requestId);
     },
     getConfig(): Promise<any> {
       return ipcRenderer.invoke('mcp-get-config');

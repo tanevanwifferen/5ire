@@ -264,15 +264,12 @@ export default class OpenAIChatService
     const payload = await this.makePayload(messages, msgId);
     const provider = this.context.getProvider();
     const url = urlJoin('/chat/completions', provider.apiBase.trim());
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${provider.apiKey.trim()}`,
-      },
-      body: JSON.stringify(payload),
-      signal: this.abortController.signal,
-    });
-    return response;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${provider.apiKey.trim()}`,
+    };
+    const isStream = this.context.isStream();
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

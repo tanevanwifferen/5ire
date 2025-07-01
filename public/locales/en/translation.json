@@ -327,5 +327,7 @@
   "Common.Remote": "Remote",
   "Knowledge.Notification.ImportError": "Failed to import file {{name}}",
   "Common.Citation": "Citation",
-  "Common.Action.Rename": "Rename"
+  "Common.Action.Rename": "Rename",
+  "Common.Proxy": "Proxy",
+  "Provider.Tooltip.InvalidProxyURL": "The proxy must be a valid URL address."
 }

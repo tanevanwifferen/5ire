@@ -316,5 +316,7 @@
   "Common.Local": "Local",
   "Common.Remote": "远程",
   "Common.Citation": "引用",
-  "Common.Action.Rename": "重命名"
+  "Common.Action.Rename": "重命名",
+  "Common.Proxy": "代理",
+  "Provider.Tooltip.InvalidProxyURL": "代理地址必须是合法的 URL 地址"
 }

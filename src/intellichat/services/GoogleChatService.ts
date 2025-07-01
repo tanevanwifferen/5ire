@@ -265,14 +265,10 @@ export default class GoogleChatService
       }?key=${provider.apiKey.trim()}`,
       provider.apiBase.trim(),
     );
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      signal: this.abortController.signal,
-    });
-    return response;
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    return this.makeHttpRequest(url, headers, payload, isStream);
   }
 }

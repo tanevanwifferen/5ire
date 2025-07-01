@@ -69,7 +69,7 @@ const chatModels = [
 
 export default {
   name: 'Baidu',
-  apiBase: 'https://qianfan.baidubce.com',
+  apiBase: 'https://api.baidu.com/v1',
   currency: 'CNY',
   options: {
     apiBaseCustomizable: false,

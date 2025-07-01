@@ -45,6 +45,17 @@ export function getDefaultEnvironment() {
   return env;
 }
 
+function validateAndGetProxy(proxyUrl: string): string {
+  try {
+    // 使用URL构造函数验证URL格式
+    const url = new URL(proxyUrl);
+    return url.toString();
+  } catch (error) {
+    logging.error(`Invalid proxy URL: ${proxyUrl}`, error);
+    throw new Error(`Invalid proxy URL: ${proxyUrl}`);
+  }
+}
+
 export default class ModuleContext {
   private clients: { [key: string]: any } = {};
 
@@ -57,6 +68,8 @@ export default class ModuleContext {
   private StreamableHTTPTransport: any;
 
   private cfgPath: string;
+
+  private activeToolCalls: Map<string, AbortController> = new Map();
 
   constructor() {
     this.cfgPath = path.join(app.getPath('userData'), 'mcp.json');
@@ -273,19 +286,9 @@ export default class ModuleContext {
           PATH: process.env.PATH,
           ...(proxy
             ? {
-                // Basic validation: ensure proxy URL looks valid
-                ...((() => {
-                  try {
-                    new URL(proxy);
-                  } catch (error) {
-                    logging.error(`Invalid proxy URL: ${proxy}`, error);
-                    throw new Error(`Invalid proxy URL: ${proxy}`);
-                  }
-                  return {};
-                })()),
-                HTTP_PROXY: proxy,
-                HTTPS_PROXY: proxy,
-                ALL_PROXY: proxy,
+                HTTP_PROXY: validateAndGetProxy(proxy),
+                HTTPS_PROXY: validateAndGetProxy(proxy),
+                ALL_PROXY: validateAndGetProxy(proxy),
               }
             : {}),
         };
@@ -434,12 +437,12 @@ export default class ModuleContext {
     client,
     name,
     args,
-    signal
+    requestId,
   }: {
     client: string;
     name: string;
     args: any;
-    signal?: AbortSignal;
+    requestId?: string;
   }) {
     if (!this.clients[client]) {
       return {
@@ -454,15 +457,31 @@ export default class ModuleContext {
         ],
       };
     }
+
+    const controller = new AbortController();
+    if (requestId) {
+      this.activeToolCalls.set(requestId, controller);
+    }
+
     const callFn = () =>
       this.clients[client].callTool({ name, arguments: args }, undefined, {
         timeout: CONNECT_TIMEOUT,
-        signal,
+        signal: controller.signal,
       });
+
     try {
       const result = await this.safeCall(client, callFn);
+      if (requestId && this.activeToolCalls) {
+        this.activeToolCalls.delete(requestId);
+      }
+
       return { isError: false, ...result };
     } catch (err: any) {
+      // 清理
+      if (requestId && this.activeToolCalls) {
+        this.activeToolCalls.delete(requestId);
+      }
+
       return {
         isError: true,
         content: [
@@ -474,6 +493,13 @@ export default class ModuleContext {
           },
         ],
       };
+    }
+  }
+  public cancelToolCall(requestId: string) {
+    if (this.activeToolCalls && this.activeToolCalls.has(requestId)) {
+      const controller = this.activeToolCalls.get(requestId);
+      controller?.abort();
+      this.activeToolCalls.delete(requestId);
     }
   }
 

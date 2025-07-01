@@ -5,7 +5,6 @@ import fs from 'node:fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
-import { ReadableStreamDefaultReader } from 'stream/web';
 import {
   app,
   dialog,
@@ -17,7 +16,7 @@ import {
   MessageBoxOptions,
   Menu,
 } from 'electron';
-import { ReadableStream } from 'node:stream/web';
+import { Readable } from 'node:stream';
 import crypto from 'crypto';
 import { autoUpdater } from 'electron-updater';
 import Store from 'electron-store';
@@ -301,7 +300,7 @@ const activeRequests = new Map<string, AbortController>();
 
 ipcMain.handle('request', async (event, options) => {
   const { url, method, headers, body, proxy, isStream } = options;
-
+  console.log(body);
   const requestId = Math.random().toString(36).substr(2, 9);
   const abortController = new AbortController();
   activeRequests.set(requestId, abortController);
@@ -329,37 +328,42 @@ ipcMain.handle('request', async (event, options) => {
 
     const response = await fetch(url, fetchOptions);
     activeRequests.delete(requestId);
+
     if (isStream) {
-      const reader = (
-        response.body as unknown as ReadableStream
-      )?.getReader() as ReadableStreamDefaultReader<Uint8Array>;
-      const stream = new ReadableStream({
-        start(controller) {
-          function pump(): any {
-            return reader?.read().then(({ done, value }) => {
-              if (abortController.signal.aborted) {
-                controller.close();
-                return;
-              }
-              if (done) {
-                controller.close();
-                return;
-              }
-              controller.enqueue(value);
-              return pump();
-            });
+      const nodeStream = response.body as Readable;
+
+      if (nodeStream) {
+        nodeStream.on('data', (chunk: Buffer) => {
+          if (!abortController.signal.aborted) {
+            event.sender.send('stream-data', requestId, new Uint8Array(chunk));
           }
-          return pump();
-        },
-      });
+        });
+
+        nodeStream.on('end', () => {
+          event.sender.send('stream-end', requestId);
+        });
+
+        nodeStream.on('error', (error) => {
+          event.sender.send('stream-error', requestId, error.message);
+        });
+
+        abortController.signal.addEventListener('abort', () => {
+          if (nodeStream && !nodeStream.destroyed) {
+            nodeStream.destroy(new Error('Request cancelled'));
+          }
+          event.sender.send('stream-end', requestId);
+        });
+      } else {
+        event.sender.send('stream-end', requestId);
+      }
 
       return {
         ok: response.ok,
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
-        body: stream,
         requestId,
+        isStream: true,
       };
     } else {
       const text = await response.text();
@@ -383,7 +387,6 @@ ipcMain.handle('request', async (event, options) => {
   }
 });
 
-// 处理取消请求
 ipcMain.handle('cancel-request', async (event, requestId: string) => {
   const controller = activeRequests.get(requestId);
   if (controller) {
@@ -705,7 +708,7 @@ ipcMain.handle(
   'mcp-call-tool',
   async (
     _,
-    args: { client: string; name: string; args: any; signal?: AbortSignal },
+    args: { client: string; name: string; args: any; requestId?: string },
   ) => {
     try {
       return await mcp.callTool(args);
@@ -723,6 +726,9 @@ ipcMain.handle(
     }
   },
 );
+ipcMain.handle('mcp-cancel-tool', (_, requestId: string) => {
+  mcp.cancelToolCall(requestId);
+});
 ipcMain.handle('mcp-get-config', () => {
   return mcp.getConfig();
 });

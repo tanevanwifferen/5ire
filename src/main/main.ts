@@ -863,7 +863,7 @@ const createWindow = async () => {
     minWidth: 468,
     minHeight: 600,
     frame: false,
-    titleBarStyle: 'hidden',
+
     ...(isMac
       ? {}
       : {

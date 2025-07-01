@@ -29,6 +29,7 @@ import ModelList from './ModelList';
 import ProviderForm from './ProviderForm';
 import ProviderList from './ProviderList';
 import { captureException } from '../../logging';
+import { WINDOWS_TITLE_BAR_HEIGHT } from 'consts';
 
 const debug = Debug('5ire:pages:providers:index');
 
@@ -219,14 +220,28 @@ export default function Providers() {
 
       <div
         className="-ml-5 -mr-5 grid grid-cols-4"
-        style={{ height: contentHeight - HEADER_HEIGHT }}
+        style={{
+          height:
+            window.electron.platform === 'darwin'
+              ? contentHeight - HEADER_HEIGHT
+              : contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT,
+        }}
       >
         <div
           className="border-r border-base relative "
-          style={{ height: contentHeight - HEADER_HEIGHT }}
+          style={{
+            height:
+              window.electron.platform === 'darwin'
+                ? contentHeight - HEADER_HEIGHT
+                : contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT,
+          }}
         >
           <ProviderList
-            height={contentHeight - (HEADER_HEIGHT + LIST_ITEM_HEIGHT)}
+            height={
+              window.electron.platform === 'darwin'
+                ? contentHeight - HEADER_HEIGHT
+                : contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT
+            }
           />
           <div className="absolute p-2 bottom-0 left-0 right-0 z-10 border-t border-base bg-white dark:bg-zinc-800/50">
             <Button

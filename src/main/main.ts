@@ -41,6 +41,7 @@ import {
 } from '../consts';
 import { IMCPServer } from 'types/mcp';
 import { isValidMCPServer, isValidMCPServerKey } from 'utils/validators';
+import { ThemeType } from 'types/appearance';
 
 dotenv.config({
   path: app.isPackaged
@@ -556,12 +557,34 @@ ipcMain.handle(
 ipcMain.handle('get-knowledge-chunk', async (_, chunkId: string) => {
   return await Knowledge.getChunk(chunkId);
 });
+
 ipcMain.handle('download', (_, fileName: string, url: string) => {
   downloader.download(fileName, url);
 });
 ipcMain.handle('cancel-download', (_, fileName: string) => {
   downloader.cancel(fileName);
 });
+
+ipcMain.on(
+  'titlebar:update-overlay',
+  (_, theme: Exclude<ThemeType, 'system'>) => {
+    // 只要 React 发消息过来，就更新
+    const themeColor = {
+      light: {
+        color: 'rgba(255, 255, 255, 0)',
+        height: 30,
+        symbolColor: 'black',
+      },
+      dark: {
+        color: 'rgba(0, 0, 0, 0)',
+        height: 30,
+        symbolColor: 'white',
+      },
+    };
+
+    mainWindow?.setTitleBarOverlay(themeColor[theme]);
+  },
+);
 
 /** mcp */
 ipcMain.handle('mcp-init', async () => {
@@ -723,6 +746,7 @@ const createWindow = async () => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
+  const isMac = process.platform === 'darwin';
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
@@ -730,6 +754,16 @@ const createWindow = async () => {
     minWidth: 468,
     minHeight: 600,
     frame: false,
+    titleBarStyle: 'hidden',
+    ...(isMac
+      ? {}
+      : {
+          titleBarOverlay: {
+            color: 'rgba(255, 255, 255, 0)',
+            height: 30,
+            symbolColor: 'black',
+          },
+        }),
     autoHideMenuBar: true,
     // trafficLightPosition: { x: 15, y: 18 },
     icon: getAssetPath('icon.png'),

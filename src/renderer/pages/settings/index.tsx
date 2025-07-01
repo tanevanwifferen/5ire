@@ -19,7 +19,9 @@ export default function Settings() {
           <h1 className="text-2xl">{t('Common.Settings')}</h1>
         </div>
       </div>
-      <div className="overflow-y-auto h-full pb-28 -mr-5 pr-5">
+      <div
+        className={`overflow-y-auto h-full  -mr-5 pr-5 ${window.electron.platform === 'darwin' ? 'pb-28' : 'pb-16'}`}
+      >
         <div className="settings-section">
           <div className="settings-section--header">{t('Common.API')}</div>
           <div className="py-4 flex-grow mt-1 gap-1">

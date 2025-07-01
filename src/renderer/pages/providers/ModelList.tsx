@@ -19,7 +19,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import TooltipIcon from 'renderer/components/TooltipIcon';
 import useProviderStore from 'stores/useProviderStore';
-import { ERROR_MODEL } from 'consts';
+import { ERROR_MODEL, WINDOWS_TITLE_BAR_HEIGHT } from 'consts';
 import ModelFormDrawer from './ModelFormDrawer';
 import CapabilityTag from './CapabilityTag';
 
@@ -133,7 +133,15 @@ export default function ModelList({ height = 400 }: { height?: number }) {
           </Button>
         </div>
       </div>
-      <div className="overflow-y-auto" style={{ height: height - 35 }}>
+      <div
+        className="overflow-y-auto"
+        style={{
+          height:
+            window.electron.platform === 'darwin'
+              ? height - 35
+              : height - 35 - WINDOWS_TITLE_BAR_HEIGHT,
+        }}
+      >
         {filteredModels.length === 0 ? (
           <div className="flex flex-col justify-center items-center h-96">
             <p className="tips">{t('Common.NoModels')}</p>

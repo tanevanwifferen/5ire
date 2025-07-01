@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { TEMP_CHAT_ID } from 'consts';
+import { TEMP_CHAT_ID, WINDOWS_TITLE_BAR_HEIGHT } from 'consts';
 import useToast from 'hooks/useToast';
 import useToken from 'hooks/useToken';
 
@@ -35,7 +35,7 @@ import {
 import useAppearanceStore from 'stores/useAppearanceStore';
 import createService from 'intellichat/services';
 import eventBus from 'utils/bus';
-import ChatContext, { createChatContext } from '../../ChatContext';
+import { createChatContext } from '../../ChatContext';
 import Header from './Header';
 import Messages from './Messages';
 import Editor from './Editor';
@@ -66,7 +66,6 @@ export default function Chat() {
   const chatContext = useMemo(() => {
     return createChatContext(activeChatId);
   }, [activeChatId]);
-
 
   const [verticalSizes, setVerticalSizes] = useState(['auto', 200]);
   const [horizontalSizes, setHorizontalSizes] = useState(['auto', 0]);
@@ -447,7 +446,16 @@ ${prompt}
   }, [messages]);
 
   return (
-    <div id="chat" className="relative h-screen flex flex-start -mx-5 ">
+    <div
+      id="chat"
+      className="relative  flex flex-start -mx-5 "
+      style={{
+        height:
+          window.electron.platform === 'darwin'
+            ? '100vh'
+            : `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`,
+      }}
+    >
       <SplitPane
         split="vertical"
         sizes={horizontalSizes}
@@ -456,7 +464,15 @@ ${prompt}
       >
         <div>
           <Header />
-          <div className="h-screen mt-10">
+          <div
+            className=" mt-10"
+            style={{
+              height:
+                window.electron.platform === 'darwin'
+                  ? '100vh'
+                  : `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`,
+            }}
+          >
             <SplitPane
               split="horizontal"
               sizes={verticalSizes}

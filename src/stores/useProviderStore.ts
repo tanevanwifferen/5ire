@@ -199,6 +199,7 @@ const mergeProviders = (
       description:
         customProvider?.description || builtInProvider?.description || '',
       schema: builtInProvider?.chat?.apiSchema || ['base'],
+      proxy: customProvider?.proxy || '',
       apiBase: customProvider?.apiBase || builtInProvider?.apiBase,
       apiKey: customProvider?.apiKey || '',
       apiVersion: customProvider?.apiVersion || builtInProvider?.apiVersion,

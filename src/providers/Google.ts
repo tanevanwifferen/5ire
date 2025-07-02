@@ -174,7 +174,7 @@ export default {
     apiKeyCustomizable: true,
   },
   chat: {
-    apiSchema: ['base', 'key'],
+    apiSchema: ['base', 'key', 'proxy'],
     presencePenalty: { min: -2, max: 2, default: 0 },
     topP: { min: 0, max: 1, default: 1 },
     temperature: { min: 0, max: 1, default: 0.9 },

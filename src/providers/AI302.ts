@@ -10,7 +10,7 @@ export default {
     modelsEndpoint: '/models?llm=1',
   },
   chat: {
-    apiSchema: ['base', 'key'],
+    apiSchema: ['base', 'key', 'proxy'],
     docs: {
       temperature:
         'Higher values will make the output more creative and unpredictable, while lower values will make it more precise.',

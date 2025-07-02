@@ -9,7 +9,7 @@ export default {
     modelsEndpoint: '/api/tags',
   },
   chat: {
-    apiSchema: ['base'],
+    apiSchema: ['base', 'proxy'],
     docs: {
       temperature:
         'Higher values will make the output more creative and unpredictable, while lower values will make it more precise.',

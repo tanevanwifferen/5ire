@@ -271,7 +271,7 @@ export default {
     apiKeyCustomizable: true,
   },
   chat: {
-    apiSchema: ['base', 'key', 'version'],
+    apiSchema: ['base', 'key', 'version', 'proxy'],
     modelExtras: ['deploymentId'],
     docs: {
       apiBase:

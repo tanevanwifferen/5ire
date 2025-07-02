@@ -277,7 +277,7 @@ export default {
       topP: 'An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with topP probability mass.',
       model: '用于统计用量和控制上下文长度，请选择与部署一致的模型',
     },
-    apiSchema: ['base', 'key'],
+    apiSchema: ['base', 'key', 'proxy'],
     modelExtras: ['modelId'],
     frequencyPenalty: { min: -2, max: 2, default: 0 },
     topP: { min: 0, max: 1, default: 0.7 },

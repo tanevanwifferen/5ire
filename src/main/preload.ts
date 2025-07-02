@@ -221,7 +221,7 @@ const electronHandler = {
   platform: platform(),
   titleBarAPI: {
     updateOverlay: (theme: ThemeType) =>
-      ipcRenderer.send('titlebar:update-overlay', theme),
+      ipcRenderer.send('titlebar-update-overlay', theme),
   },
 };
 

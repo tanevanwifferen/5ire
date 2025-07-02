@@ -56,6 +56,7 @@ logging.init();
 
 logging.info('Main process start...');
 
+const isDarwin = process.platform === 'darwin';
 const mcp = new ModuleContext();
 const store = new Store();
 
@@ -672,23 +673,23 @@ ipcMain.handle('cancel-download', (_, fileName: string) => {
 });
 
 ipcMain.on(
-  'titlebar:update-overlay',
+  'titlebar-update-overlay',
   (_, theme: Exclude<ThemeType, 'system'>) => {
-    // 只要 React 发消息过来，就更新
-    const themeColor = {
-      light: {
-        color: 'rgba(255, 255, 255, 0)',
-        height: 30,
-        symbolColor: 'black',
-      },
-      dark: {
-        color: 'rgba(0, 0, 0, 0)',
-        height: 30,
-        symbolColor: 'white',
-      },
-    };
-
-    mainWindow?.setTitleBarOverlay(themeColor[theme]);
+    if (!isDarwin) {
+      const themeColor = {
+        light: {
+          color: 'rgba(255, 255, 255, 0)',
+          height: 30,
+          symbolColor: 'black',
+        },
+        dark: {
+          color: 'rgba(0, 0, 0, 0)',
+          height: 30,
+          symbolColor: 'white',
+        },
+      };
+      mainWindow?.setTitleBarOverlay!(themeColor[theme]);
+    }
   },
 );
 
@@ -855,7 +856,6 @@ const createWindow = async () => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
-  const isWin = process.platform === 'win32';
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
@@ -863,20 +863,20 @@ const createWindow = async () => {
     minWidth: 468,
     minHeight: 600,
     frame: false,
-    ...(isWin
-      ? {
+    ...(isDarwin
+      ? {}
+      : {
           titleBarStyle: 'hidden',
-        }
-      : {}),
-    ...(isWin
-      ? {
+        }),
+    ...(isDarwin
+      ? {}
+      : {
           titleBarOverlay: {
-            color: 'rgba(255, 255, 255, 0)',
+            color: 'rgba(220, 220, 220, 0)',
             height: 30,
             symbolColor: 'black',
           },
-        }
-      : {}),
+        }),
     autoHideMenuBar: true,
     // trafficLightPosition: { x: 15, y: 18 },
     icon: getAssetPath('icon.png'),

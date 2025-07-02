@@ -20,7 +20,7 @@ export default function Settings() {
         </div>
       </div>
       <div
-        className={`overflow-y-auto h-full  -mr-5 pr-5 ${window.electron.platform === 'darwin' ? 'pb-28' : 'pb-16'}`}
+        className={`overflow-y-auto h-full  -mr-5 pr-5 ${window.electron.platform === 'win32' ? 'pb-16' : 'pb-28'} `}
       >
         <div className="settings-section">
           <div className="settings-section--header">{t('Common.API')}</div>

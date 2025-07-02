@@ -222,25 +222,25 @@ export default function Providers() {
         className="-ml-5 -mr-5 grid grid-cols-4"
         style={{
           height:
-            window.electron.platform === 'darwin'
-              ? contentHeight - HEADER_HEIGHT
-              : contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT,
+            window.electron.platform === 'win32'
+              ? contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT
+              : contentHeight - HEADER_HEIGHT,
         }}
       >
         <div
           className="border-r border-base relative "
           style={{
             height:
-              window.electron.platform === 'darwin'
-                ? contentHeight - HEADER_HEIGHT
-                : contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT,
+              window.electron.platform === 'win32'
+                ? contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT
+                : contentHeight - HEADER_HEIGHT,
           }}
         >
           <ProviderList
             height={
-              window.electron.platform === 'darwin'
-                ? contentHeight - HEADER_HEIGHT
-                : contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT
+              window.electron.platform === 'win32'
+                ? contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT
+                : contentHeight - HEADER_HEIGHT
             }
           />
           <div className="absolute p-2 bottom-0 left-0 right-0 z-10 border-t border-base bg-white dark:bg-zinc-800/50">

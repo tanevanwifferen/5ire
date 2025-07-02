@@ -451,9 +451,9 @@ ${prompt}
       className="relative  flex flex-start -mx-5 "
       style={{
         height:
-          window.electron.platform === 'darwin'
-            ? '100vh'
-            : `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`,
+          window.electron.platform === 'win32'
+            ? `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`
+            : '100vh',
       }}
     >
       <SplitPane
@@ -468,9 +468,9 @@ ${prompt}
             className=" mt-10"
             style={{
               height:
-                window.electron.platform === 'darwin'
-                  ? '100vh'
-                  : `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`,
+                window.electron.platform === 'win32'
+                  ? `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`
+                  : '100vh',
             }}
           >
             <SplitPane

@@ -38,7 +38,7 @@ export default function AppHeader() {
   const { t } = useTranslation();
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
 
-  const isMac = window.electron.platform === 'darwin';
+  const isWin = window.electron.platform === 'win32';
 
   const NetworkStatusIcon = useOnlineStatus() ? (
     <Popover withArrow size="small" closeOnScroll>
@@ -72,9 +72,9 @@ export default function AppHeader() {
       <div
         className={`app-header z-30   pb-2 w-auto ${
           collapsed ? 'md:w-[10rem]' : 'md:w-[17rem]'
-        } flex  ${isMac ? 'items-center pl-20 pt-1.5' : 'items-start pl-2 p-10'}`}
+        } flex  ${isWin ? 'items-start pl-2 p-10' : 'items-center pl-20 pt-1.5'}`}
       >
-        {isMac && <TrafficLights />}
+        {!isWin && <TrafficLights />}
 
         <div className="block md:hidden pl-1">
           <Button

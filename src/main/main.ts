@@ -855,7 +855,7 @@ const createWindow = async () => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
-  const isMac = process.platform === 'darwin';
+  const isWin = process.platform === 'win32';
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
@@ -863,16 +863,20 @@ const createWindow = async () => {
     minWidth: 468,
     minHeight: 600,
     frame: false,
-
-    ...(isMac
-      ? {}
-      : {
+    ...(isWin
+      ? {
+          titleBarStyle: 'hidden',
+        }
+      : {}),
+    ...(isWin
+      ? {
           titleBarOverlay: {
             color: 'rgba(255, 255, 255, 0)',
             height: 30,
             symbolColor: 'black',
           },
-        }),
+        }
+      : {}),
     autoHideMenuBar: true,
     // trafficLightPosition: { x: 15, y: 18 },
     icon: getAssetPath('icon.png'),

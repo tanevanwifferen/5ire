@@ -62,9 +62,9 @@ export default function Sidebar({ chatId }: { chatId: string }) {
         className=" overflow-x-hidden overflow-y-auto break-word -ml-2.5 pb-14"
         style={{
           height:
-            window.electron.platform === 'darwin'
-              ? '100vh'
-              : `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`,
+            window.electron.platform === 'win32'
+              ? `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`
+              : '100vh',
         }}
       >
         {trace.length > 0 ? (

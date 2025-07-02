@@ -130,7 +130,7 @@ export default function FluentApp() {
       data-theme={theme}
     >
       <div className=" flex flex-col h-screen">
-        {window.electron.platform !== 'darwin' && <WindowsTitleBar />}
+        {window.electron.platform === 'win32' && <WindowsTitleBar />}
         <div className=" flex-1">
           <Router>
             <AppHeader />
@@ -139,9 +139,9 @@ export default function FluentApp() {
               className={`relative flex  w-full overflow-hidden main-container ${fontSizeCls}`}
               style={{
                 height:
-                  window.electron.platform === 'darwin'
-                    ? '100vh'
-                    : `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`,
+                  window.electron.platform === 'win32'
+                    ? `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`
+                    : '100vh',
               }}
             >
               <AppSidebar />

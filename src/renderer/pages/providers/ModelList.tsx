@@ -137,9 +137,9 @@ export default function ModelList({ height = 400 }: { height?: number }) {
         className="overflow-y-auto"
         style={{
           height:
-            window.electron.platform === 'darwin'
-              ? height - 35
-              : height - 35 - WINDOWS_TITLE_BAR_HEIGHT,
+            window.electron.platform === 'win32'
+              ? height - 35 - WINDOWS_TITLE_BAR_HEIGHT
+              : height - 35,
         }}
       >
         {filteredModels.length === 0 ? (

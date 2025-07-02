@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { TEMP_CHAT_ID, WINDOWS_TITLE_BAR_HEIGHT } from 'consts';
+import { TEMP_CHAT_ID } from 'consts';
 import useToast from 'hooks/useToast';
 import useToken from 'hooks/useToken';
 
@@ -23,6 +23,7 @@ import useKnowledgeStore from 'stores/useKnowledgeStore';
 import SplitPane, { Pane } from 'split-pane-react';
 import Empty from 'renderer/components/Empty';
 
+import useUI from 'hooks/useUI';
 import useUsageStore from 'stores/useUsageStore';
 import useNav from 'hooks/useNav';
 import { debounce } from 'lodash';
@@ -57,6 +58,7 @@ export default function Chat() {
   const anchor = useParams().anchor || null;
   const bus = useRef(eventBus);
   const navigate = useNav();
+  const { heightStyle } = useUI();
   const [activeChatId, setActiveChatId] = useState(id);
   if (activeChatId !== id) {
     setActiveChatId(id);
@@ -450,10 +452,7 @@ ${prompt}
       id="chat"
       className="relative  flex flex-start -mx-5 "
       style={{
-        height:
-          window.electron.platform === 'darwin'
-            ? '100vh'
-            : `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`,
+        height: heightStyle(),
       }}
     >
       <SplitPane
@@ -467,10 +466,7 @@ ${prompt}
           <div
             className=" mt-10"
             style={{
-              height:
-                window.electron.platform === 'darwin'
-                  ? '100vh'
-                  : `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`,
+              height: heightStyle(),
             }}
           >
             <SplitPane

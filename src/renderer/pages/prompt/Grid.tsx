@@ -43,6 +43,7 @@ import { useTranslation } from 'react-i18next';
 import { fmtDateTime, unix2date, highlight, date2unix } from 'utils/util';
 import usePromptStore from 'stores/usePromptStore';
 import useToast from 'hooks/useToast';
+import useUI from 'hooks/useUI';
 import { IPromptDef } from '../../../intellichat/types';
 
 const EditIcon = bundleIcon(EditFilled, EditRegular);
@@ -63,6 +64,7 @@ export default function Grid({
   keyword: string;
 }) {
   const { t } = useTranslation();
+  const { calcHeight } = useUI();
   const [delConfirmDialogOpen, setDelConfirmDialogOpen] =
     useState<boolean>(false);
   const [innerHeight, setInnerHeight] = useState(window.innerHeight);
@@ -256,7 +258,10 @@ export default function Grid({
             )}
           </DataGridRow>
         </DataGridHeader>
-        <DataGridBody<Item> itemSize={50} height={innerHeight - 155}>
+        <DataGridBody<Item>
+          itemSize={50}
+          height={calcHeight(innerHeight - 155)}
+        >
           {renderRow}
         </DataGridBody>
       </DataGrid>

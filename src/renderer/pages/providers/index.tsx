@@ -25,17 +25,16 @@ import useProviderStore from 'stores/useProviderStore';
 import useToast from 'hooks/useToast';
 import useAuthStore from 'stores/useAuthStore';
 import StateButton from 'renderer/components/StateButton';
+import useUI from 'hooks/useUI';
 import ModelList from './ModelList';
 import ProviderForm from './ProviderForm';
 import ProviderList from './ProviderList';
 import { captureException } from '../../logging';
-import { WINDOWS_TITLE_BAR_HEIGHT } from 'consts';
 
 const debug = Debug('5ire:pages:providers:index');
 
 const DEFAULT_HEIGHT = 400;
 const HEADER_HEIGHT = 90;
-const LIST_ITEM_HEIGHT = 42;
 
 const AddIcon = bundleIcon(AddCircleFilled, AddCircleRegular);
 const CloudArrowUpIcon = bundleIcon(
@@ -52,6 +51,7 @@ export default function Providers() {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const { overwrite } = useProviderStore();
+  const { heightStyle, calcHeight } = useUI();
   const { notifyInfo, notifyError, notifySuccess } = useToast();
   const [updated, setUpdated] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -221,27 +221,17 @@ export default function Providers() {
       <div
         className="-ml-5 -mr-5 grid grid-cols-4"
         style={{
-          height:
-            window.electron.platform === 'darwin'
-              ? contentHeight - HEADER_HEIGHT
-              : contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT,
+          height: heightStyle(contentHeight - HEADER_HEIGHT),
         }}
       >
         <div
           className="border-r border-base relative "
           style={{
-            height:
-              window.electron.platform === 'darwin'
-                ? contentHeight - HEADER_HEIGHT
-                : contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT,
+            height: heightStyle(contentHeight - HEADER_HEIGHT),
           }}
         >
           <ProviderList
-            height={
-              window.electron.platform === 'darwin'
-                ? contentHeight - HEADER_HEIGHT
-                : contentHeight - HEADER_HEIGHT - WINDOWS_TITLE_BAR_HEIGHT
-            }
+            height={calcHeight(contentHeight - HEADER_HEIGHT) as number}
           />
           <div className="absolute p-2 bottom-0 left-0 right-0 z-10 border-t border-base bg-white dark:bg-zinc-800/50">
             <Button
@@ -266,11 +256,11 @@ export default function Providers() {
                 <ProviderForm />
               </div>
               <ModelList
-                height={
+                height={calcHeight(
                   contentHeight -
-                  (HEADER_HEIGHT +
-                    (providerFormRef.current?.offsetHeight || 153))
-                }
+                    HEADER_HEIGHT -
+                    (providerFormRef.current?.offsetHeight || 153),
+                )}
               />
             </div>
           )}

@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import Debug from 'debug';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import { WINDOWS_TITLE_BAR_HEIGHT } from 'consts';
 import {
   FluentProvider,
   Toaster,
@@ -12,6 +11,8 @@ import {
 } from '@fluentui/react-components';
 import { useTranslation } from 'react-i18next';
 import Providers from 'renderer/pages/providers';
+import useUI from 'hooks/useUI';
+import usePlatform from 'hooks/usePlatform';
 import { captureException } from '../logging';
 import useSettingsStore from '../../stores/useSettingsStore';
 import useAppearanceStore from '../../stores/useAppearanceStore';
@@ -70,6 +71,8 @@ darkTheme.colorBrandForeground2 = fire[130];
 
 export default function FluentApp() {
   const { i18n } = useTranslation();
+  const { isDarwin } = usePlatform();
+  const { heightStyle } = useUI();
   const themeSettings = useSettingsStore((state) => state.theme);
   const theme = useAppearanceStore((state) => state.theme);
   const fontSize = useSettingsStore((state) => state.fontSize);
@@ -130,7 +133,7 @@ export default function FluentApp() {
       data-theme={theme}
     >
       <div className=" flex flex-col h-screen">
-        {window.electron.platform !== 'darwin' && <WindowsTitleBar />}
+        {!isDarwin && <WindowsTitleBar />}
         <div className=" flex-1">
           <Router>
             <AppHeader />
@@ -138,10 +141,7 @@ export default function FluentApp() {
             <div
               className={`relative flex  w-full overflow-hidden main-container ${fontSizeCls}`}
               style={{
-                height:
-                  window.electron.platform === 'darwin'
-                    ? '100vh'
-                    : `calc(100vh - ${WINDOWS_TITLE_BAR_HEIGHT}px)`,
+                height: heightStyle(),
               }}
             >
               <AppSidebar />

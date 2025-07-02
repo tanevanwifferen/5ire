@@ -19,6 +19,7 @@ import {
 } from '@fluentui/react-icons';
 import useOnlineStatus from 'hooks/useOnlineStatus';
 import { useTranslation } from 'react-i18next';
+import usePlatform from 'hooks/usePlatform';
 import useAppearanceStore from '../../../stores/useAppearanceStore';
 import './AppHeader.scss';
 import SearchDialog from '../SearchDialog';
@@ -31,14 +32,13 @@ const OnlineIcon = bundleIcon(Wifi124Filled, Wifi124Regular);
 const OfflineIcon = bundleIcon(WifiOff24Filled, WifiOff24Regular);
 
 export default function AppHeader() {
+  const { isDarwin } = usePlatform();
   const collapsed = useAppearanceStore((state) => state.sidebar.collapsed);
   const toggleSidebarVisibility = useAppearanceStore(
     (state) => state.toggleSidebarVisibility,
   );
   const { t } = useTranslation();
   const [searchOpen, setSearchOpen] = useState<boolean>(false);
-
-  const isMac = window.electron.platform === 'darwin';
 
   const NetworkStatusIcon = useOnlineStatus() ? (
     <Popover withArrow size="small" closeOnScroll>
@@ -72,9 +72,9 @@ export default function AppHeader() {
       <div
         className={`app-header z-30   pb-2 w-auto ${
           collapsed ? 'md:w-[10rem]' : 'md:w-[17rem]'
-        } flex  ${isMac ? 'items-center pl-20 pt-1.5' : 'items-start pl-2 p-10'}`}
+        } flex  ${isDarwin ? 'items-center pl-20 pt-1.5' : 'items-start pl-2 p-10'}`}
       >
-        {isMac && <TrafficLights />}
+        {isDarwin && <TrafficLights />}
 
         <div className="block md:hidden pl-1">
           <Button

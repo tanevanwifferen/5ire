@@ -238,6 +238,15 @@ const mergeProviders = (
   return mergedProviders.sort(sortByName);
 };
 
+// 添加缓存相关的类型和对象
+interface ModelCache {
+  models: IChatModelConfig[];
+  timestamp: number;
+}
+
+const modelsCache: Record<string, ModelCache> = {};
+const CACHE_EXPIRY_TIME = 60 * 1000; // 1 mins
+
 export interface IProviderStore {
   providers: IChatProviderConfig[];
   provider: IChatProviderConfig | null;
@@ -273,6 +282,7 @@ export interface IProviderStore {
   createModel: (model: IChatModelConfig) => void;
   updateModel: (model: Partial<IChatModelConfig> & { id: string }) => void;
   deleteModel: (modelId: string) => void;
+  clearModelsCache: (providerName?: string) => void;
 }
 
 const useProviderStore = create<IProviderStore>((set, get) => ({
@@ -321,6 +331,7 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
     });
   },
   updateProvider: (name: string, provider: Partial<IChatProviderConfig>) => {
+    const { clearModelsCache } = get();
     const customProviders = window.electron.store.get('providers') || [];
     let found = false;
     const newProvider = omit(provider, ['isBuiltIn', 'isReady', 'isPremium']);
@@ -342,6 +353,10 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
     if (!found) {
       updatedProviders.push({ ...newProvider, name } as IChatProviderConfig);
     }
+
+    // 清除该提供商的缓存
+    clearModelsCache(name);
+
     window.electron.store.set('providers', updatedProviders);
     const providers = mergeProviders(updatedProviders);
     set({ providers });
@@ -435,43 +450,66 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
   },
   getModels: async (
     provider: IChatProviderConfig,
-    options?: { withDisabled?: boolean; signal?: AbortSignal },
+    options?: {
+      withDisabled?: boolean;
+      signal?: AbortSignal;
+      forceRefresh?: boolean;
+    },
   ) => {
     let $models: IChatModelConfig[] = [];
     if (provider.modelsEndpoint) {
-      const modelsMap = keyBy(provider.models || [], 'name');
-      try {
-        const headers = {
-          'Content-Type': 'application/json',
-        } as any;
-        if (provider.apiKey) {
-          headers.Authorization = `Bearer ${provider.apiKey}`;
-        }
-        const resp = await fetch(
-          `${provider.apiBase}${provider.modelsEndpoint}`,
-          {
-            method: 'GET',
-            headers,
-            signal: options?.signal,
-          },
-        );
-        const data = await resp.json();
-        $models = (data.models || data.data || [])
-          .filter(
-            (model: { id?: string; name: string }) =>
-              (model.id || model.name).indexOf('embed') < 0,
-          )
-          .map((model: { id?: string; name: string }) => {
-            const modelName = model.id || model.name;
-            const customModel = modelsMap[modelName];
-            delete modelsMap[modelName];
-            return mergeRemoteModel(modelName, {
-              ...customModel,
-              isFromApi: true,
+      // 为每个提供商生成唯一的缓存键
+      const cacheKey = `${provider.name}_${provider.apiBase}_${provider.modelsEndpoint}`;
+      const now = Date.now();
+
+      // 检查缓存是否有效且未过期，同时确保不是强制刷新
+      if (
+        !options?.forceRefresh &&
+        modelsCache[cacheKey] &&
+        now - modelsCache[cacheKey].timestamp < CACHE_EXPIRY_TIME
+      ) {
+        $models = modelsCache[cacheKey].models;
+      } else {
+        const modelsMap = keyBy(provider.models || [], 'name');
+        try {
+          const headers = {
+            'Content-Type': 'application/json',
+          } as any;
+          if (provider.apiKey) {
+            headers.Authorization = `Bearer ${provider.apiKey}`;
+          }
+          const resp = await fetch(
+            `${provider.apiBase}${provider.modelsEndpoint}`,
+            {
+              method: 'GET',
+              headers,
+              signal: options?.signal,
+            },
+          );
+          const data = await resp.json();
+          $models = (data.models || data.data || [])
+            .filter(
+              (model: { id?: string; name: string }) =>
+                (model.id || model.name).indexOf('embed') < 0,
+            )
+            .map((model: { id?: string; name: string }) => {
+              const modelName = model.id || model.name;
+              const customModel = modelsMap[modelName];
+              delete modelsMap[modelName];
+              return mergeRemoteModel(modelName, {
+                ...customModel,
+                isFromApi: true,
+              });
             });
-          });
-      } catch (e) {
-        $models = [ErrorModel];
+
+          // 更新缓存
+          modelsCache[cacheKey] = {
+            models: $models,
+            timestamp: now,
+          };
+        } catch (e) {
+          $models = [ErrorModel];
+        }
       }
     } else {
       $models = getMergedLocalModels(provider);
@@ -567,6 +605,22 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
       ),
     };
     updateProvider(provider.name, updatedProvider);
+  },
+
+  clearModelsCache: (providerName?: string) => {
+    if (providerName) {
+      // 清除特定提供商的缓存
+      Object.keys(modelsCache).forEach((key) => {
+        if (key.startsWith(`${providerName}_`)) {
+          delete modelsCache[key];
+        }
+      });
+    } else {
+      // 清除所有缓存
+      Object.keys(modelsCache).forEach((key) => {
+        delete modelsCache[key];
+      });
+    }
   },
 }));
 

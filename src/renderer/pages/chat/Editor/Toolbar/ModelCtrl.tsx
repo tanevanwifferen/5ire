@@ -1,5 +1,7 @@
 import {
   Button,
+  Field,
+  Input,
   Menu,
   MenuItem,
   MenuList,
@@ -18,6 +20,8 @@ import { captureException } from 'renderer/logging';
 import useChatStore from 'stores/useChatStore';
 import useProviderStore from 'stores/useProviderStore';
 
+const MAX_MODELS = 15;
+
 export default function ModelCtrl({
   chat,
   ctx,
@@ -31,6 +35,7 @@ export default function ModelCtrl({
   const providers = useMemo(() => {
     return getAvailableProviders().filter((provider) => !provider.disabled);
   }, [getAvailableProviders]);
+  const [query, setQuery] = useState('');
   const [curProvider, setCurProvider] = useState<IChatProviderConfig>();
   const [curModel, setCurModel] = useState<IChatModelConfig>();
   const [models, setModels] = useState<IChatModelConfig[]>([]);
@@ -39,6 +44,21 @@ export default function ModelCtrl({
   const [menuModelOpen, setMenuModelOpen] = useState(false);
   const [menuProviderOpen, setMenuProviderOpen] = useState(false);
   const abortController = useRef<AbortController | null>(null);
+
+  const filteredModels = useMemo(() => {
+    return models
+      .filter((model) => {
+        if (query.trim() === '') {
+          return true;
+        }
+        const searchTerm = query.toLowerCase();
+        return (
+          model.name.toLowerCase().includes(searchTerm) ||
+          model.label?.toLowerCase().includes(searchTerm)
+        );
+      })
+      .splice(0, MAX_MODELS);
+  }, [query, models]);
 
   const loadModels = useCallback(
     async function (provider: IChatProviderConfig) {
@@ -93,7 +113,7 @@ export default function ModelCtrl({
       setCurModel(undefined);
       setModels([]);
     };
-  }, [chat.id, chat.provider, chat.model]);
+  }, [chat.id, chat.provider]);
 
   useEffect(() => {
     if (curProvider) {
@@ -224,8 +244,21 @@ export default function ModelCtrl({
         </MenuTrigger>
         <MenuPopover>
           <MenuList>
+            {models.length > MAX_MODELS && (
+              <MenuItem disabled>
+                <Field>
+                  <Input
+                    size="small"
+                    placeholder={t('Common.Search')}
+                    onInput={(e) => {
+                      setQuery((e.target as HTMLInputElement).value);
+                    }}
+                  />
+                </Field>
+              </MenuItem>
+            )}
             {models.length > 0 ? (
-              models.map((model: IChatModelConfig) => (
+              filteredModels.map((model: IChatModelConfig) => (
                 <MenuItem
                   key={model.name}
                   disabled={!model.isReady}
@@ -241,7 +274,7 @@ export default function ModelCtrl({
                 >
                   <div className="flex justify-start items-center gap-1 text-sm py-1">
                     <ToolStatusIndicator model={model} withTooltip />
-                    <div className="-mt-[3px]">
+                    <div className="-mt-[3px] overflow-x-hidden text-ellipsis whitespace-nowrap max-w-32 sm:max-w-48">
                       <span> {model.label || model.name}</span>
                       {curModel?.name === model.name && <span>✓</span>}
                     </div>

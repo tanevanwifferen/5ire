@@ -35,7 +35,7 @@ import {
 import useAppearanceStore from 'stores/useAppearanceStore';
 import createService from 'intellichat/services';
 import eventBus from 'utils/bus';
-import ChatContext, { createChatContext } from '../../ChatContext';
+import { createChatContext } from '../../ChatContext';
 import Header from './Header';
 import Messages from './Messages';
 import Editor from './Editor';
@@ -67,7 +67,6 @@ export default function Chat() {
     return createChatContext(activeChatId);
   }, [activeChatId]);
 
-
   const [verticalSizes, setVerticalSizes] = useState(['auto', 200]);
   const [horizontalSizes, setHorizontalSizes] = useState(['auto', 0]);
   const ref = useRef<HTMLDivElement>(null);
@@ -90,7 +89,7 @@ export default function Chat() {
   const chatService = useRef<INextChatService>();
   const isReady = useMemo(() => {
     return chatContext.isReady();
-  }, [chatContext, activeChatId]);
+  }, [activeChatId, chatContext.getProvider(), chatContext.getModel()]);
   const [isLoading, setIsLoading] = useState(false);
 
   const { notifyError } = useToast();

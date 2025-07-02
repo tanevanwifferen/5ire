@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import TooltipIcon from 'renderer/components/TooltipIcon';
 import useProviderStore from 'stores/useProviderStore';
 import { ERROR_MODEL } from 'consts';
+import useUI from 'hooks/useUI';
 import ModelFormDrawer from './ModelFormDrawer';
 import CapabilityTag from './CapabilityTag';
 
@@ -30,6 +31,7 @@ export default function ModelList({ height = 400 }: { height?: number }) {
     (state) => state.provider as IChatProviderConfig,
   );
   const { getModels } = useProviderStore();
+  const { heightStyle } = useUI();
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [formOpen, setFormOpen] = useState<boolean>(false);
@@ -142,7 +144,12 @@ export default function ModelList({ height = 400 }: { height?: number }) {
           </Button>
         </div>
       </div>
-      <div className="overflow-y-auto" style={{ height: height - 35 }}>
+      <div
+        className="overflow-y-auto"
+        style={{
+          height: heightStyle(height - 35),
+        }}
+      >
         {filteredModels.length === 0 ? (
           <div className="flex flex-col justify-center items-center h-96">
             <p className="tips">{t('Common.NoModels')}</p>

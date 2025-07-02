@@ -7,6 +7,7 @@ import {
 } from '@fluentui/react-components';
 import { ArrowForwardFilled } from '@fluentui/react-icons';
 import useMarkdown from 'hooks/useMarkdown';
+import useUI from 'hooks/useUI';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import useAppearanceStore from 'stores/useAppearanceStore';
@@ -14,6 +15,7 @@ import useInspectorStore, { ITraceMessage } from 'stores/useInspectorStore';
 
 export default function Sidebar({ chatId }: { chatId: string }) {
   const { t } = useTranslation();
+  const { heightStyle } = useUI();
   const theme = useAppearanceStore((state) => state.theme);
   const { render } = useMarkdown();
   const chatSidebar = useAppearanceStore((state) => state.chatSidebar);
@@ -57,7 +59,12 @@ export default function Sidebar({ chatId }: { chatId: string }) {
           </Button>
         )}
       </div>
-      <div className="h-screen overflow-x-hidden overflow-y-auto break-word -ml-2.5 pb-14">
+      <div
+        className=" overflow-x-hidden overflow-y-auto break-word -ml-2.5 pb-14"
+        style={{
+          height: heightStyle(),
+        }}
+      >
         {trace.length > 0 ? (
           <Accordion multiple collapsible>
             {trace?.map((item: ITraceMessage, idx: number) => {

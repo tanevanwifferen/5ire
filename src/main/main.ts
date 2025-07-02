@@ -44,6 +44,7 @@ import {
 } from '../consts';
 import { IMCPServer } from 'types/mcp';
 import { isValidMCPServer, isValidMCPServerKey } from 'utils/validators';
+import { ThemeType } from 'types/appearance';
 
 dotenv.config({
   path: app.isPackaged
@@ -55,6 +56,7 @@ logging.init();
 
 logging.info('Main process start...');
 
+const isDarwin = process.platform === 'darwin';
 const mcp = new ModuleContext();
 const store = new Store();
 
@@ -662,12 +664,34 @@ ipcMain.handle(
 ipcMain.handle('get-knowledge-chunk', async (_, chunkId: string) => {
   return await Knowledge.getChunk(chunkId);
 });
+
 ipcMain.handle('download', (_, fileName: string, url: string) => {
   downloader.download(fileName, url);
 });
 ipcMain.handle('cancel-download', (_, fileName: string) => {
   downloader.cancel(fileName);
 });
+
+ipcMain.on(
+  'titlebar-update-overlay',
+  (_, theme: Exclude<ThemeType, 'system'>) => {
+    if (!isDarwin) {
+      const themeColor = {
+        light: {
+          color: 'rgba(255, 255, 255, 0)',
+          height: 30,
+          symbolColor: 'black',
+        },
+        dark: {
+          color: 'rgba(0, 0, 0, 0)',
+          height: 30,
+          symbolColor: 'white',
+        },
+      };
+      mainWindow?.setTitleBarOverlay!(themeColor[theme]);
+    }
+  },
+);
 
 /** mcp */
 ipcMain.handle('mcp-init', async () => {
@@ -839,6 +863,20 @@ const createWindow = async () => {
     minWidth: 468,
     minHeight: 600,
     frame: false,
+    ...(isDarwin
+      ? {}
+      : {
+          titleBarStyle: 'hidden',
+        }),
+    ...(isDarwin
+      ? {}
+      : {
+          titleBarOverlay: {
+            color: 'rgba(220, 220, 220, 0)',
+            height: 30,
+            symbolColor: 'black',
+          },
+        }),
     autoHideMenuBar: true,
     // trafficLightPosition: { x: 15, y: 18 },
     icon: getAssetPath('icon.png'),

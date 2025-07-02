@@ -11,6 +11,8 @@ import {
 } from '@fluentui/react-components';
 import { useTranslation } from 'react-i18next';
 import Providers from 'renderer/pages/providers';
+import useUI from 'hooks/useUI';
+import usePlatform from 'hooks/usePlatform';
 import { captureException } from '../logging';
 import useSettingsStore from '../../stores/useSettingsStore';
 import useAppearanceStore from '../../stores/useAppearanceStore';
@@ -31,6 +33,7 @@ import Prompts from '../pages/prompt';
 import PromptForm from '../pages/prompt/Form';
 import AppLoader from '../apps/Loader';
 import ToolSetup from './ToolSetup';
+import WindowsTitleBar from './layout/aside/WindowsTitleBar';
 
 const debug = Debug('5ire:components:FluentApp');
 
@@ -68,6 +71,8 @@ darkTheme.colorBrandForeground2 = fire[130];
 
 export default function FluentApp() {
   const { i18n } = useTranslation();
+  const { isDarwin } = usePlatform();
+  const { heightStyle } = useUI();
   const themeSettings = useSettingsStore((state) => state.theme);
   const theme = useAppearanceStore((state) => state.theme);
   const fontSize = useSettingsStore((state) => state.fontSize);
@@ -127,43 +132,51 @@ export default function FluentApp() {
       theme={theme === 'light' ? lightTheme : darkTheme}
       data-theme={theme}
     >
-      <Router>
-        <AppHeader />
-        <Toaster toasterId="toaster" limit={5} offset={{ vertical: 25 }} />
-        <div
-          className={`relative flex h-screen w-full overflow-hidden main-container ${fontSizeCls}`}
-        >
-          <AppSidebar />
-          <main className="relative px-5 flex h-full w-full flex-col overflow-hidden">
-            <Routes>
-              <Route index element={<Chat />} />
-              <Route path="/chats/:id?/:anchor?" element={<Chat />} />
-              <Route path="/knowledge" element={<Knowledge />} />
-              <Route
-                path="/knowledge/collection-form/:id?"
-                element={<KnowledgeCollectionForm />}
-              />
-              <Route path="/tool" element={<Tools />} />
-              <Route path="/apps/:key" element={<AppLoader />} />
-              <Route path="/bookmarks" element={<Bookmarks />} />
-              <Route path="/bookmarks/:id" element={<Bookmark />} />
-              <Route path="/user/login" element={<Login />} />
-              <Route path="/user/register" element={<Register />} />
-              <Route path="/user/account" element={<Account />} />
-              <Route path="/usage" element={<Usage />} />
-              <Route path="/prompts" element={<Prompts />} />
-              <Route path="/prompts/form/:id?" element={<PromptForm />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/providers" element={<Providers />} />
-            </Routes>
+      <div className=" flex flex-col h-screen">
+        {!isDarwin && <WindowsTitleBar />}
+        <div className=" flex-1">
+          <Router>
+            <AppHeader />
+            <Toaster toasterId="toaster" limit={5} offset={{ vertical: 25 }} />
             <div
-              id="portal"
-              style={{ zIndex: 9999999, position: 'absolute' }}
-            />
-          </main>
+              className={`relative flex  w-full overflow-hidden main-container ${fontSizeCls}`}
+              style={{
+                height: heightStyle(),
+              }}
+            >
+              <AppSidebar />
+              <main className="relative px-5 flex h-full w-full flex-col overflow-hidden">
+                <Routes>
+                  <Route index element={<Chat />} />
+                  <Route path="/chats/:id?/:anchor?" element={<Chat />} />
+                  <Route path="/knowledge" element={<Knowledge />} />
+                  <Route
+                    path="/knowledge/collection-form/:id?"
+                    element={<KnowledgeCollectionForm />}
+                  />
+                  <Route path="/tool" element={<Tools />} />
+                  <Route path="/apps/:key" element={<AppLoader />} />
+                  <Route path="/bookmarks" element={<Bookmarks />} />
+                  <Route path="/bookmarks/:id" element={<Bookmark />} />
+                  <Route path="/user/login" element={<Login />} />
+                  <Route path="/user/register" element={<Register />} />
+                  <Route path="/user/account" element={<Account />} />
+                  <Route path="/usage" element={<Usage />} />
+                  <Route path="/prompts" element={<Prompts />} />
+                  <Route path="/prompts/form/:id?" element={<PromptForm />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/providers" element={<Providers />} />
+                </Routes>
+                <div
+                  id="portal"
+                  style={{ zIndex: 9999999, position: 'absolute' }}
+                />
+              </main>
+            </div>
+            <ToolSetup />
+          </Router>
         </div>
-        <ToolSetup />
-      </Router>
+      </div>
     </FluentProvider>
   );
 }

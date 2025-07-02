@@ -1,0 +1,22 @@
+.custom-titlebar {
+  display: flex;
+  align-items: center;
+  /* 避免被收缩 */
+  flex-shrink: 0;
+  /* 高度与 main.js 中 titleBarOverlay.height 一致  */
+  height: 30px;
+  width: 100%;
+  gap: 2px;
+  /* 标题栏始终在最顶层（避免后续被 Modal 之类的覆盖） */
+  z-index: 9999;
+  padding-left: 8px;
+  font-size: 12px;
+  background-color: rgba(238, 236, 235, 0.9);
+  transition: all .2s ease-in;
+  user-select: none;
+  -webkit-app-region: drag;
+}
+
+.dark .custom-titlebar {
+  background-color: rgba(44, 42, 43, 0.9);
+}

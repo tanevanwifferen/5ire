@@ -32,3 +32,5 @@ export const SUPPORTED_IMAGE_TYPES: { [key: string]: string } = {
   jpeg: 'image/jpeg',
   png: 'image/png',
 };
+
+export const WINDOWS_TITLE_BAR_HEIGHT = 30;

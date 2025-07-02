@@ -23,6 +23,7 @@ import useKnowledgeStore from 'stores/useKnowledgeStore';
 import SplitPane, { Pane } from 'split-pane-react';
 import Empty from 'renderer/components/Empty';
 
+import useUI from 'hooks/useUI';
 import useUsageStore from 'stores/useUsageStore';
 import useNav from 'hooks/useNav';
 import { debounce } from 'lodash';
@@ -57,6 +58,7 @@ export default function Chat() {
   const anchor = useParams().anchor || null;
   const bus = useRef(eventBus);
   const navigate = useNav();
+  const { heightStyle } = useUI();
   const [activeChatId, setActiveChatId] = useState(id);
   if (activeChatId !== id) {
     setActiveChatId(id);
@@ -446,7 +448,13 @@ ${prompt}
   }, [messages]);
 
   return (
-    <div id="chat" className="relative h-screen flex flex-start -mx-5 ">
+    <div
+      id="chat"
+      className="relative  flex flex-start -mx-5 "
+      style={{
+        height: heightStyle(),
+      }}
+    >
       <SplitPane
         split="vertical"
         sizes={horizontalSizes}
@@ -455,7 +463,12 @@ ${prompt}
       >
         <div>
           <Header />
-          <div className="h-screen mt-10">
+          <div
+            className=" mt-10"
+            style={{
+              height: heightStyle(),
+            }}
+          >
             <SplitPane
               split="horizontal"
               sizes={verticalSizes}

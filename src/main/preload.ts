@@ -3,6 +3,8 @@
 
 import v8 from 'v8';
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { platform } from 'os';
+import { ThemeType } from 'types/appearance';
 // 设置文件描述符限制
 if (process.platform !== 'win32') {
   process.setFdLimit(4096);
@@ -215,6 +217,11 @@ const electronHandler = {
     unsubscribeAll(channel: Channels) {
       ipcRenderer.removeAllListeners(channel);
     },
+  },
+  platform: platform(),
+  titleBarAPI: {
+    updateOverlay: (theme: ThemeType) =>
+      ipcRenderer.send('titlebar-update-overlay', theme),
   },
 };
 

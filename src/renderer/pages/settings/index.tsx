@@ -3,12 +3,14 @@ import { useTranslation } from 'react-i18next';
 import './Settings.scss';
 
 import { Link } from 'react-router-dom';
+import usePlatform from 'hooks/usePlatform';
 import Version from './Version';
 import AppearanceSettings from './AppearanceSettings';
 import EmbedSettings from './EmbedSettings';
 import LanguageSettings from './LanguageSettings';
 
 export default function Settings() {
+  const { isDarwin } = usePlatform();
   const { t } = useTranslation();
 
   return (
@@ -19,7 +21,9 @@ export default function Settings() {
           <h1 className="text-2xl">{t('Common.Settings')}</h1>
         </div>
       </div>
-      <div className="overflow-y-auto h-full pb-28 -mr-5 pr-5">
+      <div
+        className={`overflow-y-auto h-full  -mr-5 pr-5 ${isDarwin ? 'pb-28' : 'pb-16'}`}
+      >
         <div className="settings-section">
           <div className="settings-section--header">{t('Common.API')}</div>
           <div className="py-4 flex-grow mt-1 gap-1">

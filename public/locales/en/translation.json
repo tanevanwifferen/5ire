@@ -329,5 +329,6 @@
   "Common.Citation": "Citation",
   "Common.Action.Rename": "Rename",
   "Common.Proxy": "Proxy",
-  "Provider.Tooltip.InvalidProxyURL": "The proxy must be a valid URL address."
+  "Provider.Tooltip.InvalidProxyURL": "The proxy must be a valid URL address.",
+  "Common.GetAPIKey": "Get the API key"
 }

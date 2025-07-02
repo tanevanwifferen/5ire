@@ -4,6 +4,7 @@ export default {
   name: '302AI',
   apiBase: 'http://api.302.ai/v1',
   currency: 'USD',
+  referral: 'https://share.302.ai/DPDpUI',
   options: {
     apiBaseCustomizable: true,
     modelsEndpoint: '/models?llm=1',
@@ -23,7 +24,6 @@ export default {
     presencePenalty: { min: -2, max: 2, default: 0 },
     topP: { min: 0, max: 1, default: 1 },
     temperature: { min: 0, max: 1, default: 0.9 },
-
     options: {
       modelCustomizable: true,
     },

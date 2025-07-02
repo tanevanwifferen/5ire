@@ -224,9 +224,27 @@ export default function ProviderForm() {
       )}
       {getChatAPISchema(provider.name || '').includes('key') && (
         <div className="mt-2 flex justify-start items-baseline gap-1">
-          <Label className="w-[70px]" size="small">
+          <InfoLabel
+            className="w-[70px]"
+            size="small"
+            info={
+              provider.referral ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.electron.openExternal(provider.referral as string)
+                  }
+                >
+                  {t('Common.GetAPIKey')}
+                </button>
+              ) : (
+                ''
+              )
+            }
+          >
             {t('Common.APIKey')}
-          </Label>
+          </InfoLabel>
+
           <Field
             size="small"
             className="field-small flex-grow"

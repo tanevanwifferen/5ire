@@ -209,6 +209,7 @@ const mergeProviders = (
     const defaultProvider = { ...OpenAI };
     const mergedProvider = {
       name: provider.name,
+      referral: builtInProvider?.referral,
       description:
         customProvider?.description || builtInProvider?.description || '',
       schema: builtInProvider?.chat?.apiSchema || ['base'],
@@ -245,7 +246,7 @@ interface ModelCache {
 }
 
 const modelsCache: Record<string, ModelCache> = {};
-const CACHE_EXPIRY_TIME = 60 * 1000; // 1 mins
+const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 mins
 
 export interface IProviderStore {
   providers: IChatProviderConfig[];

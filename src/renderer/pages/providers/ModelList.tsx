@@ -74,6 +74,15 @@ export default function ModelList({ height = 400 }: { height?: number }) {
     };
   }, [provider?.name, provider?.models]);
 
+  useEffect(() => {
+    if (provider.modelsEndpoint && provider.apiKey && provider.apiBase) {
+      loadModels();
+    } else {
+      setLoading(false);
+      setModels([]);
+    }
+  }, [provider.apiKey, provider.apiBase]);
+
   if (loading) {
     return (
       <Skeleton>

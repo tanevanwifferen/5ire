@@ -50,8 +50,21 @@ const isProviderReady = (provider: IChatProviderConfig) => {
   }
 };
 
-const sortByName = (a: { name: string }, b: { name: string }) =>
-  (a.name || '').localeCompare(b.name || '');
+const sortByName = (a: { name: string }, b: { name: string }) => {
+  const aName = a.name || '';
+  const bName = b.name || '';
+
+  // Split into letters and numbers
+  const aIsNum = /^\d/.test(aName);
+  const bIsNum = /^\d/.test(bName);
+
+  // If one starts with number and other with letter, letter comes first
+  if (aIsNum && !bIsNum) return 1;
+  if (!aIsNum && bIsNum) return -1;
+
+  // Otherwise use normal string comparison
+  return aName.localeCompare(bName);
+};
 
 const isModelReady = (
   modelExtras: string[],
@@ -428,13 +441,17 @@ const useProviderStore = create<IProviderStore>((set, get) => ({
     if (provider.modelsEndpoint) {
       const modelsMap = keyBy(provider.models || [], 'name');
       try {
+        const headers = {
+          'Content-Type': 'application/json',
+        } as any;
+        if (provider.apiKey) {
+          headers.Authorization = `Bearer ${provider.apiKey}`;
+        }
         const resp = await fetch(
           `${provider.apiBase}${provider.modelsEndpoint}`,
           {
             method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers,
             signal: options?.signal,
           },
         );

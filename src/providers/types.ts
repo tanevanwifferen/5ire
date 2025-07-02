@@ -12,7 +12,8 @@ export type ProviderType =
   | 'ChatBro'
   | '5ire'
   | 'Doubao'
-  | 'Grok';
+  | 'Grok'
+  | '302AI';
 
 export interface INumberRange {
   min: number;

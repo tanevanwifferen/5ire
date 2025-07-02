@@ -302,7 +302,6 @@ const activeRequests = new Map<string, AbortController>();
 
 ipcMain.handle('request', async (event, options) => {
   const { url, method, headers, body, proxy, isStream } = options;
-  console.log(body);
   const requestId = Math.random().toString(36).substr(2, 9);
   const abortController = new AbortController();
   activeRequests.set(requestId, abortController);

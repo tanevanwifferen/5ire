@@ -283,6 +283,7 @@ export default class ModuleContext {
         const mergedEnv = {
           ...getDefaultEnvironment(),
           ...env,
+          NODE_EXTRA_CA_CERTS: process.env.NODE_EXTRA_CA_CERTS,
           PATH: process.env.PATH,
           ...(proxy
             ? {
@@ -495,6 +496,7 @@ export default class ModuleContext {
       };
     }
   }
+
   public cancelToolCall(requestId: string) {
     if (this.activeToolCalls && this.activeToolCalls.has(requestId)) {
       const controller = this.activeToolCalls.get(requestId);

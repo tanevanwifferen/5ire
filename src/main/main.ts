@@ -61,7 +61,7 @@ const mcp = new ModuleContext();
 const store = new Store();
 const themeSetting =  store.get('settings.theme', 'system') as ThemeType;
 const theme = themeSetting === 'system' ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light') : themeSetting;
-const themeColor = {
+const titleBarColor = {
   light: {
     color: 'rgba(255, 255, 255, 0)',
     height: 30,
@@ -689,7 +689,7 @@ ipcMain.on(
   'titlebar-update-overlay',
   (_, theme: Exclude<ThemeType, 'system'>) => {
     if (!isDarwin) {
-      mainWindow?.setTitleBarOverlay!(themeColor[theme]);
+      mainWindow?.setTitleBarOverlay!(titleBarColor[theme]);
     }
   },
 );
@@ -872,7 +872,7 @@ const createWindow = async () => {
     ...(isDarwin
       ? {}
       : {
-          titleBarOverlay: themeColor[theme],
+          titleBarOverlay: titleBarColor[theme],
         }),
     autoHideMenuBar: true,
     // trafficLightPosition: { x: 15, y: 18 },
@@ -923,8 +923,7 @@ const createWindow = async () => {
         'native-theme-change',
         nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
       );
-      console.log('Native theme updated:', nativeTheme.shouldUseDarkColors);
-      mainWindow.setTitleBarOverlay!(themeColor[ nativeTheme.shouldUseDarkColors ? 'dark' : 'light' ]);
+      mainWindow.setTitleBarOverlay!(titleBarColor[ nativeTheme.shouldUseDarkColors ? 'dark' : 'light' ]);
     }
   });
 

@@ -35,6 +35,7 @@ const debug = Debug('5ire:pages:providers:index');
 
 const DEFAULT_HEIGHT = 400;
 const HEADER_HEIGHT = 90;
+const LIST_ITEM_HEIGHT = 42;
 
 const AddIcon = bundleIcon(AddCircleFilled, AddCircleRegular);
 const CloudArrowUpIcon = bundleIcon(
@@ -231,7 +232,9 @@ export default function Providers() {
           }}
         >
           <ProviderList
-            height={calcHeight(contentHeight - HEADER_HEIGHT) as number}
+            height={calcHeight(
+              contentHeight - (HEADER_HEIGHT + LIST_ITEM_HEIGHT),
+            )}
           />
           <div className="absolute p-2 bottom-0 left-0 right-0 z-10 border-t border-base bg-white dark:bg-zinc-800/50">
             <Button

@@ -286,6 +286,10 @@ main {
   --tw-bg-opacity: 1;
   background-color: rgba(var(--color-bg-surface-3), var(--tw-bg-opacity));
 }
+.bg-sidebar{
+  --tw-bg-opacity: 0.9;
+  background-color: rgba(var(--color-bg-sidebar),var(--tw-bg-opacity));
+}
 
 .justify-start {
   justify-content: flex-start !important;

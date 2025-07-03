@@ -133,10 +133,11 @@ export default function FluentApp() {
       data-theme={theme}
     >
       <div className=" flex flex-col h-screen">
-        {!isDarwin && <WindowsTitleBar />}
-        <div className=" flex-1">
+
+        <div className="flex-1 bg-sidebar">
           <Router>
-            <AppHeader />
+           {isDarwin ?  <AppHeader />: <WindowsTitleBar />}
+
             <Toaster toasterId="toaster" limit={5} offset={{ vertical: 25 }} />
             <div
               className={`relative flex  w-full overflow-hidden main-container ${fontSizeCls}`}
@@ -145,7 +146,7 @@ export default function FluentApp() {
               }}
             >
               <AppSidebar />
-              <main className="relative px-5 flex h-full w-full flex-col overflow-hidden">
+              <main className={`relative px-5 flex h-full w-full flex-col overflow-hidden border-l ${isDarwin?'':'border-t border-base rounded-tl-lg'}`}>
                 <Routes>
                   <Route index element={<Chat />} />
                   <Route path="/chats/:id?/:anchor?" element={<Chat />} />

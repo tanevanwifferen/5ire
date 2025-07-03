@@ -59,6 +59,20 @@ logging.info('Main process start...');
 const isDarwin = process.platform === 'darwin';
 const mcp = new ModuleContext();
 const store = new Store();
+const themeSetting =  store.get('settings.theme', 'system') as ThemeType;
+const theme = themeSetting === 'system' ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light') : themeSetting;
+const themeColor = {
+  light: {
+    color: 'rgba(255, 255, 255, 0)',
+    height: 30,
+    symbolColor: 'black',
+  },
+  dark: {
+    color: 'rgba(0, 0, 0, 0)',
+    height: 30,
+    symbolColor: 'white',
+  },
+};
 
 class AppUpdater {
   constructor() {
@@ -675,18 +689,6 @@ ipcMain.on(
   'titlebar-update-overlay',
   (_, theme: Exclude<ThemeType, 'system'>) => {
     if (!isDarwin) {
-      const themeColor = {
-        light: {
-          color: 'rgba(255, 255, 255, 0)',
-          height: 30,
-          symbolColor: 'black',
-        },
-        dark: {
-          color: 'rgba(0, 0, 0, 0)',
-          height: 30,
-          symbolColor: 'white',
-        },
-      };
       mainWindow?.setTitleBarOverlay!(themeColor[theme]);
     }
   },
@@ -870,11 +872,7 @@ const createWindow = async () => {
     ...(isDarwin
       ? {}
       : {
-          titleBarOverlay: {
-            color: 'rgba(220, 220, 220, 0)',
-            height: 30,
-            symbolColor: 'black',
-          },
+          titleBarOverlay: themeColor[theme],
         }),
     autoHideMenuBar: true,
     // trafficLightPosition: { x: 15, y: 18 },
@@ -895,7 +893,7 @@ const createWindow = async () => {
     return { action: 'deny' };
   });
 
-  // 拦截导航事件，防止在当前窗口打开外部链接
+
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (mainWindow) {
       const currentURL = mainWindow.webContents.getURL();
@@ -925,6 +923,8 @@ const createWindow = async () => {
         'native-theme-change',
         nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
       );
+      console.log('Native theme updated:', nativeTheme.shouldUseDarkColors);
+      mainWindow.setTitleBarOverlay!(themeColor[ nativeTheme.shouldUseDarkColors ? 'dark' : 'light' ]);
     }
   });
 

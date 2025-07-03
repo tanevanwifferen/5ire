@@ -295,6 +295,11 @@ main {
   min-width: 0 !important;
 }
 
+#app{
+  border-radius: 20px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.25);
+}
+
 .page {
   padding-bottom: 50px;
 }

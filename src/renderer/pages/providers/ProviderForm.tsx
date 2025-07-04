@@ -186,42 +186,6 @@ export default function ProviderForm() {
           />
         </Field>
       </div>
-      {getChatAPISchema(provider.name || '').includes('proxy') && (
-        <div className="mt-2 flex justify-start items-baseline gap-1">
-          <Label className="w-[70px]" size="small">
-            {t('Common.Proxy')}
-          </Label>
-          <Field
-            size="small"
-            className="field-small flex-grow"
-            validationState={proxyError ? 'error' : 'none'}
-            validationMessage={proxyError}
-          >
-            <Input
-              size="small"
-              value={proxy}
-              className="flex-grow"
-              onBlur={(ev: React.FocusEvent<HTMLInputElement>) => {
-                if (isValidHttpHRL(ev.target.value)) {
-                  updateProvider(name, {
-                    proxy: ev.target.value,
-                  });
-                } else {
-                  setProxyError(t('Provider.Tooltip.InvalidProxyURL'));
-                }
-              }}
-              onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
-                setProxy(ev.target.value);
-                if (isValidHttpHRL(ev.target.value)) {
-                  setProxyError('');
-                } else {
-                  setProxyError(t('Provider.Tooltip.InvalidProxyURL'));
-                }
-              }}
-            />
-          </Field>
-        </div>
-      )}
       {getChatAPISchema(provider.name || '').includes('key') && (
         <div className="mt-2 flex justify-start items-baseline gap-1">
           <InfoLabel
@@ -244,7 +208,6 @@ export default function ProviderForm() {
           >
             {t('Common.APIKey')}
           </InfoLabel>
-
           <Field
             size="small"
             className="field-small flex-grow"
@@ -270,6 +233,43 @@ export default function ProviderForm() {
                   setApiKeyError(t('Common.Required'));
                 } else {
                   setApiKeyError('');
+                }
+              }}
+            />
+          </Field>
+        </div>
+      )}
+      {getChatAPISchema(provider.name || '').includes('proxy') && (
+        <div className="mt-2 flex justify-start items-baseline gap-1">
+          <Label className="w-[70px]" size="small">
+            {t('Common.Proxy')}
+          </Label>
+          <Field
+            size="small"
+            className="field-small flex-grow"
+            validationState={proxyError ? 'error' : 'none'}
+            validationMessage={proxyError}
+          >
+            <Input
+              size="small"
+              value={proxy}
+              className="flex-grow"
+              placeholder={t('Common.Placeholder.Proxy')}
+              onBlur={(ev: React.FocusEvent<HTMLInputElement>) => {
+                if (isValidHttpHRL(ev.target.value)) {
+                  updateProvider(name, {
+                    proxy: ev.target.value,
+                  });
+                } else {
+                  setProxyError(t('Provider.Tooltip.InvalidProxyURL'));
+                }
+              }}
+              onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
+                setProxy(ev.target.value);
+                if (isValidHttpHRL(ev.target.value)) {
+                  setProxyError('');
+                } else {
+                  setProxyError(t('Provider.Tooltip.InvalidProxyURL'));
                 }
               }}
             />

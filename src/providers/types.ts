@@ -13,7 +13,8 @@ export type ProviderType =
   | '5ire'
   | 'Doubao'
   | 'Grok'
-  | '302AI';
+  | '302AI'
+  | 'Perplexity';
 
 export interface INumberRange {
   min: number;

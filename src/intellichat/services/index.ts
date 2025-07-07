@@ -14,6 +14,7 @@ import DoubaoChatService from './DoubaoChatService';
 import GrokChatService from './GrokChatService';
 import DeepSeekChatService from './DeepSeekChatService';
 import INextChatService from './INextCharService';
+import PerplexityChatService from './PerplexityChatService';
 
 const debug = Debug('5ire:intellichat:ChatService');
 
@@ -47,6 +48,8 @@ export default function createService(chatCtx: IChatContext): INextChatService {
       return new DeepSeekChatService(provider.name, chatCtx);
     case 'LMStudio':
       return new LMStudioChatService(provider.name, chatCtx);
+    case 'Perplexity':
+      return new PerplexityChatService(provider.name, chatCtx);
     default:
       return new OpenAIChatService(provider.name, chatCtx);
   }

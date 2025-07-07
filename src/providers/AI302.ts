@@ -1,7 +1,7 @@
 import { IServiceProvider } from './types';
 
 export default {
-  name: '302AI',
+  name: '302.AI',
   apiBase: 'http://api.302.ai/v1',
   currency: 'USD',
   referral: 'https://share.302.ai/DPDpUI',

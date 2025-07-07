@@ -27,7 +27,7 @@ export const providers: { [key: string]: IServiceProvider } = {
   Doubao,
   DeepSeek,
   LMStudio,
-  '302AI': AI302,
+  '302.AI': AI302,
   '5ire': Fire,
 };
 

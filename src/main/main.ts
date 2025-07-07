@@ -59,13 +59,8 @@ logging.info('Main process start...');
 const isDarwin = process.platform === 'darwin';
 const mcp = new ModuleContext();
 const store = new Store();
-const themeSetting = store.get('settings.theme', 'system') as ThemeType;
-const theme =
-  themeSetting === 'system'
-    ? nativeTheme.shouldUseDarkColors
-      ? 'dark'
-      : 'light'
-    : themeSetting;
+const themeSetting =  store.get('settings.theme', 'system') as ThemeType;
+const theme = themeSetting === 'system' ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light') : themeSetting;
 const titleBarColor = {
   light: {
     color: 'rgba(255, 255, 255, 0)',
@@ -698,6 +693,7 @@ ipcMain.on(
     }
   },
 );
+
 /** mcp */
 ipcMain.handle('mcp-init', async () => {
   mcp.init().then(async () => {
@@ -897,6 +893,7 @@ const createWindow = async () => {
     return { action: 'deny' };
   });
 
+
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (mainWindow) {
       const currentURL = mainWindow.webContents.getURL();
@@ -926,9 +923,7 @@ const createWindow = async () => {
         'native-theme-change',
         nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
       );
-      mainWindow.setTitleBarOverlay!(
-        titleBarColor[nativeTheme.shouldUseDarkColors ? 'dark' : 'light'],
-      );
+      mainWindow.setTitleBarOverlay!(titleBarColor[ nativeTheme.shouldUseDarkColors ? 'dark' : 'light' ]);
     }
   });
 

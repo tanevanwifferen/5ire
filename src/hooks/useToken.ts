@@ -5,7 +5,6 @@ import {
   isDoubao,
   isGrok,
   isDeepSeek,
-  isPerplexity,
 } from 'utils/util';
 import {
   countGPTTokens,
@@ -24,8 +23,7 @@ export default function useToken() {
         isGPT(modelName) ||
         isDoubao(modelName) ||
         isGrok(modelName) ||
-        isDeepSeek(modelName) ||
-        isPerplexity(modelName)
+        isDeepSeek(modelName)
       ) {
         const messages: IChatRequestMessage[] = [];
         ChatContext.getCtxMessages().forEach((msg: IChatMessage) => {
@@ -53,21 +51,6 @@ export default function useToken() {
       }
 
       if (isMoonshot(modelName)) {
-        const provider = ChatContext.getProvider();
-        const messages: IChatRequestMessage[] = [];
-        ChatContext.getCtxMessages().forEach((msg: IChatMessage) => {
-          messages.push({ role: 'user', content: msg.prompt });
-          messages.push({ role: 'assistant', content: msg.reply });
-        });
-        messages.push({ role: 'user', content: prompt });
-        return await countTokensOfMoonshot(
-          messages,
-          provider.apiBase,
-          provider.apiKey as string,
-          modelName,
-        );
-      }
-      if (isPerplexity(modelName)) {
         const provider = ChatContext.getProvider();
         const messages: IChatRequestMessage[] = [];
         ChatContext.getCtxMessages().forEach((msg: IChatMessage) => {

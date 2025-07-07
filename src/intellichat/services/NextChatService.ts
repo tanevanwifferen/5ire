@@ -370,10 +370,7 @@ export default abstract class NextCharService {
             requestId: toolRequestId,
           });
 
-          this.abortController.signal.removeEventListener(
-            'abort',
-            abortHandler,
-          );
+          this.abortController.signal.removeEventListener('abort', abortHandler);
 
           this.traceTool(
             chatId,
@@ -403,10 +400,7 @@ export default abstract class NextCharService {
           ] as IChatRequestMessage[];
           await this.chat(messagesWithTool);
         } catch (error) {
-          this.abortController.signal.removeEventListener(
-            'abort',
-            abortHandler,
-          );
+          this.abortController.signal.removeEventListener('abort', abortHandler);
           throw error;
         }
       } else {

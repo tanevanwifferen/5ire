@@ -15,6 +15,7 @@ import {
   ChevronUp16Regular,
 } from '@fluentui/react-icons';
 import useECharts from 'hooks/useECharts';
+import { debounce } from 'lodash';
 import {
   getNormalContent,
   getReasoningContent,
@@ -33,28 +34,43 @@ export default function Message({ message }: { message: IChatMessage }) {
   const { showCitation } = useKnowledgeStore();
   const { renderMermaid } = useMermaid();
   const { initECharts, disposeECharts } = useECharts({ message });
+
   const [deferredReply, setDeferredReply] = useState('');
   const [deferredReasoning, setDeferredReasoning] = useState('');
+  const [isReasoning, setIsReasoning] = useState(false);
+  const [reasoningSeconds, setReasoningSeconds] = useState(0);
+  const [isReasoningShow, setIsReasoningShow] = useState(false);
+
+  const reasoningInterval = useRef<number | null>(null);
+  const hasStartedReasoning = useRef(false);
 
   const keyword = useMemo(
     () => keywords[message.chatId],
     [keywords, message.chatId],
   );
+
   const citedFiles = useMemo(
     () => JSON.parse(message.citedFiles || '[]'),
     [message.citedFiles],
   );
 
-  const citedChunks = useMemo(() => {
-    return JSON.parse(message.citedChunks || '[]');
-  }, [message.citedChunks]);
+  const citedChunks = useMemo(
+    () => JSON.parse(message.citedChunks || '[]'),
+    [message.citedChunks],
+  );
+
+  const reply = useMemo(() => getNormalContent(message.reply), [message.reply]);
+
+  const reasoning = useMemo(
+    () => getReasoningContent(message.reply, message.reasoning),
+    [message.reply, message.reasoning],
+  );
 
   const { render } = useMarkdown();
 
   const onCitationClick = useCallback(
     (event: any) => {
       try {
-        // 确保有 href
         if (!event.target?.href) {
           event.preventDefault();
           return;
@@ -82,162 +98,191 @@ export default function Message({ message }: { message: IChatMessage }) {
   const renderECharts = useCallback(
     (prefix: string, msgDom: Element) => {
       const charts = msgDom.querySelectorAll('.echarts-container');
-      if (charts.length > 0) {
-        charts.forEach((chart) => {
-          initECharts(prefix, chart.id);
-        });
-      }
+      charts.forEach((chart) => {
+        initECharts(prefix, chart.id);
+      });
     },
     [initECharts],
   );
 
-  const [isReasoning, setIsReasoning] = useState(true);
-  const [reasoningSeconds, setReasoningSeconds] = useState(0);
-  const [isReasoningShow, setIsReasoningShow] = useState(false);
-  const messageRef = useRef(message);
-  const isReasoningRef = useRef(isReasoning);
-  const reasoningInterval = useRef<number | null>(null);
-  const reasoningRef = useRef('');
-  const replyRef = useRef('');
-  const hasStartedReasoning = useRef(false);
+  const toggleThink = useCallback(() => {
+    setIsReasoningShow(!isReasoningShow);
+  }, [isReasoningShow]);
 
-  useEffect(() => {
-    messageRef.current = message;
-  }, [message.id, message.isActive]);
-
-  useEffect(() => {
-    isReasoningRef.current = isReasoning;
-  }, [isReasoning]);
-
-  const reply = useMemo(() => getNormalContent(message.reply), [message.reply]);
-  const reasoning = useMemo(
-    () => getReasoningContent(message.reply, message.reasoning),
-    [message.reply, message.reasoning],
+  const debouncedSetDeferredReply = useMemo(
+    () => debounce((replyData: string) => setDeferredReply(replyData), 50),
+    [],
   );
 
-  useEffect(() => {
-    if (reasoning) {
-      setIsReasoning(true);
-    } else {
-      setIsReasoning(false);
-    }
-  }, [reasoning]);
+  const debouncedSetDeferredReasoning = useMemo(
+    () =>
+      debounce(
+        (reasoningData: string) => setDeferredReasoning(reasoningData),
+        50,
+      ),
+    [],
+  );
 
-  useEffect(() => {
-    const frameId = requestAnimationFrame(() => {
-      replyRef.current = reply;
-      reasoningRef.current = reasoning;
-      setDeferredReply(reply);
-      setDeferredReasoning(reasoning);
-    });
-    return () => cancelAnimationFrame(frameId);
-  }, [reply, reasoning]);
-
-  useEffect(() => {
+  const updateDOM = useCallback(() => {
     const timer = setTimeout(() => {
-      const promptNode = document.querySelector(`#${message.id} .msg-prompt`);
+      const messageContainer = document.getElementById(message.id);
+      if (!messageContainer) return;
+
+      const promptNode = messageContainer.querySelector('.msg-prompt');
       if (promptNode) {
         renderECharts('prompt', promptNode);
       }
-      const replyNode = document.querySelector(`#${message.id} .msg-reply`);
-      if (!replyNode) return;
-      const links = replyNode.querySelectorAll('a');
-      links.forEach((link) => {
-        link.removeEventListener('click', onCitationClick);
-        link.addEventListener('click', onCitationClick);
-      });
-      renderECharts('reply', replyNode);
-      renderMermaid();
-    }, 10);
 
-    return () => {
-      clearTimeout(timer);
-      const replyNode = document.querySelector(`#${message.id} .msg-reply`);
-      const links = replyNode?.querySelectorAll('a');
-      links?.forEach((link) => {
-        link.removeEventListener('click', onCitationClick);
-      });
-      disposeECharts();
-    };
-  }, [message.id, message.isActive]);
+      const replyNode = messageContainer.querySelector('.msg-reply');
+      if (replyNode) {
+        const links = replyNode.querySelectorAll('a');
+        links.forEach((link) => {
+          link.removeEventListener('click', onCitationClick);
+          link.addEventListener('click', onCitationClick);
+        });
 
-  function monitorThinkStatus() {
+        renderECharts('reply', replyNode);
+        renderMermaid();
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [message.id, onCitationClick, renderECharts, renderMermaid]);
+
+  // 推理状态监控
+  const monitorReasoning = useCallback(() => {
     if (reasoningInterval.current) {
       clearInterval(reasoningInterval.current);
     }
 
     reasoningInterval.current = setInterval(() => {
-      if (isReasoningRef.current && messageRef.current.isActive) {
+      if (isReasoning && message.isActive) {
         setReasoningSeconds((prev) => prev + 1);
       }
 
-      if (
-        !!replyRef.current.trim() &&
-        isReasoningRef.current &&
-        messageRef.current.isActive
-      ) {
+      if (reply.trim() && isReasoning && message.isActive) {
         clearInterval(reasoningInterval.current as number);
         setIsReasoning(false);
         debug('Reasoning ended');
-        debug(`Total thinking time: ${reasoningSeconds} seconds`);
       }
     }, 1000) as any;
-  }
+  }, [isReasoning, message.isActive, reply]);
+
+  useEffect(() => {
+    debouncedSetDeferredReply(reply);
+    debouncedSetDeferredReasoning(reasoning);
+
+    return () => {
+      debouncedSetDeferredReply.cancel();
+      debouncedSetDeferredReasoning.cancel();
+    };
+  }, [
+    reply,
+    reasoning,
+    debouncedSetDeferredReply,
+    debouncedSetDeferredReasoning,
+  ]);
 
   useEffect(() => {
     if (reasoning && !hasStartedReasoning.current && message.isActive) {
       hasStartedReasoning.current = true;
       setIsReasoning(true);
       setIsReasoningShow(true);
-      monitorThinkStatus();
+      monitorReasoning();
     } else if (!reasoning) {
       hasStartedReasoning.current = false;
       setIsReasoning(false);
     }
-  }, [reasoning, message.isActive]);
+  }, [reasoning, message.isActive, monitorReasoning]);
 
   useEffect(() => {
     if (!message.isActive) {
       hasStartedReasoning.current = false;
       setIsReasoning(false);
     }
+
     return () => {
-      clearInterval(reasoningInterval.current as number);
+      if (reasoningInterval.current) {
+        clearInterval(reasoningInterval.current);
+      }
       hasStartedReasoning.current = false;
       setIsReasoning(false);
     };
   }, [message.id, message.isActive]);
 
-  const toggleThink = useCallback(() => {
-    setIsReasoningShow(!isReasoningShow);
-  }, [isReasoningShow]);
+  useEffect(() => {
+    const cleanup = updateDOM();
+    return () => {
+      cleanup();
+      disposeECharts();
+    };
+  }, [message.id, message.isActive, updateDOM, disposeECharts]);
 
-  const replyNode = () => {
+  const renderedContent = useMemo(() => {
     const isLoading = message.isActive && states.loading;
-    const isEmpty =
-      (!message.reply || message.reply === '') &&
-      (!message.reasoning || message.reasoning === '');
-    const thinkTitle = `${isReasoning ? t('Reasoning.Thinking') : t('Reasoning.Thought')
-      }${reasoningSeconds > 0 ? ` ${reasoningSeconds}s` : ''}`;
-    return (
-      <div className={`w-full mt-1.5 ${isLoading ? 'is-loading' : ''}`}>
-        {message.isActive && states.runningTool ? (
-          <div className="flex flex-row justify-start items-center gap-1">
-            <ToolSpinner size={20} style={{ marginBottom: '-1px' }} />
-            <span>{states.runningTool.replace('--', ':')}</span>
-          </div>
-        ) : null}
-        {isLoading && isEmpty ? (
-          <>
-            <span className="skeleton-box" style={{ width: '80%' }} />
-            <span className="skeleton-box" style={{ width: '90%' }} />
-          </>
-        ) : (
-          <div className="-mt-1">
-            {reasoning.trim() ? (
-              <div className="think">
-                <div className="think-header" onClick={toggleThink}>
-                  <span className="font-bold text-gray-400 ">{thinkTitle}</span>
+    const isEmpty = !message.reply && !message.reasoning;
+
+    const isReasoningInProgress = isReasoning && !reply.trim();
+
+    return {
+      isLoading,
+      isEmpty,
+      thinkTitle: `${isReasoning ? t('Reasoning.Thinking') : t('Reasoning.Thought')}${reasoningSeconds > 0 ? ` ${reasoningSeconds}s` : ''}`,
+      replyHTML: render(
+        `${highlight(deferredReply, keyword) || ''}${
+          isLoading && deferredReply
+            ? '<span class="blinking-cursor" /></span>'
+            : ''
+        }`,
+      ),
+      reasoningHTML: render(
+        `${highlight(deferredReasoning, keyword) || ''}${
+          isReasoningInProgress && deferredReasoning
+            ? '<span class="blinking-cursor" /></span>'
+            : ''
+        }`,
+      ),
+    };
+  }, [
+    message.isActive,
+    states.loading,
+    message.reply,
+    message.reasoning,
+    isReasoning,
+    reasoningSeconds,
+    t,
+    render,
+    deferredReply,
+    deferredReasoning,
+    keyword,
+    reply,
+  ]);
+
+  const replyNode = () => (
+    <div
+      className={`w-full mt-1.5 ${renderedContent.isLoading ? 'is-loading' : ''}`}
+    >
+      {!!message.isActive && !!states.runningTool && (
+        <div className="flex flex-row justify-start items-center gap-1">
+          <ToolSpinner size={20} style={{ marginBottom: '-1px' }} />
+          <span>{states.runningTool.replace('--', ':')}</span>
+        </div>
+      )}
+
+      {renderedContent.isLoading && renderedContent.isEmpty ? (
+        <>
+          <span className="skeleton-box" style={{ width: '80%' }} />
+          <span className="skeleton-box" style={{ width: '90%' }} />
+        </>
+      ) : (
+        <div className="-mt-1">
+          {reasoning.trim() && (
+            <div className="think">
+              <button onClick={toggleThink} type="button">
+                <div className="think-header">
+                  <span className="font-bold text-gray-400">
+                    {renderedContent.thinkTitle}
+                  </span>
                   <div className="text-gray-400 -mb-0.5">
                     {isReasoningShow ? (
                       <ChevronUp16Regular />
@@ -246,45 +291,33 @@ export default function Message({ message }: { message: IChatMessage }) {
                     )}
                   </div>
                 </div>
-                <div
-                  className="think-body"
-                  style={{ display: isReasoningShow ? 'block' : 'none' }}
-                >
-                  <div
-                    dangerouslySetInnerHTML={{
-                      __html: render(
-                        `${highlight(deferredReasoning, keyword) || ''
-                        }${isReasoning && deferredReasoning ? '<span class="blinking-cursor" /></span>' : ''}`,
-                      ),
-                    }}
-                  />
-                </div>
-              </div>
-            ) : null}
-            <div
-              lang="en"
-              className="break-words hyphens-auto mt-1"
-              dangerouslySetInnerHTML={{
-                __html: render(
-                  `${highlight(deferredReply, keyword) || ''
-                  }${isLoading && deferredReply ? '<span class="blinking-cursor" /></span>' : ''}`,
-                ),
-              }}
-            />
-          </div>
-        )}
-      </div>
-    );
-  };
+              </button>
+              <div
+                className="think-body"
+                style={{ display: isReasoningShow ? 'block' : 'none' }}
+                dangerouslySetInnerHTML={{
+                  __html: renderedContent.reasoningHTML,
+                }}
+              />
+            </div>
+          )}
+          <div
+            lang="en"
+            className="break-words hyphens-auto mt-1"
+            dangerouslySetInnerHTML={{ __html: renderedContent.replyHTML }}
+          />
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="leading-6 message" id={message.id}>
       <div>
-        <a
+        <div
           id={`prompt-${message.id}`}
           aria-label={`prompt of message ${message.id}`}
         />
-
         <div
           className="msg-prompt my-2 flex flex-start"
           style={{ minHeight: '40px' }}
@@ -298,8 +331,9 @@ export default function Message({ message }: { message: IChatMessage }) {
           />
         </div>
       </div>
+
       <div>
-        <a id={`#reply-${message.id}`} aria-label={`Reply ${message.id}`} />
+        <div id={`reply-${message.id}`} aria-label={`Reply ${message.id}`} />
         <div
           className="msg-reply mt-2 flex flex-start"
           style={{ minHeight: '40px' }}
@@ -307,6 +341,7 @@ export default function Message({ message }: { message: IChatMessage }) {
           <div className="avatar flex-shrink-0 mr-2" />
           {replyNode()}
         </div>
+
         {citedFiles.length > 0 && (
           <div className="message-cited-files mt-2">
             <div className="mt-4 mb-2">

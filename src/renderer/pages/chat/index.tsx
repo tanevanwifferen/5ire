@@ -185,8 +185,10 @@ export default function Chat() {
       const keyword = keywords[activeChatId] || '';
       await debouncedFetchMessages(activeChatId, keyword);
       if (anchor) {
-        const anchorDom = document.getElementById(anchor);
-        anchorDom?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        setTimeout(() => {
+          const anchorDom = document.getElementById(anchor);
+          anchorDom?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }, 500);
       } else {
         scrollToBottom();
       }

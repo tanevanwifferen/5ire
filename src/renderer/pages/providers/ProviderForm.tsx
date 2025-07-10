@@ -257,7 +257,7 @@ export default function ProviderForm() {
               className="flex-grow"
               placeholder={t('Common.Placeholder.Proxy')}
               onBlur={(ev: React.FocusEvent<HTMLInputElement>) => {
-                if (isValidHttpHRL(ev.target.value)) {
+                if (isBlank(ev.target.value) || isValidHttpHRL(ev.target.value)) {
                   updateProvider(name, {
                     proxy: ev.target.value,
                   });
@@ -267,7 +267,7 @@ export default function ProviderForm() {
               }}
               onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
                 setProxy(ev.target.value);
-                if (isValidHttpHRL(ev.target.value)) {
+                if (isBlank(ev.target.value) || isValidHttpHRL(ev.target.value)) {
                   setProxyError('');
                 } else {
                   setProxyError(t('Provider.Tooltip.InvalidProxyURL'));

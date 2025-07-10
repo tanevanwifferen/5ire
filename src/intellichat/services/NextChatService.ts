@@ -15,6 +15,7 @@ import OpenAI from 'providers/OpenAI';
 import { IServiceProvider } from 'providers/types';
 import useInspectorStore from 'stores/useInspectorStore';
 import { raiseError, stripHtmlTags } from 'utils/util';
+import { isValidHttpHRL } from 'utils/validators';
 
 const debug = Debug('5ire:intellichat:NextChatService');
 
@@ -167,8 +168,7 @@ export default abstract class NextCharService {
   ): Promise<Response> {
     const provider = this.context.getProvider();
 
-    if (provider.proxy) {
-      // 使用 electron.request 处理代理
+    if (isValidHttpHRL(provider.proxy || '')) {
       const requestPromise = window.electron
         .request({
           url,
@@ -370,7 +370,10 @@ export default abstract class NextCharService {
             requestId: toolRequestId,
           });
 
-          this.abortController.signal.removeEventListener('abort', abortHandler);
+          this.abortController.signal.removeEventListener(
+            'abort',
+            abortHandler,
+          );
 
           this.traceTool(
             chatId,
@@ -400,7 +403,10 @@ export default abstract class NextCharService {
           ] as IChatRequestMessage[];
           await this.chat(messagesWithTool);
         } catch (error) {
-          this.abortController.signal.removeEventListener('abort', abortHandler);
+          this.abortController.signal.removeEventListener(
+            'abort',
+            abortHandler,
+          );
           throw error;
         }
       } else {

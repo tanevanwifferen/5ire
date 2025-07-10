@@ -112,10 +112,12 @@ export default function ModelFormDrawer({
     if (name.trim() === '') {
       currentNameError = t('Common.Required');
       setNameError(currentNameError);
+    } else if (modelNames.includes(name.trim())) {
+      currentNameError = t('Provider.Model.NameAlreadyExists');
+      setNameError(currentNameError);
     } else {
       setNameError('');
     }
-
     if (currentNameError) {
       return;
     }

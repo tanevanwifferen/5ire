@@ -203,7 +203,7 @@ export default function Tools() {
               </Menu>
             </div>
           </div>
-          <div className="tips flex justify-start items-center">
+          <div className="tips flex justify-start items-center md:mt-0 mt-2">
             {t('Common.MCPServers')}
             <TooltipIcon tip={t('Tools.PrerequisiteDescription')} />
           </div>

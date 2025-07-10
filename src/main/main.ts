@@ -21,9 +21,7 @@ import crypto from 'crypto';
 import { autoUpdater } from 'electron-updater';
 import Store from 'electron-store';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import * as logging from './logging';
 import axiom from '../vendors/axiom';
-import MenuBuilder from './menu';
 import {
   decodeBase64,
   getFileInfo,
@@ -31,6 +29,8 @@ import {
   resolveHtmlPath,
 } from './util';
 import './sqlite';
+import MenuBuilder from './menu';
+import * as logging from './logging';
 import Downloader from './downloader';
 import { Embedder } from './embedder';
 import initCrashReporter from '../CrashReporter';
@@ -66,10 +66,12 @@ const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
 const theme = shouldUseSystemTheme ? systemTheme : themeSetting;
 const titleBarColor = {
   light: {
+    color: 'rgba(255, 255, 255, 0)',
     height: 30,
     symbolColor: 'black',
   },
   dark: {
+    color: 'rgba(0, 0, 0, 0)',
     height: 30,
     symbolColor: 'white',
   },
@@ -944,8 +946,12 @@ const createWindow = async () => {
       const { screen } = require('electron');
       const primaryDisplay = screen.getPrimaryDisplay();
       const { workAreaSize } = primaryDisplay;
-      if (bounds.x < 0 || bounds.y < 0 ||
-          bounds.x > workAreaSize.width || bounds.y > workAreaSize.height) {
+      if (
+        bounds.x < 0 ||
+        bounds.y < 0 ||
+        bounds.x > workAreaSize.width ||
+        bounds.y > workAreaSize.height
+      ) {
         mainWindow.center();
       }
       mainWindow.show();

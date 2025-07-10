@@ -66,12 +66,10 @@ const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
 const theme = shouldUseSystemTheme ? systemTheme : themeSetting;
 const titleBarColor = {
   light: {
-    color: 'rgba(255, 255, 255, 0)',
     height: 30,
     symbolColor: 'black',
   },
   dark: {
-    color: 'rgba(0, 0, 0, 0)',
     height: 30,
     symbolColor: 'white',
   },
@@ -277,6 +275,14 @@ if (!gotTheLock) {
         } else {
           mainWindow.show();
           mainWindow.focus();
+
+          if (process.platform === 'win32') {
+            mainWindow.moveTop();
+            if (!mainWindow.isVisible()) {
+              mainWindow.showInactive();
+              mainWindow.focus();
+            }
+          }
         }
       });
 
@@ -300,7 +306,6 @@ if (!gotTheLock) {
           app.quit();
           process.exit(0);
         }
-
       });
 
       app.on('before-quit', async () => {
@@ -891,10 +896,10 @@ const createWindow = async () => {
     frame: false,
     ...(isDarwin
       ? {
-        vibrancy: 'sidebar',
-        visualEffectState: 'followWindow',
-        transparent: true,
-      }
+          vibrancy: 'sidebar',
+          visualEffectState: 'followWindow',
+          transparent: true,
+        }
       : {
           titleBarStyle: 'hidden',
           titleBarOverlay: titleBarColor[theme],
@@ -935,8 +940,22 @@ const createWindow = async () => {
     }
     mainWindow.show();
     if (process.platform === 'win32') {
+      const bounds = mainWindow.getBounds();
+      const { screen } = require('electron');
+      const primaryDisplay = screen.getPrimaryDisplay();
+      const { workAreaSize } = primaryDisplay;
+      if (bounds.x < 0 || bounds.y < 0 ||
+          bounds.x > workAreaSize.width || bounds.y > workAreaSize.height) {
+        mainWindow.center();
+      }
+      mainWindow.show();
       mainWindow.moveTop();
       mainWindow.focus();
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.invalidate();
+        }
+      }, 100);
     } else {
       mainWindow.focus();
     }
@@ -954,7 +973,7 @@ const createWindow = async () => {
         'native-theme-change',
         nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
       );
-      if(!isDarwin) {
+      if (!isDarwin) {
         mainWindow.setTitleBarOverlay!(
           titleBarColor[nativeTheme.shouldUseDarkColors ? 'dark' : 'light'],
         );

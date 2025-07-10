@@ -25,8 +25,8 @@ import { useEffect, useMemo } from 'react';
 import Spinner from 'renderer/components/Spinner';
 import { IMCPServer } from 'types/mcp';
 import useChatStore from 'stores/useChatStore';
-import WorkspaceMenu from './WorkspaceMenu';
 import usePlatform from 'hooks/usePlatform';
+import WorkspaceMenu from './WorkspaceMenu';
 
 const AppsIcon = bundleIcon(Apps24Filled, Apps24Regular);
 const BookmarkMultipleIcon = bundleIcon(
@@ -47,14 +47,17 @@ const IS_ASSISTANTS_ENABLED = false;
 export default function GlobalNav({ collapsed }: { collapsed: boolean }) {
   const { t } = useTranslation();
   const navigate = useNav();
-  const {isDarwin} = usePlatform();
+  const { isDarwin } = usePlatform();
   const config = useMCPStore((store) => store.config);
   const loadConfig = useMCPStore((state) => state.loadConfig);
   const isMCPServersLoading = useMCPStore((state) => state.isLoading);
   const { createFolder, selectFolder } = useChatStore();
 
   const numOfActiveServers = useMemo(
-    () => Object.values(config.mcpServers).filter((server: IMCPServer) => server.isActive).length,
+    () =>
+      Object.values(config.mcpServers).filter(
+        (server: IMCPServer) => server.isActive,
+      ).length,
     [config.mcpServers],
   );
 
@@ -93,7 +96,7 @@ export default function GlobalNav({ collapsed }: { collapsed: boolean }) {
     <div
       className={`relative ${
         collapsed ? 'text-center' : ''
-      } ${isDarwin ? 'darwin' : ''} border-b border-base py-2`}
+      } ${isDarwin ? 'darwin' : 'mt-8 md:mt-0'} border-b border-base py-2`}
     >
       <div className="px-1">
         <WorkspaceMenu collapsed={collapsed} />

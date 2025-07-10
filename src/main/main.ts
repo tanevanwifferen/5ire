@@ -59,8 +59,11 @@ logging.info('Main process start...');
 const isDarwin = process.platform === 'darwin';
 const mcp = new ModuleContext();
 const store = new Store();
-const themeSetting =  store.get('settings.theme', 'system') as ThemeType;
-const theme = themeSetting === 'system' ? (nativeTheme.shouldUseDarkColors ? 'dark' : 'light') : themeSetting;
+const themeSetting = store.get('settings.theme', 'system') as ThemeType;
+const shouldUseSystemTheme =
+  themeSetting !== 'dark' && themeSetting !== 'light';
+const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+const theme = shouldUseSystemTheme ? systemTheme : themeSetting;
 const titleBarColor = {
   light: {
     color: 'rgba(255, 255, 255, 0)',
@@ -266,7 +269,15 @@ if (!gotTheLock) {
       app.on('activate', () => {
         // On macOS it's common to re-create a window in the app when the
         // dock icon is clicked and there are no other windows open.
-        if (mainWindow === null) createWindow();
+        if (mainWindow === null || mainWindow.isDestroyed()) {
+          createWindow();
+        } else if (mainWindow.isMinimized()) {
+          mainWindow.restore();
+          mainWindow.focus();
+        } else {
+          mainWindow.show();
+          mainWindow.focus();
+        }
       });
 
       app.on('will-finish-launching', () => {
@@ -274,10 +285,15 @@ if (!gotTheLock) {
       });
 
       app.on('window-all-closed', () => {
+        if (mainWindow) {
+          mainWindow.destroy();
+          mainWindow = null;
+        }
         // Respect the OSX convention of having the application in memory even
         // after all windows have been closed
         if (process.platform !== 'darwin') {
           app.quit();
+          process.exit(0);
         }
         axiom.flush();
       });
@@ -440,9 +456,13 @@ ipcMain.on('maximize-app', () => {
   }
 });
 ipcMain.on('close-app', () => {
-  mainWindow?.close();
+  if (mainWindow) {
+    mainWindow.destroy();
+    mainWindow = null;
+  }
   if (process.platform !== 'darwin') {
     app.quit();
+    process.exit(0);
   }
 });
 
@@ -893,7 +913,6 @@ const createWindow = async () => {
     return { action: 'deny' };
   });
 
-
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (mainWindow) {
       const currentURL = mainWindow.webContents.getURL();
@@ -909,6 +928,12 @@ const createWindow = async () => {
       throw new Error('"mainWindow" is not defined');
     }
     mainWindow.show();
+    if (process.platform === 'win32') {
+      mainWindow.moveTop();
+      mainWindow.focus();
+    } else {
+      mainWindow.focus();
+    }
     const fixPath = (await import('fix-path')).default;
     fixPath();
   });
@@ -923,7 +948,9 @@ const createWindow = async () => {
         'native-theme-change',
         nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
       );
-      mainWindow.setTitleBarOverlay!(titleBarColor[ nativeTheme.shouldUseDarkColors ? 'dark' : 'light' ]);
+      mainWindow.setTitleBarOverlay!(
+        titleBarColor[nativeTheme.shouldUseDarkColors ? 'dark' : 'light'],
+      );
     }
   });
 

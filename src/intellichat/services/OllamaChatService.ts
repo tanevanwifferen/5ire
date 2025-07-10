@@ -123,7 +123,10 @@ export default class OllamaChatService
     const url = urlJoin('/api/chat', provider.apiBase.trim());
     const headers = {
       'Content-Type': 'application/json',
-    };
+    } as Record<string, string>;
+    if (provider.apiKey && provider.apiKey.trim()) {
+      headers['Authorization'] = `Bearer ${provider.apiKey.trim()}`;
+    }
     const isStream = this.context.isStream();
     return this.makeHttpRequest(url, headers, payload, isStream);
   }

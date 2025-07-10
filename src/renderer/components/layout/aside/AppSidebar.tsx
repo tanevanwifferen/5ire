@@ -40,7 +40,7 @@ export default function Sidebar() {
         sidebar.collapsed ? width : 'w-64 md:w-[17rem]'
       } fixed inset-y-0 top-0 ${
         sidebar.collapsed ? leftCollapsed : left
-      } flex flex-col duration-300 h-full md:relative`}
+      } flex flex-col h-full md:relative`}
     >
       <div className="flex h-full flex-1 flex-col">
         <GlobalNav collapsed={sidebar.collapsed} />

@@ -289,13 +289,18 @@ if (!gotTheLock) {
           mainWindow.destroy();
           mainWindow = null;
         }
+        try {
+          axiom.flush();
+        } catch (error) {
+          logging.error('Failed to flush axiom:', error);
+        }
         // Respect the OSX convention of having the application in memory even
         // after all windows have been closed
         if (process.platform !== 'darwin') {
           app.quit();
           process.exit(0);
         }
-        axiom.flush();
+
       });
 
       app.on('before-quit', async () => {
@@ -885,14 +890,15 @@ const createWindow = async () => {
     minHeight: 600,
     frame: false,
     ...(isDarwin
-      ? {}
+      ? {
+        vibrancy: 'sidebar',
+        visualEffectState: 'followWindow',
+        transparent: true,
+      }
       : {
           titleBarStyle: 'hidden',
-        }),
-    ...(isDarwin
-      ? {}
-      : {
           titleBarOverlay: titleBarColor[theme],
+          transparent: false,
         }),
     autoHideMenuBar: true,
     // trafficLightPosition: { x: 15, y: 18 },
@@ -907,7 +913,7 @@ const createWindow = async () => {
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
-
+  // mainWindow.setVibrancy('sidebar');
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     openSafeExternal(url);
     return { action: 'deny' };
@@ -948,9 +954,11 @@ const createWindow = async () => {
         'native-theme-change',
         nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
       );
-      mainWindow.setTitleBarOverlay!(
-        titleBarColor[nativeTheme.shouldUseDarkColors ? 'dark' : 'light'],
-      );
+      if(!isDarwin) {
+        mainWindow.setTitleBarOverlay!(
+          titleBarColor[nativeTheme.shouldUseDarkColors ? 'dark' : 'light'],
+        );
+      }
     }
   });
 

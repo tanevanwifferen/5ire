@@ -66,7 +66,7 @@ const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
 const theme = shouldUseSystemTheme ? systemTheme : themeSetting;
 const titleBarColor = {
   light: {
-    color: 'rgba(255, 255, 255, 0)',
+    color: 'rgba(0, 0, 0, 0)',
     height: 30,
     symbolColor: 'black',
   },
@@ -267,17 +267,20 @@ if (!gotTheLock) {
       new AppUpdater();
 
       app.on('activate', () => {
+        logging.info('App activated.');
         // On macOS it's common to re-create a window in the app when the
         // dock icon is clicked and there are no other windows open.
         if (mainWindow === null || mainWindow.isDestroyed()) {
+          logging.info('Recreating main window on macOS');
           createWindow();
         } else if (mainWindow.isMinimized()) {
+          logging.info('Restoring main window on macOS');
           mainWindow.restore();
           mainWindow.focus();
         } else {
+          logging.info('Showing main window on macOS');
           mainWindow.show();
           mainWindow.focus();
-
           if (process.platform === 'win32') {
             mainWindow.moveTop();
             if (!mainWindow.isVisible()) {
@@ -313,6 +316,11 @@ if (!gotTheLock) {
       app.on('before-quit', async () => {
         ipcMain.removeAllListeners();
         await mcp.close();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.removeAllListeners();
+          mainWindow.destroy();
+          mainWindow = null;
+        }
         process.stdin.destroy();
       });
 

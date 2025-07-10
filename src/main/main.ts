@@ -260,11 +260,6 @@ if (!gotTheLock) {
         mainWindow.show();
       }
       mainWindow.focus();
-      if (isWin32) {
-        mainWindow.moveTop();
-        mainWindow.setAlwaysOnTop(true);
-        mainWindow.setAlwaysOnTop(false);
-      }
     } else {
       createWindow();
     }
@@ -278,7 +273,7 @@ if (!gotTheLock) {
     .whenReady()
     .then(async () => {
       createWindow();
-      // Remove this if your app does not use auto updates
+
       // eslint-disable-next-line
       new AppUpdater();
 
@@ -909,7 +904,7 @@ const createWindow = async () => {
   })();
 
   mainWindow = new BrowserWindow({
-    show: isWin32 ? true : false,
+    show: false,
     width: 1024,
     height: 728,
     minWidth: 468,
@@ -939,7 +934,7 @@ const createWindow = async () => {
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
-  // mainWindow.setVibrancy('sidebar');
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     openSafeExternal(url);
     return { action: 'deny' };
@@ -955,6 +950,23 @@ const createWindow = async () => {
     }
   });
 
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (isWin32) {
+      if (!mainWindow) {
+        throw new Error('"mainWindow" is not defined');
+      }
+      logging.debug('Main window finished loading');
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  mainWindow.webContents.once('did-fail-load', () => {
+    setTimeout(() => {
+      mainWindow?.reload();
+    }, 1000);
+  });
+
   mainWindow.on('ready-to-show', async () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
@@ -962,11 +974,6 @@ const createWindow = async () => {
     logging.debug('Main window is ready to show');
     mainWindow.show();
     mainWindow.focus();
-    if (process.platform === 'win32') {
-      mainWindow.moveTop();
-      mainWindow.setAlwaysOnTop(true);
-      mainWindow.setAlwaysOnTop(false);
-    }
     const fixPath = (await import('fix-path')).default;
     fixPath();
   });
@@ -996,12 +1003,6 @@ const createWindow = async () => {
   mainWindow.webContents.setWindowOpenHandler((evt: any) => {
     shell.openExternal(evt.url);
     return { action: 'deny' };
-  });
-
-  mainWindow.webContents.once('did-fail-load', () => {
-    setTimeout(() => {
-      mainWindow?.reload();
-    }, 1000);
   });
 
   downloader = new Downloader(mainWindow, {

@@ -248,7 +248,7 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', (event, commandLine, workingDirectory) => {
-    logging.info('Second instance detected')
+    logging.info('Second instance detected');
     if (mainWindow) {
       if (mainWindow.isMinimized()) {
         mainWindow.restore();
@@ -263,7 +263,7 @@ if (!gotTheLock) {
         mainWindow.setAlwaysOnTop(false);
       }
     } else {
-      createWindow();
+      initWindow();
     }
     const link = commandLine.pop();
     if (link) {
@@ -274,7 +274,7 @@ if (!gotTheLock) {
   app
     .whenReady()
     .then(async () => {
-      createWindow();
+      initWindow();
       // Remove this if your app does not use auto updates
       // eslint-disable-next-line
       new AppUpdater();
@@ -283,7 +283,7 @@ if (!gotTheLock) {
         // On macOS it's common to re-create a window in the app when the
         // dock icon is clicked and there are no other windows open.
         if (mainWindow === null || mainWindow.isDestroyed()) {
-          createWindow();
+          initWindow();
         } else if (mainWindow.isMinimized()) {
           mainWindow.restore();
           mainWindow.focus();
@@ -920,7 +920,7 @@ const createWindow = async () => {
         }
       : {
           titleBarStyle: 'hidden',
-          titleBarOverlay: titleBarColor[safeTheme] || titleBarColor.light, // 添加默认值
+          titleBarOverlay: titleBarColor[safeTheme],
           transparent: false,
         }),
     autoHideMenuBar: true,
@@ -1039,6 +1039,13 @@ const createWindow = async () => {
   });
 };
 
+const initWindow = async () => {
+  if (process.platform === 'win32') {
+    setTimeout(async () => await createWindow(), 100);
+  } else {
+    await createWindow();
+  }
+};
 /**
  * Set Dock icon
  */

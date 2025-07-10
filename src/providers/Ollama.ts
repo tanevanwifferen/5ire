@@ -6,6 +6,7 @@ export default {
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,
+    isApiKeyOptional: true,
     modelsEndpoint: '/api/tags',
   },
   chat: {

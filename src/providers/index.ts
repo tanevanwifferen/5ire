@@ -31,8 +31,9 @@ export const providers: { [key: string]: IServiceProvider } = {
   '5ire': Fire,
 };
 
-// TODO: about to remove
-export function getProvider(providerName: ProviderType): IServiceProvider {
+export function getBuiltInProvider(
+  providerName: ProviderType,
+): IServiceProvider {
   return providers[providerName];
 }
 

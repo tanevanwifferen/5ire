@@ -133,7 +133,7 @@ export default function FluentApp() {
       data-theme={theme}
       style={{background: 'transparent'}}
     >
-      <div className=" flex flex-col h-screen">
+      <div className="flex flex-col h-screen">
         <div className="flex-1">
           <Router>
             {isDarwin ? <AppHeader /> : <WindowsTitleBar />}

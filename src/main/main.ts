@@ -263,7 +263,7 @@ if (!gotTheLock) {
         mainWindow.setAlwaysOnTop(false);
       }
     } else {
-      initWindow();
+      createWindow();
     }
     const link = commandLine.pop();
     if (link) {
@@ -283,7 +283,7 @@ if (!gotTheLock) {
         // On macOS it's common to re-create a window in the app when the
         // dock icon is clicked and there are no other windows open.
         if (mainWindow === null || mainWindow.isDestroyed()) {
-          initWindow();
+          createWindow();
         } else if (mainWindow.isMinimized()) {
           mainWindow.restore();
           mainWindow.focus();
@@ -956,30 +956,13 @@ const createWindow = async () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
     }
+    logging.debug('Main window is ready to show');
     mainWindow.show();
+    mainWindow.focus();
     if (process.platform === 'win32') {
-      const bounds = mainWindow.getBounds();
-      const { screen } = require('electron');
-      const primaryDisplay = screen.getPrimaryDisplay();
-      const { workAreaSize } = primaryDisplay;
-      if (
-        bounds.x < 0 ||
-        bounds.y < 0 ||
-        bounds.x > workAreaSize.width ||
-        bounds.y > workAreaSize.height
-      ) {
-        mainWindow.center();
-      }
-      mainWindow.show();
       mainWindow.moveTop();
-      mainWindow.focus();
-      setTimeout(() => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.invalidate();
-        }
-      }, 100);
-    } else {
-      mainWindow.focus();
+      mainWindow.setAlwaysOnTop(true);
+      mainWindow.setAlwaysOnTop(false);
     }
     const fixPath = (await import('fix-path')).default;
     fixPath();
@@ -1041,7 +1024,8 @@ const createWindow = async () => {
 
 const initWindow = async () => {
   if (process.platform === 'win32') {
-    setTimeout(async () => await createWindow(), 100);
+    logging.info('Windows platform detected, waiting for app to be ready...');
+    setTimeout(async () => await createWindow(), 50);
   } else {
     await createWindow();
   }

@@ -899,6 +899,12 @@ const createWindow = async () => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
+  const safeTheme = (() => {
+    const theme = store.get('settings.theme', 'system') as ThemeType;
+    if (theme === 'dark' || theme === 'light') return theme;
+    return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+  })();
+
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
@@ -914,7 +920,7 @@ const createWindow = async () => {
         }
       : {
           titleBarStyle: 'hidden',
-          titleBarOverlay: titleBarColor[theme],
+          titleBarOverlay: titleBarColor[safeTheme] || titleBarColor.light, // 添加默认值
           transparent: false,
         }),
     autoHideMenuBar: true,

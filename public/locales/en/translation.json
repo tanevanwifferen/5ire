@@ -331,5 +331,6 @@
   "Common.Proxy": "Proxy",
   "Provider.Tooltip.InvalidProxyURL": "The proxy must be a valid URL address.",
   "Common.GetAPIKey": "Get the API key",
-  "Common.Placeholder.Proxy": "routes traffic via this server (leave blank if unsure)"
+  "Common.Placeholder.Proxy": "routes traffic via this server (leave blank if unsure)",
+  "Common.Placeholder.APIKey": "Most providers require an API key – don't forget to set yours here"
 }

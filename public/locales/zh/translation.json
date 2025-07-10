@@ -320,5 +320,6 @@
   "Common.Proxy": "代理",
   "Provider.Tooltip.InvalidProxyURL": "代理地址必须是合法的 URL 地址",
   "Common.GetAPIKey": "去获取密钥",
-  "Common.Placeholder.Proxy": "通过该服务器转发网络请求（如不确定请留空）"
+  "Common.Placeholder.Proxy": "通过该服务器转发网络请求（如不确定请留空）",
+  "Common.Placeholder.APIKey": "API Key 是大多数服务商的必填项，别忘了设置"
 }

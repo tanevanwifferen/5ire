@@ -248,9 +248,22 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', (event, commandLine, workingDirectory) => {
+    logging.info('Second instance detected')
     if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      if (!mainWindow.isVisible()) {
+        mainWindow.show();
+      }
       mainWindow.focus();
+      if (process.platform === 'win32') {
+        mainWindow.moveTop();
+        mainWindow.setAlwaysOnTop(true);
+        mainWindow.setAlwaysOnTop(false);
+      }
+    } else {
+      createWindow();
     }
     const link = commandLine.pop();
     if (link) {
@@ -267,27 +280,16 @@ if (!gotTheLock) {
       new AppUpdater();
 
       app.on('activate', () => {
-        logging.info('App activated.');
         // On macOS it's common to re-create a window in the app when the
         // dock icon is clicked and there are no other windows open.
         if (mainWindow === null || mainWindow.isDestroyed()) {
-          logging.info('Recreating main window on macOS');
           createWindow();
         } else if (mainWindow.isMinimized()) {
-          logging.info('Restoring main window on macOS');
           mainWindow.restore();
           mainWindow.focus();
         } else {
-          logging.info('Showing main window on macOS');
           mainWindow.show();
           mainWindow.focus();
-          if (process.platform === 'win32') {
-            mainWindow.moveTop();
-            if (!mainWindow.isVisible()) {
-              mainWindow.showInactive();
-              mainWindow.focus();
-            }
-          }
         }
       });
 
@@ -888,7 +890,7 @@ const createWindow = async () => {
   if (isDebug) {
     // await installExtensions();
   }
-
+  logging.debug('Creating main window...');
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
     : path.join(__dirname, '../../assets');

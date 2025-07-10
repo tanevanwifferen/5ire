@@ -36,18 +36,18 @@ export default function Sidebar() {
 
   let paddingClass = 'md:pt-0';
   if (isDarwin) {
-    paddingClass = 'pt-10';
+    paddingClass = 'darwin pt-10';
   } else if (isLinux) {
     paddingClass = 'pt-8 md:pt-0';
   }
 
   return (
     <aside
-      className={`app-sidebar shadow-md md:shadow-none z-10 flex-shrink-0 ${paddingClass} ${
+      className={`shadow-md md:shadow-none z-10 flex-shrink-0 ${paddingClass} ${
         sidebar.collapsed ? width : 'w-64 md:w-[17rem]'
       } fixed inset-y-0 top-0 ${
         sidebar.collapsed ? leftCollapsed : left
-      } flex flex-col h-full md:relative`}
+      } flex flex-col h-full md:relative app-sidebar`}
     >
       <div className="flex h-full flex-1 flex-col">
         <GlobalNav collapsed={sidebar.collapsed} />

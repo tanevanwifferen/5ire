@@ -58,7 +58,6 @@ logging.info('Main process start...');
 
 const isDarwin = process.platform === 'darwin';
 const isWin32 = process.platform === 'win32';
-const isLinux = process.platform === 'linux';
 
 const mcp = new ModuleContext();
 const store = new Store();

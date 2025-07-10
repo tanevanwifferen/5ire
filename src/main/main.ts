@@ -277,7 +277,7 @@ if (!gotTheLock) {
   app
     .whenReady()
     .then(async () => {
-      initWindow();
+      createWindow();
       // Remove this if your app does not use auto updates
       // eslint-disable-next-line
       new AppUpdater();
@@ -909,7 +909,7 @@ const createWindow = async () => {
   })();
 
   mainWindow = new BrowserWindow({
-    show: false,
+    show: isWin32 ? true : false,
     width: 1024,
     height: 728,
     minWidth: 468,
@@ -1025,14 +1025,6 @@ const createWindow = async () => {
   });
 };
 
-const initWindow = async () => {
-  if (process.platform === 'win32') {
-    logging.info('Windows platform detected, waiting for app to be ready...');
-    setTimeout(async () => await createWindow(), 50);
-  } else {
-    await createWindow();
-  }
-};
 /**
  * Set Dock icon
  */

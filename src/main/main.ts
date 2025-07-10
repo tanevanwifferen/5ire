@@ -58,6 +58,7 @@ logging.info('Main process start...');
 
 const isDarwin = process.platform === 'darwin';
 const isWin32 = process.platform === 'win32';
+const isLinux = process.platform === 'linux';
 
 const mcp = new ModuleContext();
 const store = new Store();
@@ -276,7 +277,7 @@ if (!gotTheLock) {
   app
     .whenReady()
     .then(async () => {
-      createWindow();
+      initWindow();
       // Remove this if your app does not use auto updates
       // eslint-disable-next-line
       new AppUpdater();
@@ -908,7 +909,7 @@ const createWindow = async () => {
   })();
 
   mainWindow = new BrowserWindow({
-    show: isWin32 ? true : false,
+    show: false,
     width: 1024,
     height: 728,
     minWidth: 468,
@@ -961,7 +962,7 @@ const createWindow = async () => {
     logging.debug('Main window is ready to show');
     mainWindow.show();
     mainWindow.focus();
-    if (isWin32) {
+    if (process.platform === 'win32') {
       mainWindow.moveTop();
       mainWindow.setAlwaysOnTop(true);
       mainWindow.setAlwaysOnTop(false);
@@ -1024,6 +1025,14 @@ const createWindow = async () => {
   });
 };
 
+const initWindow = async () => {
+  if (process.platform === 'win32') {
+    logging.info('Windows platform detected, waiting for app to be ready...');
+    setTimeout(async () => await createWindow(), 50);
+  } else {
+    await createWindow();
+  }
+};
 /**
  * Set Dock icon
  */

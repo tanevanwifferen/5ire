@@ -15,7 +15,7 @@ import {
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IUsageStatistics } from 'types/usage';
-import { getProvider } from 'providers';
+import useProviderStore from 'stores/useProviderStore';
 import { ProviderType } from '../../../providers/types';
 
 type modelCell = {
@@ -51,8 +51,9 @@ export default function Grid({
   statistics: IUsageStatistics[];
 }) {
   const { t } = useTranslation();
+  const { getAvailableProvider } = useProviderStore();
   const currencySymbol = useMemo(() => {
-    const $provider = getProvider(provider);
+    const $provider = getAvailableProvider(provider);
     return $provider?.currency === 'USD' ? '$' : '¥';
   }, [provider]);
   const columns: TableColumnDefinition<Item>[] = [

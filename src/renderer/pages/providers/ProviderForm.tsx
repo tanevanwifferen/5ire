@@ -72,6 +72,7 @@ export default function ProviderForm() {
           validationMessage={nameError}
         >
           <InfoLabel
+            className="pt-0.5"
             size="small"
             info={
               provider.isBuiltIn
@@ -189,7 +190,7 @@ export default function ProviderForm() {
       {getChatAPISchema(provider.name || '').includes('key') && (
         <div className="mt-2 flex justify-start items-baseline gap-1">
           <InfoLabel
-            className="w-[70px]"
+            className="w-[70px] flex"
             size="small"
             info={
               provider.referral ? (

@@ -171,7 +171,7 @@ export default function ToolEditDialog(options: {
                     }
                   >
                     <InfoLabel
-                      className="mb-[7px]"
+                      className="mb-0.5 py-0.5"
                       info={
                         server ? t('Tools.KeyCannotUpdate') : t('Tools.KeyHint')
                       }

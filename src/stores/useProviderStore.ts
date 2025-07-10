@@ -1,9 +1,10 @@
 import { find, isNil, keyBy, omit, pickBy, unionBy } from 'lodash';
-import { getBuiltInProviders } from 'providers';
+import { getBuiltInProvider, getBuiltInProviders } from 'providers';
 import {
   IChatModel,
   IChatModelConfig,
   IChatProviderConfig,
+  ProviderType,
 } from 'providers/types';
 import { genDefaultName } from 'utils/util';
 import { create } from 'zustand';
@@ -42,6 +43,10 @@ const isProviderReady = (provider: IChatProviderConfig) => {
     const url = new URL(provider.apiBase);
     const isReady = ['http:', 'https:'].includes(url.protocol);
     if (isReady) {
+      const builtIn = getBuiltInProvider(provider.name as ProviderType);
+      if (builtIn?.options?.isApiKeyOptional) {
+        return true;
+      }
       return !provider.schema.includes('key') || !isBlank(provider.apiKey);
     }
     return false;

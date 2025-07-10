@@ -21,9 +21,7 @@ import crypto from 'crypto';
 import { autoUpdater } from 'electron-updater';
 import Store from 'electron-store';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import * as logging from './logging';
 import axiom from '../vendors/axiom';
-import MenuBuilder from './menu';
 import {
   decodeBase64,
   getFileInfo,
@@ -31,6 +29,8 @@ import {
   resolveHtmlPath,
 } from './util';
 import './sqlite';
+import MenuBuilder from './menu';
+import * as logging from './logging';
 import Downloader from './downloader';
 import { Embedder } from './embedder';
 import initCrashReporter from '../CrashReporter';
@@ -57,6 +57,8 @@ logging.init();
 logging.info('Main process start...');
 
 const isDarwin = process.platform === 'darwin';
+const isWin32 = process.platform === 'win32';
+
 const mcp = new ModuleContext();
 const store = new Store();
 const themeSetting = store.get('settings.theme', 'system') as ThemeType;
@@ -66,7 +68,7 @@ const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
 const theme = shouldUseSystemTheme ? systemTheme : themeSetting;
 const titleBarColor = {
   light: {
-    color: 'rgba(255, 255, 255, 0)',
+    color: 'rgba(0, 0, 0, 0)',
     height: 30,
     symbolColor: 'black',
   },
@@ -248,9 +250,17 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on('second-instance', (event, commandLine, workingDirectory) => {
+    logging.info('Second instance detected');
     if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      if (!mainWindow.isVisible()) {
+        mainWindow.show();
+      }
       mainWindow.focus();
+    } else {
+      createWindow();
     }
     const link = commandLine.pop();
     if (link) {
@@ -262,7 +272,7 @@ if (!gotTheLock) {
     .whenReady()
     .then(async () => {
       createWindow();
-      // Remove this if your app does not use auto updates
+
       // eslint-disable-next-line
       new AppUpdater();
 
@@ -300,12 +310,16 @@ if (!gotTheLock) {
           app.quit();
           process.exit(0);
         }
-
       });
 
       app.on('before-quit', async () => {
         ipcMain.removeAllListeners();
         await mcp.close();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.removeAllListeners();
+          mainWindow.destroy();
+          mainWindow = null;
+        }
         process.stdin.destroy();
       });
 
@@ -873,7 +887,7 @@ const createWindow = async () => {
   if (isDebug) {
     // await installExtensions();
   }
-
+  logging.debug('Creating main window...');
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
     : path.join(__dirname, '../../assets');
@@ -881,6 +895,12 @@ const createWindow = async () => {
   const getAssetPath = (...paths: string[]): string => {
     return path.join(RESOURCES_PATH, ...paths);
   };
+
+  const safeTheme = (() => {
+    const theme = store.get('settings.theme', 'system') as ThemeType;
+    if (theme === 'dark' || theme === 'light') return theme;
+    return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+  })();
 
   mainWindow = new BrowserWindow({
     show: false,
@@ -891,13 +911,13 @@ const createWindow = async () => {
     frame: false,
     ...(isDarwin
       ? {
-        vibrancy: 'sidebar',
-        visualEffectState: 'followWindow',
-        transparent: true,
-      }
+          vibrancy: 'sidebar',
+          visualEffectState: 'followWindow',
+          transparent: true,
+        }
       : {
           titleBarStyle: 'hidden',
-          titleBarOverlay: titleBarColor[theme],
+          titleBarOverlay: titleBarColor[safeTheme],
           transparent: false,
         }),
     autoHideMenuBar: true,
@@ -913,7 +933,7 @@ const createWindow = async () => {
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
-  // mainWindow.setVibrancy('sidebar');
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     openSafeExternal(url);
     return { action: 'deny' };
@@ -929,17 +949,30 @@ const createWindow = async () => {
     }
   });
 
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (isWin32) {
+      if (!mainWindow) {
+        throw new Error('"mainWindow" is not defined');
+      }
+      logging.debug('Main window finished loading');
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+
+  mainWindow.webContents.once('did-fail-load', () => {
+    setTimeout(() => {
+      mainWindow?.reload();
+    }, 1000);
+  });
+
   mainWindow.on('ready-to-show', async () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
     }
+    logging.debug('Main window is ready to show');
     mainWindow.show();
-    if (process.platform === 'win32') {
-      mainWindow.moveTop();
-      mainWindow.focus();
-    } else {
-      mainWindow.focus();
-    }
+    mainWindow.focus();
     const fixPath = (await import('fix-path')).default;
     fixPath();
   });
@@ -954,7 +987,7 @@ const createWindow = async () => {
         'native-theme-change',
         nativeTheme.shouldUseDarkColors ? 'dark' : 'light',
       );
-      if(!isDarwin) {
+      if (!isDarwin) {
         mainWindow.setTitleBarOverlay!(
           titleBarColor[nativeTheme.shouldUseDarkColors ? 'dark' : 'light'],
         );
@@ -969,12 +1002,6 @@ const createWindow = async () => {
   mainWindow.webContents.setWindowOpenHandler((evt: any) => {
     shell.openExternal(evt.url);
     return { action: 'deny' };
-  });
-
-  mainWindow.webContents.once('did-fail-load', () => {
-    setTimeout(() => {
-      mainWindow?.reload();
-    }, 1000);
   });
 
   downloader = new Downloader(mainWindow, {

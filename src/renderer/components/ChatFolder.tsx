@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AccordionItem,
   AccordionHeader,
@@ -23,7 +24,6 @@ import { IChat, IChatFolder } from 'intellichat/types';
 import { useDroppable } from '@dnd-kit/core';
 import useChatStore from 'stores/useChatStore';
 import { t } from 'i18next';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import Mousetrap from 'mousetrap';
 import useNav from 'hooks/useNav';
 import { TEMP_CHAT_ID } from 'consts';
@@ -71,7 +71,7 @@ export default function ChatFolder({
   }, [name, folder.id, updateFolder]);
 
   const handleContextMenuCommand = useCallback(
-    (command: string, params: any) => {
+    (command: string) => {
       if (command === 'delete-chat-folder') {
         setConfirmDialogOpen(true);
       } else if (command === 'folder-chat-settings') {
@@ -237,7 +237,7 @@ export default function ChatFolder({
         <AccordionPanel>
           {chats.length > 0 && (
             <div
-              className={`pt-0.5 ${collapsed ? 'ml-0' : 'border-l border-gray-300 dark:border-zinc-700 ml-3'}`}
+              className={`pt-0.5 ${collapsed ? 'ml-0' : 'border-l border-zinc-400/50 dark:border-zinc-700 ml-3'}`}
               style={{ paddingLeft: collapsed ? 0 : 4 }}
             >
               {chats.map((c) => (

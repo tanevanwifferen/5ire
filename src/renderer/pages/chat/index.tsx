@@ -45,6 +45,8 @@ import CitationDialog from './CitationDialog';
 
 import './Chat.scss';
 import 'split-pane-react/esm/themes/default.css';
+import '../../../assets/css/katex.min.css';
+import '../../../assets/css/texmath.min.css';
 
 const debug = Debug('5ire:pages:chat');
 

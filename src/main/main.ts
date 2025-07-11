@@ -61,11 +61,15 @@ const isWin32 = process.platform === 'win32';
 
 const mcp = new ModuleContext();
 const store = new Store();
-const themeSetting = store.get('settings.theme', 'system') as ThemeType;
-const shouldUseSystemTheme =
-  themeSetting !== 'dark' && themeSetting !== 'light';
-const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
-const theme = shouldUseSystemTheme ? systemTheme : themeSetting;
+const loadTheme = (theme?: ThemeType) => {
+  const $theme = theme || (store.get('settings.theme', 'system') as ThemeType);
+  if ($theme === 'dark' || $theme === 'light') {
+    nativeTheme.themeSource = $theme;
+    return $theme;
+  }
+  nativeTheme.themeSource = 'system';
+  return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+};
 const titleBarColor = {
   light: {
     color: 'rgba(0, 0, 0, 0)',
@@ -540,10 +544,7 @@ ipcMain.handle('set-native-theme', (_, theme: 'light' | 'dark' | 'system') => {
 });
 
 ipcMain.handle('get-native-theme', () => {
-  if (nativeTheme.themeSource === 'system') {
-    return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
-  }
-  return nativeTheme.themeSource;
+  return loadTheme();
 });
 
 ipcMain.handle('get-system-language', () => {
@@ -724,14 +725,12 @@ ipcMain.handle('cancel-download', (_, fileName: string) => {
   downloader.cancel(fileName);
 });
 
-ipcMain.on(
-  'titlebar-update-overlay',
-  (_, theme: Exclude<ThemeType, 'system'>) => {
-    if (!isDarwin) {
-      mainWindow?.setTitleBarOverlay!(titleBarColor[theme]);
-    }
-  },
-);
+ipcMain.on('theme-changed', (_, theme: ThemeType) => {
+  if (!isDarwin) {
+    mainWindow?.setTitleBarOverlay!(titleBarColor[loadTheme(theme)]);
+  }
+  nativeTheme.themeSource = theme;
+});
 
 /** mcp */
 ipcMain.handle('mcp-init', async () => {
@@ -895,13 +894,7 @@ const createWindow = async () => {
   const getAssetPath = (...paths: string[]): string => {
     return path.join(RESOURCES_PATH, ...paths);
   };
-
-  const safeTheme = (() => {
-    const theme = store.get('settings.theme', 'system') as ThemeType;
-    if (theme === 'dark' || theme === 'light') return theme;
-    return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
-  })();
-
+  const theme = loadTheme();
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
@@ -917,7 +910,7 @@ const createWindow = async () => {
         }
       : {
           titleBarStyle: 'hidden',
-          titleBarOverlay: titleBarColor[safeTheme],
+          titleBarOverlay: titleBarColor[theme],
           transparent: false,
         }),
     autoHideMenuBar: true,

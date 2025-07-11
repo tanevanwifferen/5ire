@@ -27,12 +27,12 @@ export default function AppearanceSettings() {
       window.electron
         .getNativeTheme()
         .then((_theme) => {
-          window.electron.titleBarAPI.updateOverlay(_theme as ThemeType);
+          window.electron.setTheme(data.value as ThemeType);
           return setTheme(_theme as ThemeType);
         })
         .catch(captureException);
     } else {
-      window.electron.titleBarAPI.updateOverlay(data.value as ThemeType);
+      window.electron.setTheme(data.value as ThemeType);
       setTheme(data.value as ThemeType);
     }
   };

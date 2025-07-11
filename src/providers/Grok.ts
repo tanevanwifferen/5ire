@@ -2,6 +2,21 @@ import { IServiceProvider } from './types';
 
 const chatModels = [
   {
+    id: 'grok-4',
+    name: 'grok-4',
+    contextWindow: 256000,
+    defaultMaxTokens: 8000,
+    maxTokens: 256000,
+    inputPrice: 0.003,
+    outputPrice: 0.015,
+    description: `Grok's latest and greatest flagship model, offering unparalleled performance in natural language, math and reasoning - the perfect jack of all trades.`,
+    capabilities: {
+      tools: {
+        enabled: true,
+      },
+    },
+  },
+  {
     id: 'grok-3',
     name: 'grok-3',
     contextWindow: 131072,
@@ -45,6 +60,11 @@ const chatModels = [
     capabilities: {
       tools: {
         enabled: true,
+      },
+      vision: {
+        enabled: true,
+        allowBase64: true,
+        allowUrl: true,
       },
     },
   },

@@ -31,7 +31,6 @@ import {
   bundleIcon,
   Circle16Filled,
   CircleHintHalfVertical16Filled,
-  CircleOff16Regular,
   DeleteFilled,
   DeleteRegular,
   EditFilled,
@@ -91,7 +90,7 @@ export default function Grid({
       return tool.isActive ? (
         <Circle16Filled className="text-green-500 -mb-0.5" />
       ) : (
-        <CircleOff16Regular className="text-gray-400 dark:text-gray-600 -mb-0.5" />
+        <Circle16Filled className="text-gray-400 dark:text-gray-600 -mb-0.5" />
       );
     },
     [loading],
@@ -145,7 +144,7 @@ export default function Grid({
                           dangerouslySetInnerHTML={{
                             __html: render(
                               `\`\`\`json\n${JSON.stringify(item, null, 2)}\n\`\`\``,
-                            )
+                            ),
                           }}
                         />
                       </PopoverSurface>

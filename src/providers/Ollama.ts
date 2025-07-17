@@ -6,10 +6,11 @@ export default {
   currency: 'USD',
   options: {
     apiBaseCustomizable: true,
+    isApiKeyOptional: true,
     modelsEndpoint: '/api/tags',
   },
   chat: {
-    apiSchema: ['base', 'proxy'],
+    apiSchema: ['base', 'key', 'proxy'],
     docs: {
       temperature:
         'Higher values will make the output more creative and unpredictable, while lower values will make it more precise.',

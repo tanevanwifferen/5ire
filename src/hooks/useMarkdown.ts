@@ -4,7 +4,8 @@ import DOMPurify from 'dompurify';
 // @ts-ignore
 import MarkdownIt from 'markdown-it';
 // @ts-ignore
-import mathjax3 from 'markdown-it-mathjax3';
+import texmath from 'markdown-it-texmath';
+import katex from 'katex';
 // @ts-ignore
 import markdownItMermaid from 'markdown-it-mermaid';
 import hljs from 'highlight.js/lib/common';
@@ -16,10 +17,92 @@ import useToast from './useToast';
 // @ts-ignore
 import markdownItEChartsPlugin from '../libs/markdownit-plugins/markdownItEChartsPlugin';
 
+// 缓存配置
+const CACHE_SIZE = 100;
+const renderCache = new Map<string, string>();
+
+// excluded LaTeX commands that should not be wrapped in $$
+const EXCLUDED_COMMANDS = [
+  '\\begin', '\\end', '\\documentclass', '\\usepackage', '\\newcommand',
+  '\\renewcommand', '\\DeclareMathOperator', '\\def'
+];
+
+// 数学表达式处理函数
+function processLatexExpressions(str: string): string {
+  // check if the expression is already wrapped in $$
+  const mathRegex = /\$([^$]+)\$/g;
+  const existingMath = new Set<string>();
+  let match;
+
+  while ((match = mathRegex.exec(str)) !== null) {
+    existingMath.add(match[1]);
+  }
+
+  const latexRegex = /(\\[a-zA-Z]+(?:\{(?:[^{}]|\{(?:[^{}]|\{[^}]*\})*\})*\})*)/g;
+
+  return str.replace(latexRegex, (match, expr) => {
+    // check if the expression is already wrapped in $$
+    if (existingMath.has(expr)) {
+      return match;
+    }
+
+    // check if the command is in the excluded list
+    const command = expr.match(/\\[a-zA-Z]+/)?.[0];
+    if (command && EXCLUDED_COMMANDS.includes(command)) {
+      return match;
+    }
+
+    // check if the expression is already wrapped in $$
+    const index = str.indexOf(match);
+    const before = str.substring(Math.max(0, index - 1), index);
+    const after = str.substring(index + match.length, index + match.length + 1);
+
+    if (before === '$' && after === '$') {
+      return match;
+    }
+
+    return `$${expr}$`;
+  });
+}
+
+function batchProcessString(str: string): string {
+  try {
+    // step 1: replace \pi with π
+    let result = str.replace(/\\pi/g, 'π');
+
+    // step 2: process LaTeX expressions
+    result = processLatexExpressions(result);
+
+    // step 3: handle left/right parentheses
+    result = result.replace(/\\left|\\right/g, (match) =>
+      match === '\\left' ? '(' : ')'
+    );
+
+    return result;
+  } catch (error) {
+    console.error('Error processing LaTeX expressions:', error);
+    return str; // return original string in case of error
+  }
+}
+
+function getCachedResult(key: string): string | undefined {
+  return renderCache.get(key);
+}
+
+function setCachedResult(key: string, value: string): void {
+  if (renderCache.size >= CACHE_SIZE) {
+    // remove the oldest entry if cache size exceeds limit
+    const firstKey = renderCache.keys().next().value;
+    renderCache.delete(firstKey || '');
+  }
+  renderCache.set(key, value);
+}
+
 export default function useMarkdown() {
   const theme = useAppearanceStore((state) => state.theme);
   const { notifySuccess } = useToast();
   const { t } = useTranslation();
+
   const md = new MarkdownIt({
     html: true,
     linkify: true,
@@ -63,7 +146,11 @@ export default function useMarkdown() {
       );
     },
   })
-    .use(mathjax3)
+    .use(texmath, {
+      engine: katex,
+      delimiters: 'dollars',
+      katexOptions: {},
+    })
     .use(markdownItMermaid, {
       startOnLoad: false,
       securityLevel: 'loose',
@@ -77,6 +164,7 @@ export default function useMarkdown() {
     })
     .use(markdownItEmoji)
     .use(markdownItEChartsPlugin);
+
   md.mermaid.loadPreferences({
     get: (key: string) => {
       if (key === 'mermaid-theme') {
@@ -88,11 +176,13 @@ export default function useMarkdown() {
       return undefined;
     },
   });
+
   const defaultRender =
     md.renderer.rules.link_open ||
     function (tokens: any, idx: any, options: any, env: any, self: any) {
       return self.renderToken(tokens, idx, options);
     };
+
   md.renderer.rules.link_open = function (
     tokens: any,
     idx: any,
@@ -135,6 +225,27 @@ export default function useMarkdown() {
   };
 
   return {
-    render: (str: string): string => DOMPurify.sanitize(md.render(str)),
+    render: (str: string): string => {
+      const cached = getCachedResult(str);
+      if (cached) {
+        return cached;
+      }
+      try {
+        const processedStr = batchProcessString(str);
+        const result = DOMPurify.sanitize(md.render(processedStr));
+        setCachedResult(str, result);
+        return result;
+      } catch (error) {
+        console.error('Error rendering markdown:', error);
+        return DOMPurify.sanitize(str);
+      }
+    },
+    clearCache: () => {
+      renderCache.clear();
+    },
+    getCacheStats: () => ({
+      size: renderCache.size,
+      maxSize: CACHE_SIZE,
+    }),
   };
 }

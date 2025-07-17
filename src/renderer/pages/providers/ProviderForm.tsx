@@ -28,7 +28,6 @@ export default function ProviderForm() {
   const [proxy, setProxy] = useState<string>('');
   const [proxyError, setProxyError] = useState<string>('');
   const [apiKey, setApiKey] = useState<string>('');
-  const [apiKeyError, setApiKeyError] = useState<string>('');
   const [secret, setSecret] = useState<string>('');
   const [secretError, setSecretError] = useState<string>('');
   const [version, setVersion] = useState<string>('');
@@ -72,6 +71,7 @@ export default function ProviderForm() {
           validationMessage={nameError}
         >
           <InfoLabel
+            className="pt-0.5"
             size="small"
             info={
               provider.isBuiltIn
@@ -189,7 +189,7 @@ export default function ProviderForm() {
       {getChatAPISchema(provider.name || '').includes('key') && (
         <div className="mt-2 flex justify-start items-baseline gap-1">
           <InfoLabel
-            className="w-[70px]"
+            className="w-[70px] flex"
             size="small"
             info={
               provider.referral ? (
@@ -208,32 +208,18 @@ export default function ProviderForm() {
           >
             {t('Common.APIKey')}
           </InfoLabel>
-          <Field
-            size="small"
-            className="field-small flex-grow"
-            validationState={apiKeyError ? 'error' : 'none'}
-            validationMessage={apiKeyError}
-          >
+          <Field size="small" className="field-small flex-grow">
             <MaskableInput
               className="flex-grow"
               value={apiKey}
+              placeholder={t('Common.Placeholder.APIKey')}
               onBlur={(ev: React.FocusEvent<HTMLInputElement>) => {
-                if (isBlank(ev.target.value)) {
-                  setApiKeyError(t('Common.Required'));
-                } else {
-                  setApiKeyError('');
-                  updateProvider(name, {
-                    apiKey: ev.target.value,
-                  });
-                }
+                updateProvider(name, {
+                  apiKey: ev.target.value,
+                });
               }}
               onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
                 setApiKey(ev.target.value);
-                if (isBlank(ev.target.value)) {
-                  setApiKeyError(t('Common.Required'));
-                } else {
-                  setApiKeyError('');
-                }
               }}
             />
           </Field>
@@ -256,7 +242,10 @@ export default function ProviderForm() {
               className="flex-grow"
               placeholder={t('Common.Placeholder.Proxy')}
               onBlur={(ev: React.FocusEvent<HTMLInputElement>) => {
-                if (isValidHttpHRL(ev.target.value)) {
+                if (
+                  isBlank(ev.target.value) ||
+                  isValidHttpHRL(ev.target.value)
+                ) {
                   updateProvider(name, {
                     proxy: ev.target.value,
                   });
@@ -266,7 +255,10 @@ export default function ProviderForm() {
               }}
               onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
                 setProxy(ev.target.value);
-                if (isValidHttpHRL(ev.target.value)) {
+                if (
+                  isBlank(ev.target.value) ||
+                  isValidHttpHRL(ev.target.value)
+                ) {
                   setProxyError('');
                 } else {
                   setProxyError(t('Provider.Tooltip.InvalidProxyURL'));

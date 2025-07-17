@@ -108,13 +108,18 @@ export default function ModelFormDrawer({
   };
 
   const onSave = () => {
-    if (nameError) {
-      return;
-    }
+    let currentNameError = '';
     if (name.trim() === '') {
-      setNameError(t('Common.Required'));
+      currentNameError = t('Common.Required');
+      setNameError(currentNameError);
+    } else if (modelNames.includes(name.trim())) {
+      currentNameError = t('Provider.Model.NameAlreadyExists');
+      setNameError(currentNameError);
     } else {
       setNameError('');
+    }
+    if (currentNameError) {
+      return;
     }
     const payload = {
       id: model?.id || '',

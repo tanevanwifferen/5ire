@@ -153,6 +153,7 @@ const electronHandler = {
   getNativeTheme: () => ipcRenderer.invoke('get-native-theme'),
   getSystemLanguage: () => ipcRenderer.invoke('get-system-language'),
   selectImageWithBase64: () => ipcRenderer.invoke('select-image-with-base64'),
+  setTheme: (theme: ThemeType) => ipcRenderer.send('theme-changed', theme),
   embeddings: {
     getModelFileStatus: () =>
       ipcRenderer.invoke('get-embedding-model-file-status'),
@@ -218,11 +219,7 @@ const electronHandler = {
       ipcRenderer.removeAllListeners(channel);
     },
   },
-  platform: platform(),
-  titleBarAPI: {
-    updateOverlay: (theme: ThemeType) =>
-      ipcRenderer.send('titlebar-update-overlay', theme),
-  },
+  platform: platform()
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

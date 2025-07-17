@@ -13,7 +13,7 @@ export type ProviderType =
   | '5ire'
   | 'Doubao'
   | 'Grok'
-  | '302AI';
+  | '302.AI';
 
 export interface INumberRange {
   min: number;
@@ -114,6 +114,7 @@ export interface IServiceProvider {
     apiBaseCustomizable?: boolean;
     apiKeyCustomizable?: boolean;
     modelsEndpoint?: string;
+    isApiKeyOptional?: boolean;
   };
   chat: IChatConfig;
   embedding?: IEmbeddingConfig;

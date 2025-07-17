@@ -14,7 +14,7 @@ import BookmarkNav from './BookmarkNav';
 
 export default function Sidebar() {
   const location = useLocation();
-  const { isDarwin } = usePlatform();
+  const { isDarwin, isLinux } = usePlatform();
   const sidebar = useAppearanceStore((state) => state.sidebar);
   const width = sidebar.hidden ? 'w-0' : 'w-auto';
   const left = sidebar.hidden ? 'md:left-0' : '-left-64 md:left-0';
@@ -34,13 +34,20 @@ export default function Sidebar() {
 
   renderNav();
 
+  let paddingClass = 'md:pt-0';
+  if (isDarwin) {
+    paddingClass = 'darwin pt-10';
+  } else if (isLinux) {
+    paddingClass = 'pt-8 md:pt-0';
+  }
+
   return (
     <aside
-      className={`app-sidebar shadow-md md:shadow-none z-10 flex-shrink-0 ${isDarwin ? 'pt-10' : 'md:pt-0'} ${
+      className={`shadow-md md:shadow-none z-10 flex-shrink-0 ${paddingClass} ${
         sidebar.collapsed ? width : 'w-64 md:w-[17rem]'
       } fixed inset-y-0 top-0 ${
         sidebar.collapsed ? leftCollapsed : left
-      } flex flex-col duration-300 h-full md:relative`}
+      } flex flex-col h-full md:relative app-sidebar`}
     >
       <div className="flex h-full flex-1 flex-col">
         <GlobalNav collapsed={sidebar.collapsed} />

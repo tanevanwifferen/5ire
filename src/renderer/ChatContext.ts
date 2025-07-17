@@ -117,17 +117,8 @@ const createChatContext = (chatId?: string): IChatContext => {
 
   const isReady = () => {
     const $provider = getProvider();
-    if ($provider.schema.includes('base') && !$provider.apiBase) {
-      return false;
-    }
-    if ($provider.schema.includes('key') && !$provider.apiKey) {
-      return false;
-    }
-    if ($provider.schema.includes('secret') && !$provider) {
-      return false;
-    }
     const $model = getModel();
-    return $model?.isReady;
+    return $provider.isReady && $model?.isReady;
   };
 
   const getCtxMessages = (msgId?: string) => {

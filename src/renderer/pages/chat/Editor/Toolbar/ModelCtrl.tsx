@@ -203,8 +203,8 @@ export default function ModelCtrl({
                 key={provider.name}
                 style={{
                   fontSize: 12,
-                  paddingTop: 2,
-                  paddingBottom: 2,
+                  paddingTop: 1,
+                  paddingBottom: 1,
                   minHeight: 12,
                 }}
                 disabled={!provider.isReady}

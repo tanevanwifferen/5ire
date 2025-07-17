@@ -236,7 +236,7 @@ export default function Providers() {
               contentHeight - (HEADER_HEIGHT + LIST_ITEM_HEIGHT),
             )}
           />
-          <div className="absolute p-2 bottom-0 left-0 right-0 z-10 border-t border-base bg-white dark:bg-zinc-800/50">
+          <div className="absolute p-2 bottom-0 left-0 right-0 border-t border-base bg-white dark:bg-zinc-800/50">
             <Button
               size="small"
               appearance="subtle"

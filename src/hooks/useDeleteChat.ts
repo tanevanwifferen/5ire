@@ -11,7 +11,8 @@ export default function useDeleteChat() {
   const { notifySuccess } = useToast();
   const navigate = useNav();
   const deleteChat = useChatStore((state) => state.deleteChat);
-  const [delConfirmDialogOpen, setDelConfirmDialogOpen] = useState<boolean>(false);
+  const [delConfirmDialogOpen, setDelConfirmDialogOpen] =
+    useState<boolean>(false);
   const [chatToDelete, setChatToDelete] = useState<IChat | null>(null);
 
   const showDeleteConfirmation = (chat?: IChat) => {
@@ -22,14 +23,10 @@ export default function useDeleteChat() {
   const onDeleteChat = async () => {
     if (chatToDelete) {
       await deleteChat(chatToDelete.id);
-      const activeChat = useChatStore.getState().chat;
-      if (activeChat?.id === chatToDelete.id) {
-        navigate(`/chats/${TEMP_CHAT_ID}`);
-      }
     } else {
       await deleteChat();
-      navigate(`/chats/${TEMP_CHAT_ID}`);
     }
+    navigate(`/chats/${TEMP_CHAT_ID}`);
     notifySuccess(t('Chat.Notification.Deleted'));
     setDelConfirmDialogOpen(false);
     setChatToDelete(null);

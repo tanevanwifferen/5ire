@@ -81,7 +81,6 @@ export default function MaxTokensCtrl({
     const value = data.value
       ? data.value
       : str2int(data.displayValue as string);
-    console.log('updateMaxTokens>>>>>>>>>>>>>', value);
     const $maxToken = Math.max(Math.min(value as number, modelMaxTokens), 1);
     await editStage(chat.id, { maxTokens: $maxToken });
     setMaxTokens($maxToken);

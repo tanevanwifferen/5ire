@@ -196,7 +196,7 @@ const chatModels = [
 
 export default {
   name: '5ire',
-  apiBase: 'https://api.5ire.com/v1',
+  apiBase: 'https://openai.5ireai.com/v1',
   currency: 'USD',
   isPremium: true,
   options: {

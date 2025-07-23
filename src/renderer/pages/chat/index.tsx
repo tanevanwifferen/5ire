@@ -91,9 +91,12 @@ export default function Chat() {
 
   const chatSidebarShow = useAppearanceStore((state) => state.chatSidebar.show);
   const chatService = useRef<INextChatService>();
+  // Get the active chat to use its provider/model as dependencies
+  const activeChat = useMemo(() => chatContext.getActiveChat(), [activeChatId]);
+
   const isReady = useMemo(() => {
     return chatContext.isReady();
-  }, [activeChatId, chatContext.getProvider(), chatContext.getModel()]);
+  }, [activeChatId, activeChat?.provider, activeChat?.model]);
   const [isLoading, setIsLoading] = useState(false);
 
   const { notifyError } = useToast();

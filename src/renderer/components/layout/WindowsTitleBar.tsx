@@ -1,14 +1,29 @@
 import './WindowsTitleBar.scss';
-import logoImage from '../../../../assets/images/logo.png';
-import { Popover, PopoverTrigger, Button, PopoverSurface } from '@fluentui/react-components';
+import {
+  Popover,
+  PopoverTrigger,
+  Button,
+  PopoverSurface,
+} from '@fluentui/react-components';
 import useOnlineStatus from 'hooks/useOnlineStatus';
 import Mousetrap from 'mousetrap';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { bundleIcon, PanelLeftText24Filled, PanelLeftText24Regular, Search24Filled, Search24Regular, Wifi124Filled, Wifi124Regular, WifiOff24Filled, WifiOff24Regular } from '@fluentui/react-icons';
+import {
+  bundleIcon,
+  PanelLeftText24Filled,
+  PanelLeftText24Regular,
+  Search24Filled,
+  Search24Regular,
+  Wifi124Filled,
+  Wifi124Regular,
+  WifiOff24Filled,
+  WifiOff24Regular,
+} from '@fluentui/react-icons';
 import SearchDialog from 'renderer/components/SearchDialog';
 import UpgradeIndicator from 'renderer/components/UpgradeIndicator';
 import useAppearanceStore from 'stores/useAppearanceStore';
+import logoImage from '../../../../assets/images/logo.png';
 
 const PanelLeftIcon = bundleIcon(PanelLeftText24Filled, PanelLeftText24Regular);
 const SearchIcon = bundleIcon(Search24Filled, Search24Regular);
@@ -51,22 +66,24 @@ function WindowsTitleBar() {
     <div className="custom-titlebar relative">
       <img src={logoImage} alt="logo" className="size-5" />
       <div className="block md:hidden pl-1">
-          <Button
-            icon={<PanelLeftIcon />}
-            appearance="transparent"
-            onClick={() => toggleSidebarVisibility()}
-          />
-        </div>
-        <div className="pl-1">
-          <Button
-            icon={<SearchIcon />}
-            appearance="transparent"
-            onClick={() => setSearchOpen(true)}
-          />
-        </div>
-        <div>{NetworkStatusIcon}</div>
-        <div className="ml-2"><UpgradeIndicator /></div>
-        <SearchDialog open={searchOpen} setOpen={setSearchOpen} />
+        <Button
+          icon={<PanelLeftIcon />}
+          appearance="transparent"
+          onClick={() => toggleSidebarVisibility()}
+        />
+      </div>
+      <div className="pl-1">
+        <Button
+          icon={<SearchIcon />}
+          appearance="transparent"
+          onClick={() => setSearchOpen(true)}
+        />
+      </div>
+      <div>{NetworkStatusIcon}</div>
+      <div className="ml-2">
+        <UpgradeIndicator />
+      </div>
+      <SearchDialog open={searchOpen} setOpen={setSearchOpen} />
     </div>
   );
 }

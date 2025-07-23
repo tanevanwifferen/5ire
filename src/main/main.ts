@@ -72,12 +72,12 @@ const loadTheme = (theme?: ThemeType) => {
 };
 const titleBarColor = {
   light: {
-    color: 'rgba(0, 0, 0, 0)',
+    color: 'rgba(227, 227, 227, 1)',
     height: 30,
     symbolColor: 'black',
   },
   dark: {
-    color: 'rgba(0, 0, 0, 0)',
+    color: 'rgba(44, 42, 43, 1)',
     height: 30,
     symbolColor: 'white',
   },

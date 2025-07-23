@@ -12,6 +12,7 @@ import Doubao from './Doubao';
 import Grok from './Grok';
 import DeepSeek from './DeepSeek';
 import Mistral from './Mistral';
+import Perplexity from './Perplexity';
 import AI302 from './AI302';
 
 export const providers: { [key: string]: IServiceProvider } = {
@@ -27,6 +28,7 @@ export const providers: { [key: string]: IServiceProvider } = {
   Doubao,
   DeepSeek,
   LMStudio,
+  Perplexity,
   '302.AI': AI302,
   '5ire': Fire,
 };

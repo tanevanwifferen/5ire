@@ -99,12 +99,18 @@ export function highlight(text: string, keyword: string | string[]) {
   if (typeof keyword === 'string') {
     if (keyword.trim() === '') return text;
     const regex = new RegExp(keyword.trim(), 'gi');
-    return DOMPurify.sanitize(text).replace(regex, (match) => `<mark>${match}</mark>`);
+    return DOMPurify.sanitize(text).replace(
+      regex,
+      (match) => `<mark>${match}</mark>`,
+    );
   }
   let result = text;
   keyword.forEach((word) => {
     const regex = new RegExp(word, 'gi');
-    result = DOMPurify.sanitize(result).replace(regex, (match) => `<mark>${match}</mark>`);
+    result = DOMPurify.sanitize(result).replace(
+      regex,
+      (match) => `<mark>${match}</mark>`,
+    );
   });
   return result;
 }
@@ -237,7 +243,9 @@ export function isMoonshot(model: string) {
 export function isLlama(model: string) {
   return model.toLowerCase().startsWith('llama');
 }
-
+export function isPerplexity(model: string) {
+  return model.toLowerCase().startsWith('sonar');
+}
 export function tryAgain(callback: () => any, times = 3, delay = 1000) {
   let tryTimes = 0;
   const interval = setInterval(() => {

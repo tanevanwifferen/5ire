@@ -5,6 +5,7 @@ import {
   isDoubao,
   isGrok,
   isDeepSeek,
+  isPerplexity,
 } from 'utils/util';
 import {
   countGPTTokens,
@@ -23,7 +24,8 @@ export default function useToken() {
         isGPT(modelName) ||
         isDoubao(modelName) ||
         isGrok(modelName) ||
-        isDeepSeek(modelName)
+        isDeepSeek(modelName) ||
+        isPerplexity(modelName)
       ) {
         const messages: IChatRequestMessage[] = [];
         ChatContext.getCtxMessages().forEach((msg: IChatMessage) => {

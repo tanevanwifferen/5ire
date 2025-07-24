@@ -246,7 +246,7 @@ export default function Providers() {
               }}
               icon={<AddIcon />}
             >
-              <div className="overflow-hidden text-ellipsis whitespace-nowrap">
+              <div className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold">
                 {t('Provider.OpenAICompatible')}
               </div>
             </Button>

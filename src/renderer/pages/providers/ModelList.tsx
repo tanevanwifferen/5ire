@@ -140,7 +140,7 @@ export default function ModelList({ height = 400 }: { height?: number }) {
               setFormOpen(true);
             }}
           >
-            Model
+            <span className="font-semibold">{t('Common.Model')}</span>
           </Button>
         </div>
       </div>

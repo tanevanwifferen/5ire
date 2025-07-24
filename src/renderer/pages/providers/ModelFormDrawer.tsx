@@ -105,6 +105,7 @@ export default function ModelFormDrawer({
     setIsDefault(false);
     setDisabled(false);
     setExtras({});
+    setNameError(null);
   };
 
   const onSave = () => {
@@ -182,6 +183,7 @@ export default function ModelFormDrawer({
       setVision(model.capabilities?.vision?.enabled || false);
       setTools(model.capabilities?.tools?.enabled || false);
       setExtras(model.extras || {});
+      setNameError(null);
     } else {
       reset();
     }

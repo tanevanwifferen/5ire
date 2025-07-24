@@ -23,7 +23,8 @@ import {
 import SearchDialog from 'renderer/components/SearchDialog';
 import UpgradeIndicator from 'renderer/components/UpgradeIndicator';
 import useAppearanceStore from 'stores/useAppearanceStore';
-import logoImage from '../../../../assets/images/logo.png';
+// @ts-ignore
+import logoImage from '../../../assets/images/logo.png';
 
 const PanelLeftIcon = bundleIcon(PanelLeftText24Filled, PanelLeftText24Regular);
 const SearchIcon = bundleIcon(Search24Filled, Search24Regular);

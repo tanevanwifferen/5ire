@@ -33,7 +33,7 @@ import Prompts from '../pages/prompt';
 import PromptForm from '../pages/prompt/Form';
 import AppLoader from '../apps/Loader';
 import ToolSetup from './ToolSetup';
-import WindowsTitleBar from './layout/aside/WindowsTitleBar';
+import WindowsTitleBar from './layout/WindowsTitleBar';
 
 const debug = Debug('5ire:components:FluentApp');
 

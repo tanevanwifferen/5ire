@@ -16,7 +16,8 @@ export const NUM_CTX_MESSAGES = 10;
 export const MAX_CTX_MESSAGES = 99;
 export const MIN_CTX_MESSAGES = 0;
 
-export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+export const KNOWLEDGE_IMPORT_MAX_FILES = 50;
+export const KNOWLEDGE_IMPORT_MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 export const SUPPORTED_FILE_TYPES: { [key: string]: string } = {
   txt: 'text/plain',
   md: 'text/plain',

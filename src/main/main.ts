@@ -39,8 +39,9 @@ import ModuleContext from './mcp';
 import Knowledge from './knowledge';
 import {
   SUPPORTED_FILE_TYPES,
-  MAX_FILE_SIZE,
+  KNOWLEDGE_IMPORT_MAX_FILE_SIZE,
   SUPPORTED_IMAGE_TYPES,
+  KNOWLEDGE_IMPORT_MAX_FILES,
 } from '../consts';
 import { IMCPServer } from 'types/mcp';
 import { isValidMCPServer, isValidMCPServerKey } from 'utils/validators';
@@ -620,8 +621,11 @@ ipcMain.handle('select-knowledge-files', async () => {
         },
       ],
     });
-    if (result.filePaths.length > 20) {
-      dialog.showErrorBox('Error', 'Please not more than 20 files a time.');
+    if (result.filePaths.length > KNOWLEDGE_IMPORT_MAX_FILES) {
+      dialog.showErrorBox(
+        'Error',
+        `Please not more than ${KNOWLEDGE_IMPORT_MAX_FILES} files a time.`,
+      );
       return '[]';
     }
     const files = [];
@@ -635,11 +639,11 @@ ipcMain.handle('select-knowledge-files', async () => {
         return '[]';
       }
       const fileInfo: any = await getFileInfo(filePath);
-      if (fileInfo.size > MAX_FILE_SIZE) {
+      if (fileInfo.size > KNOWLEDGE_IMPORT_MAX_FILE_SIZE) {
         dialog.showErrorBox(
           'Error',
           `the size of ${filePath} exceeds the limit (${
-            MAX_FILE_SIZE / (1024 * 1024)
+            KNOWLEDGE_IMPORT_MAX_FILE_SIZE / (1024 * 1024)
           } MB})`,
         );
         return '[]';
@@ -675,11 +679,11 @@ ipcMain.handle('select-image-with-base64', async () => {
       return null;
     }
     const fileInfo: any = await getFileInfo(filePath);
-    if (fileInfo.size > MAX_FILE_SIZE) {
+    if (fileInfo.size > KNOWLEDGE_IMPORT_MAX_FILE_SIZE) {
       dialog.showErrorBox(
         'Error',
         `the size of ${filePath} exceeds the limit (${
-          MAX_FILE_SIZE / (1024 * 1024)
+          KNOWLEDGE_IMPORT_MAX_FILE_SIZE / (1024 * 1024)
         } MB})`,
       );
       return null;

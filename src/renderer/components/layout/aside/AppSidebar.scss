@@ -17,8 +17,8 @@
 
 @media screen and (width >= 768px) {
   .darwin.app-sidebar {
+    border-right: none;
     background: transparent;;
-    border-right: 0.5px solid rgba(var(--color-darwin-border),var(--tw-border-opacity));
   }
 }
 

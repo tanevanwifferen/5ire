@@ -179,6 +179,14 @@ main {
   background-color: rgba(var(--color-bg-surface-1), var(--tw-bg-opacity));
 }
 
+@media screen and (width >= 768px) {
+  main.darwin {
+    --tw-border-opacity:1;
+    box-shadow: -0.3px 0 0 rgba(var(--color-darwin-border),var(--tw-border-opacity));
+  }
+}
+
+
 .traffic-lights {
   position: absolute;
   z-index: 999;

@@ -212,6 +212,7 @@ const mergeProviders = (
     const customProvider = customProviders[provider.name];
     const builtInProvider = builtInProviders[provider.name];
     const defaultProvider = { ...OpenAI };
+    defaultProvider.options.isApiKeyOptional = true; // Providers derived from OpenAI do not require API keys by default
     const mergedProvider = {
       name: provider.name,
       referral: builtInProvider?.referral,

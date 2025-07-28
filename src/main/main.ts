@@ -909,7 +909,7 @@ const createWindow = async () => {
     ...(isDarwin
       ? {
           vibrancy: 'sidebar',
-          visualEffectState: 'followWindow',
+          visualEffectState: 'active',
           transparent: true,
         }
       : {

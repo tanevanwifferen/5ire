@@ -147,7 +147,7 @@ export default function FluentApp() {
             >
               <AppSidebar />
               <main
-                className={`relative px-5 flex h-full w-full flex-col overflow-hidden  ${isDarwin ? '' : 'border-l border-t border-base rounded-tl-lg'}`}
+                className={`relative px-5 flex h-full w-full flex-col overflow-hidden  ${isDarwin ? 'darwin' : 'border-l border-t border-base rounded-tl-lg'}`}
               >
                 <Routes>
                   <Route index element={<Chat />} />

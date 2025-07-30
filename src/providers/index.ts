@@ -14,6 +14,7 @@ import DeepSeek from './DeepSeek';
 import Mistral from './Mistral';
 import Perplexity from './Perplexity';
 import AI302 from './AI302';
+import Zhipu from './Zhipu';
 
 export const providers: { [key: string]: IServiceProvider } = {
   OpenAI,
@@ -28,6 +29,7 @@ export const providers: { [key: string]: IServiceProvider } = {
   Doubao,
   DeepSeek,
   LMStudio,
+  Zhipu,
   Perplexity,
   '302.AI': AI302,
   '5ire': Fire,

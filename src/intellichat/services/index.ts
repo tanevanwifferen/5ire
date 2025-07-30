@@ -13,6 +13,7 @@ import FireChatService from './FireChatService';
 import DoubaoChatService from './DoubaoChatService';
 import GrokChatService from './GrokChatService';
 import DeepSeekChatService from './DeepSeekChatService';
+import ZhipuChatService from './ZhipuChatService';
 import INextChatService from './INextCharService';
 import PerplexityChatService from './PerplexityChatService';
 
@@ -50,6 +51,8 @@ export default function createService(chatCtx: IChatContext): INextChatService {
       return new LMStudioChatService(provider.name, chatCtx);
     case 'Perplexity':
       return new PerplexityChatService(provider.name, chatCtx);
+    case 'Zhipu':
+      return new ZhipuChatService(provider.name, chatCtx);
     default:
       return new OpenAIChatService(provider.name, chatCtx);
   }

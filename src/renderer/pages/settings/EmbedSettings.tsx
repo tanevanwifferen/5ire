@@ -11,6 +11,10 @@ import Debug from 'debug';
 
 const debug = Debug('5ire:pages:settings:EmbedSettings');
 
+/**
+ * Configuration array containing the required model files and their download URLs
+ * @constant {Array<{name: string, url: string}>}
+ */
 const FILES = [
   {
     name: 'config.json',
@@ -30,6 +34,13 @@ const FILES = [
   },
 ];
 
+/**
+ * React component for managing embedding model settings.
+ * Provides functionality to download, manage, and remove the BGE-M3 embedding model
+ * and its associated configuration files.
+ * 
+ * @returns {JSX.Element} The embedding settings interface
+ */
 export default function EmbedSettings() {
   const model = 'Xenova/bge-m3';
   const { t } = useTranslation();
@@ -124,6 +135,10 @@ export default function EmbedSettings() {
     };
   }, []);
 
+  /**
+   * Initiates the download process for all required model files.
+   * Resets progress and downloading states, then triggers downloads for each file.
+   */
   function downloadModel() {
     setProgress({
       'model_quantized.onnx': 0,
@@ -142,6 +157,10 @@ export default function EmbedSettings() {
     });
   }
 
+  /**
+   * Cancels all ongoing downloads and removes any partially downloaded model files.
+   * Sets the cancelling state and calls the main process to cancel downloads.
+   */
   function cancelDownload() {
     setCancelling(true);
     for (const item of FILES) {
@@ -150,6 +169,10 @@ export default function EmbedSettings() {
     removeModel();
   }
 
+  /**
+   * Removes the embedding model and all associated files from the system.
+   * Resets all file status states to false after successful removal.
+   */
   function removeModel() {
     window.electron.embeddings.removeModel().then(() => {
       setFileStatus({

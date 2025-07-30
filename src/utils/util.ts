@@ -243,6 +243,11 @@ export function isMoonshot(model: string) {
 export function isLlama(model: string) {
   return model.toLowerCase().startsWith('llama');
 }
+
+export function isZhipu(model: string) {
+  return model.toLowerCase().startsWith('glm');
+}
+
 export function isPerplexity(model: string) {
   return model.toLowerCase().startsWith('sonar');
 }

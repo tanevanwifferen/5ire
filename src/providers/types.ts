@@ -14,6 +14,7 @@ export type ProviderType =
   | 'Doubao'
   | 'Grok'
   | '302.AI'
+  | 'Zhipu'
   | 'Perplexity';
 
 export interface INumberRange {

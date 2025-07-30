@@ -3,6 +3,15 @@ import { t } from 'i18next';
 import useAppearanceStore from 'stores/useAppearanceStore';
 import { getImage } from 'renderer/components/Assets';
 
+/**
+ * Empty state component that displays a theme-aware image with optional text.
+ * Automatically switches between dark and light versions of the image based on the current theme.
+ * 
+ * @param props - The component props
+ * @param props.image - The image identifier used to retrieve theme-specific images
+ * @param props.text - Optional text to display below the image
+ * @returns JSX element representing the empty state
+ */
 export default function Empty({
   image,
   text = '',

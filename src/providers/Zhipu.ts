@@ -202,7 +202,6 @@ const chatModels = [
     isDefault: false,
     description: `Reasoning model with deep thinking capabilities, significantly enhanced mathematical reasoning abilities, suitable for high-frequency calling scenarios`,
     capabilities: {
-      tools: null,
       json: {
         enabled: true,
       },
@@ -219,7 +218,6 @@ const chatModels = [
     isDefault: false,
     description: `High-speed version of GLM-Z1-Air with deep thinking capabilities for fast reasoning`,
     capabilities: {
-      tools: null,
       json: {
         enabled: true,
       },
@@ -236,7 +234,6 @@ const chatModels = [
     isDefault: false,
     description: `Ultra-fast inference speed and faster concurrency guarantee, extreme cost-effectiveness, further lowering the threshold for reasoning model usage`,
     capabilities: {
-      tools: null,
       json: {
         enabled: true,
       },
@@ -253,7 +250,6 @@ const chatModels = [
     isDefault: false,
     description: `Free reasoning model, basic version of GLM-Z1-FlashX`,
     capabilities: {
-      tools: null,
       json: {
         enabled: true,
       },

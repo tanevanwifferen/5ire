@@ -11,6 +11,22 @@
 // import DarkHint from 'assets/images/hint.dark.png'; //1387
 // import LightHint from 'assets/images/hint.light.png';
 
+/**
+ * Dynamically loads an image asset from the assets/images directory.
+ * 
+ * @param name - The base name of the image file (without extension)
+ * @param theme - Optional theme variant ('light' or 'dark'). When provided, loads the themed version of the image
+ * @returns The required image asset
+ * 
+ * @example
+ * // Load a basic image
+ * const image = getImage('logo.png');
+ * 
+ * @example
+ * // Load a themed image
+ * const darkImage = getImage('design', 'dark'); // loads design.dark.png
+ * const lightImage = getImage('design', 'light'); // loads design.light.png
+ */
 export function getImage(name: string, theme?: 'light' | 'dark') {
   if (theme) {
     return require(`assets/images/${name}.${theme}.png`);

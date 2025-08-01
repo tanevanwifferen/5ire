@@ -129,7 +129,7 @@ export default class AnthropicReader extends BaseReader {
   /**
    * Extracts tool arguments from a chat response message.
    * @param {IChatResponseMessage} respMsg - The response message containing tool call data
-   * @returns {{index: number; args: string} | null} Object with tool index and arguments, or null if not available
+   * @returns {{index: number; args: string;} | null} Object with tool index and arguments, or null if not available
    */
   protected parseToolArgs(respMsg: IChatResponseMessage): {
     index: number;

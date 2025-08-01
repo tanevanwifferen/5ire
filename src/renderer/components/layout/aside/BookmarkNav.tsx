@@ -6,6 +6,14 @@ import useNav from 'hooks/useNav';
 import useBookmarkStore from 'stores/useBookmarkStore';
 import { IBookmark } from 'types/bookmark';
 
+/**
+ * Navigation component that displays bookmark favorites in a sidebar layout.
+ * Supports both collapsed and expanded states with tooltips and active bookmark highlighting.
+ * 
+ * @param {Object} props - Component props
+ * @param {boolean} props.collapsed - Whether the navigation should be displayed in collapsed mode
+ * @returns {JSX.Element} The bookmark navigation component
+ */
 export default function BookmarkNav({ collapsed }: { collapsed: boolean }) {
   const { t } = useTranslation();
   const activeBookmarkId = useBookmarkStore((state) => state.activeBookmarkId);
@@ -17,6 +25,14 @@ export default function BookmarkNav({ collapsed }: { collapsed: boolean }) {
     loadFavorites({ limit: 100, offset: 0 });
   }, [loadFavorites]);
 
+  /**
+   * Renders a bookmark icon wrapped in a tooltip component.
+   * Shows filled icon for active bookmarks and regular icon for inactive ones.
+   * 
+   * @param {boolean} isActiveBookmark - Whether this bookmark is currently active
+   * @param {string} summary - The bookmark summary text to display in tooltip
+   * @returns {JSX.Element} Tooltip component containing the appropriate bookmark icon
+   */
   const renderIconWithTooltip = (
     isActiveBookmark: boolean,
     summary: string,
@@ -33,6 +49,12 @@ export default function BookmarkNav({ collapsed }: { collapsed: boolean }) {
     );
   };
 
+  /**
+   * Renders the list of favorite bookmarks or a hint message when no favorites exist.
+   * Each bookmark is displayed as a clickable button with appropriate styling for active state.
+   * 
+   * @returns {JSX.Element[]} Array of bookmark button elements or hint message
+   */
   const renderFavorites = () => {
     if (favorites?.length > 0) {
       return favorites.map((bookmark: IBookmark) => {

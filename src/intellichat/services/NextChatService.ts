@@ -15,19 +15,24 @@ import OpenAI from 'providers/OpenAI';
 import { IServiceProvider } from 'providers/types';
 import useInspectorStore from 'stores/useInspectorStore';
 import { raiseError, stripHtmlTags } from 'utils/util';
-import { isValidHttpHRL } from 'utils/validators';
 
 const debug = Debug('5ire:intellichat:NextChatService');
 
 export default abstract class NextCharService {
   protected updateBuffer: string = '';
+
   protected reasoningBuffer: string = '';
+
   protected lastUpdateTime: number = 0;
+
   protected readonly UPDATE_INTERVAL: number = 100; // 100ms
+
   protected currentRequestId?: string;
 
   name: string;
+
   abortController: AbortController;
+
   toolAbortController: AbortController | undefined = undefined;
 
   context: IChatContext;
@@ -166,111 +171,105 @@ export default abstract class NextCharService {
     payload: any,
     isStream: boolean = true,
   ): Promise<Response> {
+    debug('Make http request: ', url, payload, isStream, headers);
+
     const provider = this.context.getProvider();
 
-    if (isValidHttpHRL(provider.proxy || '')) {
-      const requestPromise = window.electron
-        .request({
-          url,
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          proxy: provider.proxy,
-          isStream,
-        })
-        .then((response: any) => {
-          this.currentRequestId = response.requestId;
+    const requestPromise = window.electron
+      .request({
+        url,
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        proxy: provider.proxy,
+        isStream,
+      })
+      .then((response: any) => {
+        this.currentRequestId = response.requestId;
 
-          if (isStream && response.isStream) {
-            const stream = new ReadableStream({
-              start(controller) {
-                const handleData = (...args: unknown[]) => {
-                  const [requestId, chunk] = args as [string, Uint8Array];
-                  if (requestId === response.requestId) {
-                    controller.enqueue(chunk);
-                  }
-                };
+        if (isStream && response.isStream) {
+          const stream = new ReadableStream({
+            start(controller) {
+              const handleData = (...args: unknown[]) => {
+                const [requestId, chunk] = args as [string, Uint8Array];
+                if (requestId === response.requestId) {
+                  controller.enqueue(chunk);
+                }
+              };
 
-                const handleEnd = (...args: unknown[]) => {
-                  const [requestId] = args as [string];
-                  if (requestId === response.requestId) {
-                    controller.close();
-                    cleanup();
-                  }
-                };
+              const handleEnd = (...args: unknown[]) => {
+                const [requestId] = args as [string];
+                if (requestId === response.requestId) {
+                  controller.close();
+                  // eslint-disable-next-line no-use-before-define
+                  cleanup();
+                }
+              };
 
-                const handleError = (...args: unknown[]) => {
-                  const [requestId, errorMessage] = args as [string, string];
-                  if (requestId === response.requestId) {
-                    controller.error(new Error(errorMessage));
-                    cleanup();
-                  }
-                };
+              const handleError = (...args: unknown[]) => {
+                const [requestId, errorMessage] = args as [string, string];
+                if (requestId === response.requestId) {
+                  controller.error(new Error(errorMessage));
+                  // eslint-disable-next-line no-use-before-define
+                  cleanup();
+                }
+              };
 
-                const cleanup = () => {
-                  window.electron.ipcRenderer.unsubscribe(
-                    'stream-data',
-                    handleData,
-                  );
-                  window.electron.ipcRenderer.unsubscribe(
-                    'stream-end',
-                    handleEnd,
-                  );
-                  window.electron.ipcRenderer.unsubscribe(
-                    'stream-error',
-                    handleError,
-                  );
-                };
+              const cleanup = () => {
+                window.electron.ipcRenderer.unsubscribe(
+                  'stream-data',
+                  handleData,
+                );
+                window.electron.ipcRenderer.unsubscribe(
+                  'stream-end',
+                  handleEnd,
+                );
+                window.electron.ipcRenderer.unsubscribe(
+                  'stream-error',
+                  handleError,
+                );
+              };
 
-                window.electron.ipcRenderer.on('stream-data', handleData);
-                window.electron.ipcRenderer.on('stream-end', handleEnd);
-                window.electron.ipcRenderer.on('stream-error', handleError);
-              },
-            });
+              window.electron.ipcRenderer.on('stream-data', handleData);
+              window.electron.ipcRenderer.on('stream-end', handleEnd);
+              window.electron.ipcRenderer.on('stream-error', handleError);
+            },
+          });
 
-            return new Response(stream, {
-              status: response.status,
-              statusText: response.statusText,
-              headers: new Headers(response.headers),
-            });
-          } else {
-            // 非流响应，直接返回文本内容
-            return new Response(response.text || '', {
-              status: response.status,
-              statusText: response.statusText,
-              headers: new Headers(response.headers),
-            });
-          }
-        });
-
-      const abortPromise = new Promise<never>((_, reject) => {
-        this.abortController.signal.addEventListener('abort', async () => {
-          if (this.currentRequestId) {
-            await window.electron.cancelRequest(this.currentRequestId);
-          }
-          reject(new DOMException('Request aborted', 'AbortError'));
+          return new Response(stream, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: new Headers(response.headers),
+          });
+        }
+        // 非流响应，直接返回文本内容
+        return new Response(response.text || '', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: new Headers(response.headers),
         });
       });
 
-      try {
-        const response = await Promise.race([requestPromise, abortPromise]);
-        return response;
-      } catch (error) {
+    // eslint-disable-next-line promise/param-names
+    const abortPromise = new Promise<never>((_, reject) => {
+      this.abortController.signal.addEventListener('abort', async () => {
         if (this.currentRequestId) {
           await window.electron.cancelRequest(this.currentRequestId);
-          this.currentRequestId = undefined;
         }
-        throw error;
-      }
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-      signal: this.abortController.signal,
+        reject(new DOMException('Request aborted', 'AbortError'));
+      });
     });
-    return response;
+
+    try {
+      const response = await Promise.race([requestPromise, abortPromise]);
+      return response;
+    } catch (error) {
+      if (this.currentRequestId) {
+        await window.electron.cancelRequest(this.currentRequestId);
+        this.currentRequestId = undefined;
+      }
+      throw error;
+    }
   }
 
   public abort() {

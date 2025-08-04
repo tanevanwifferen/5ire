@@ -313,7 +313,7 @@
   "Tools.Hint.UrlIsRequired": "请填写 Server 地址",
   "Common.HttpHeaders": "请求头",
   "Common.Value": "值",
-  "Common.Local": "Local",
+  "Common.Local": "本地",
   "Common.Remote": "远程",
   "Common.Citation": "引用",
   "Common.Action.Rename": "重命名",
@@ -326,5 +326,8 @@
   "Tools.ApprovalPolicy.Never": "永不",
   "Tools.ApprovalPolicy.Always": "总是",
   "Tools.ApprovalPolicy.Once": "仅一次",
-  "Tools.ApprovalPolicy.Once.Hint": "每个会话都需一次性审批"
+  "Tools.ApprovalPolicy.Once.Hint": "每个会话都需一次性审批",
+  "Tools.ApprovalMessage": "允许执行来自“{{tool}}”（{{type}}）的工具吗？",
+  "Common.Allow": "允许",
+  "Common.Deny": "拒绝"
 }

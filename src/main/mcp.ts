@@ -459,34 +459,6 @@ export default class ModuleContext {
       };
     }
 
-    const clientConfig = this.getConfig().mcpServers[client];
-
-    if (!clientConfig) {
-      return {
-        isError: true,
-        content: [
-          {
-            error: `MCP Client ${client} config not found`,
-            code: 'client_not_found',
-            clientName: client,
-            toolName: name,
-          },
-        ],
-      };
-    }
-
-    switch (clientConfig.approvalPolicy) {
-      case 'always': {
-        break;
-      }
-      case 'once': {
-        break;
-      }
-      default: {
-        break;
-      }
-    }
-
     const controller = new AbortController();
     if (requestId) {
       this.activeToolCalls.set(requestId, controller);

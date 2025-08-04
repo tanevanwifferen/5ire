@@ -13,7 +13,9 @@ import {
 } from 'intellichat/types';
 import OpenAI from 'providers/OpenAI';
 import { IServiceProvider } from 'providers/types';
+import MCPServerApprovalPolicyDialog from 'renderer/components/MCPServerApprovalPolicyDialog';
 import useInspectorStore from 'stores/useInspectorStore';
+import useMCPStore from 'stores/useMCPStore';
 import { raiseError, stripHtmlTags } from 'utils/util';
 
 const debug = Debug('5ire:intellichat:NextChatService');
@@ -362,12 +364,73 @@ export default abstract class NextCharService {
         this.abortController.signal.addEventListener('abort', abortHandler);
 
         try {
-          const toolCallsResult = await window.electron.mcp.callTool({
-            client,
-            name,
-            args: readResult.tool.args,
-            requestId: toolRequestId,
-          });
+          let toolCallsResult: any;
+
+          const servers = useMCPStore.getState().config.mcpServers;
+          const server = servers[client];
+
+          const toolCallsCanclledResult = {
+            isError: true,
+            content: [
+              {
+                error: 'Tool call was cancelled by the user.',
+                code: 'tool_call_cancelled',
+                clientName: client,
+                toolName: name,
+              },
+            ],
+          };
+
+          switch (server.approvalPolicy || 'always') {
+            case 'always': {
+              await MCPServerApprovalPolicyDialog.open({
+                toolName: client,
+                toolType: server.type,
+                methodName: name,
+                parameters: readResult.tool.args,
+              }).catch(() => {
+                toolCallsResult = toolCallsCanclledResult;
+              });
+              break;
+            }
+            case 'once': {
+              const isAllowedKey = `APPROVAL_POLICY::${chatId}--${client}`;
+              const isAllowed = await window.electron.store.get(isAllowedKey);
+
+              if (typeof isAllowed !== 'boolean') {
+                const allow = await MCPServerApprovalPolicyDialog.open({
+                  toolName: client,
+                  toolType: server.type,
+                  methodName: name,
+                  parameters: readResult.tool.args,
+                })
+                  .then(() => true)
+                  .catch(() => false);
+
+                await window.electron.store.set(isAllowedKey, allow);
+
+                if (!allow) {
+                  toolCallsResult = toolCallsCanclledResult;
+                }
+              } else if (isAllowed === false) {
+                toolCallsResult = toolCallsCanclledResult;
+              }
+
+              break;
+            }
+            default: {
+              break;
+            }
+          }
+
+          if (!toolCallsResult) {
+            toolCallsResult = await window.electron.mcp.callTool({
+              client,
+              name,
+              args: readResult.tool.args,
+              requestId: toolRequestId,
+            });
+          }
 
           this.abortController.signal.removeEventListener(
             'abort',

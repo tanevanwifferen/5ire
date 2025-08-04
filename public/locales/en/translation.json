@@ -332,5 +332,13 @@
   "Provider.Tooltip.InvalidProxyURL": "The proxy must be a valid URL address.",
   "Common.GetAPIKey": "Get the API key",
   "Common.Placeholder.Proxy": "routes traffic via this server (leave blank if unsure)",
-  "Common.Placeholder.APIKey": "Most providers require an API key – don't forget to set yours here"
+  "Common.Placeholder.APIKey": "Most providers require an API key – don't forget to set yours here",
+  "Tools.ApprovalPolicy": "Approval Policy",
+  "Tools.ApprovalPolicy.Never": "Never",
+  "Tools.ApprovalPolicy.Always": "Always",
+  "Tools.ApprovalPolicy.Once": "Once",
+  "Tools.ApprovalPolicy.Once.Hint": "Requires one-time approval for each session",
+  "Tools.ApprovalMessage": "Allow executing the tool from \"{{tool}}\" ({{type}})?",
+  "Common.Allow": "Allow",
+  "Common.Deny": "Deny"
 }

@@ -4,15 +4,33 @@ import OpenAIChatService from './OpenAIChatService';
 import Azure from '../../providers/Azure';
 import INextChatService from './INextCharService';
 
+/**
+ * Azure-specific implementation of the chat service that extends OpenAI chat functionality
+ * for Azure OpenAI deployments. Handles Azure-specific URL construction and authentication.
+ */
 export default class AzureChatService
   extends OpenAIChatService
   implements INextChatService
 {
+  /**
+   * Creates a new AzureChatService instance.
+   * @param {string} name - The name identifier for this chat service instance
+   * @param {IChatContext} chatContext - The chat context containing configuration and state
+   */
   constructor(name: string, chatContext: IChatContext) {
     super(name, chatContext);
     this.provider = Azure;
   }
 
+  /**
+   * Makes an HTTP request to the Azure OpenAI chat completions endpoint.
+   * Constructs the Azure-specific URL using deployment ID and API version,
+   * and sets up proper authentication headers.
+   * @param {IChatRequestMessage[]} messages - Array of chat messages to send
+   * @param {string} [msgId] - Optional message identifier
+   * @returns {Promise<Response>} Promise that resolves to the HTTP response
+   * @protected
+   */
   protected async makeRequest(
     messages: IChatRequestMessage[],
     msgId?: string,

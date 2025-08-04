@@ -321,5 +321,10 @@
   "Provider.Tooltip.InvalidProxyURL": "代理地址必须是合法的 URL 地址",
   "Common.GetAPIKey": "去获取密钥",
   "Common.Placeholder.Proxy": "通过该服务器转发网络请求（如不确定请留空）",
-  "Common.Placeholder.APIKey": "API Key 是大多数服务商的必填项，别忘了设置"
+  "Common.Placeholder.APIKey": "API Key 是大多数服务商的必填项，别忘了设置",
+  "Tools.ApprovalPolicy": "审批策略",
+  "Tools.ApprovalPolicy.Never": "永不",
+  "Tools.ApprovalPolicy.Always": "总是",
+  "Tools.ApprovalPolicy.Once": "仅一次",
+  "Tools.ApprovalPolicy.Once.Hint": "每个会话都需一次性审批"
 }

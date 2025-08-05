@@ -319,7 +319,11 @@ if (!gotTheLock) {
 
       app.on('before-quit', async () => {
         ipcMain.removeAllListeners();
-        await mcp.close();
+        try {
+          await mcp.close();
+        } catch (error) {
+          logging.error('Failed to close MCP:', error);
+        }
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.removeAllListeners();
           mainWindow.destroy();

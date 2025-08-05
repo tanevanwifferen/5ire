@@ -33,6 +33,7 @@ export interface IChatMessage {
   chatId: string;
   systemMessage?: string | null;
   prompt: string;
+  structuredPrompts?: unknown[] | null;
   reply: string;
   reasoning?: string;
   model: string;

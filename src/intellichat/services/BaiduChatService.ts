@@ -7,15 +7,32 @@ import OpenAIChatService from './OpenAIChatService';
 
 const debug = Debug('5ire:intellichat:BaiduChatService');
 
+/**
+ * Chat service implementation for Baidu API that extends OpenAI chat service functionality.
+ * Handles chat requests by formatting them according to Baidu's API requirements.
+ */
 export default class BaiduChatService
   extends OpenAIChatService
   implements INextChatService
 {
+  /**
+   * Creates a new BaiduChatService instance.
+   * @param {string} name - The name identifier for this chat service
+   * @param {IChatContext} context - The chat context containing configuration and state
+   */
   constructor(name: string, context: IChatContext) {
     super(name, context);
     this.provider = Baidu;
   }
 
+  /**
+   * Makes an HTTP request to Baidu's chat API with the provided messages.
+   * Formats the request payload according to Baidu's API specifications and handles authentication.
+   * @param {IChatRequestMessage[]} messages - Array of chat messages to send
+   * @param {string} [msgId] - Optional message identifier
+   * @returns {Promise<Response>} Promise that resolves to the HTTP response from Baidu's API
+   * @protected
+   */
   protected async makeRequest(
     messages: IChatRequestMessage[],
     msgId?: string,

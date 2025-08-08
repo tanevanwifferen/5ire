@@ -216,6 +216,11 @@ const electronHandler = {
       ipcRenderer.removeAllListeners(channel);
     },
   },
+  document: {
+    loadFromBuffer: (buffer: Uint8Array, fileType: string) => {
+      return ipcRenderer.invoke('load-document-buffer', buffer, fileType);
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

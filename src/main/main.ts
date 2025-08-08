@@ -18,6 +18,8 @@ import {
 import crypto from 'crypto';
 import { autoUpdater } from 'electron-updater';
 import Store from 'electron-store';
+import { IMCPServer } from 'types/mcp';
+import { isValidMCPServer, isValidMCPServerKey } from 'utils/validators';
 import * as logging from './logging';
 import axiom from '../vendors/axiom';
 import MenuBuilder from './menu';
@@ -39,8 +41,7 @@ import {
   MAX_FILE_SIZE,
   SUPPORTED_IMAGE_TYPES,
 } from '../consts';
-import { IMCPServer } from 'types/mcp';
-import { isValidMCPServer, isValidMCPServerKey } from 'utils/validators';
+import { loadDocumentFromBuffer } from './docloader';
 
 dotenv.config({
   path: app.isPackaged
@@ -225,7 +226,7 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
+  app.on('second-instance', (event, commandLine) => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
@@ -439,6 +440,7 @@ ipcMain.handle(
   },
 );
 
+// eslint-disable-next-line consistent-return
 ipcMain.handle('select-knowledge-files', async () => {
   try {
     const result = await dialog.showOpenDialog({
@@ -464,7 +466,9 @@ ipcMain.handle('select-knowledge-files', async () => {
       return '[]';
     }
     const files = [];
+    // eslint-disable-next-line no-restricted-syntax
     for (const filePath of result.filePaths) {
+      // eslint-disable-next-line no-await-in-loop
       const fileType = await getFileType(filePath);
       if (!SUPPORTED_FILE_TYPES[fileType]) {
         dialog.showErrorBox(
@@ -473,6 +477,7 @@ ipcMain.handle('select-knowledge-files', async () => {
         );
         return '[]';
       }
+      // eslint-disable-next-line no-await-in-loop
       const fileInfo: any = await getFileInfo(filePath);
       if (fileInfo.size > MAX_FILE_SIZE) {
         dialog.showErrorBox(
@@ -493,6 +498,7 @@ ipcMain.handle('select-knowledge-files', async () => {
   }
 });
 
+// eslint-disable-next-line consistent-return
 ipcMain.handle('select-image-with-base64', async () => {
   try {
     const result = await dialog.showOpenDialog({
@@ -544,17 +550,14 @@ ipcMain.handle(
     return JSON.stringify(result);
   },
 );
-ipcMain.handle('remove-knowledge-file', async (_, fileId: string) => {
-  return await Knowledge.remove({ fileId });
+ipcMain.handle('remove-knowledge-file', (_, fileId: string) => {
+  return Knowledge.remove({ fileId });
 });
-ipcMain.handle(
-  'remove-knowledge-collection',
-  async (_, collectionId: string) => {
-    return await Knowledge.remove({ collectionId });
-  },
-);
-ipcMain.handle('get-knowledge-chunk', async (_, chunkId: string) => {
-  return await Knowledge.getChunk(chunkId);
+ipcMain.handle('remove-knowledge-collection', (_, collectionId: string) => {
+  return Knowledge.remove({ collectionId });
+});
+ipcMain.handle('get-knowledge-chunk', (_, chunkId: string) => {
+  return Knowledge.getChunk(chunkId);
 });
 ipcMain.handle('download', (_, fileName: string, url: string) => {
   downloader.download(fileName, url);
@@ -564,7 +567,8 @@ ipcMain.handle('cancel-download', (_, fileName: string) => {
 });
 
 /** mcp */
-ipcMain.handle('mcp-init', async () => {
+ipcMain.handle('mcp-init', () => {
+  // eslint-disable-next-line promise/catch-or-return
   mcp.init().then(async () => {
     // https://github.com/sindresorhus/fix-path
     logging.info('mcp initialized');
@@ -579,10 +583,10 @@ ipcMain.handle('mcp-update-server', (_, server: IMCPServer) => {
   return mcp.updateServer(server);
 });
 ipcMain.handle('mcp-activate', async (_, server: IMCPServer) => {
-  return await mcp.activate(server);
+  return mcp.activate(server);
 });
 ipcMain.handle('mcp-deactivate', async (_, clientName: string) => {
-  return await mcp.deactivate(clientName);
+  return mcp.deactivate(clientName);
 });
 ipcMain.handle('mcp-list-tools', async (_, name: string) => {
   try {
@@ -698,6 +702,13 @@ ipcMain.on('show-context-menu', (event, params) => {
   menu.popup({ window: mainWindow as BrowserWindow, x: params.x, y: params.y });
 });
 
+ipcMain.handle(
+  'load-document-buffer',
+  (_, buffer: Uint8Array, fileType: string) => {
+    return loadDocumentFromBuffer(buffer, fileType);
+  },
+);
+
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
@@ -710,18 +721,18 @@ if (isDebug) {
   require('electron-debug')();
 }
 
-const installExtensions = async () => {
-  const installer = require('electron-devtools-installer');
-  const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
+// const installExtensions = async () => {
+//   const installer = require('electron-devtools-installer');
+//   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
+//   const extensions = ['REACT_DEVELOPER_TOOLS'];
 
-  return installer
-    .default(
-      extensions.map((name) => installer[name]),
-      forceDownload,
-    )
-    .catch(logging.info);
-};
+//   return installer
+//     .default(
+//       extensions.map((name) => installer[name]),
+//       forceDownload,
+//     )
+//     .catch(logging.info);
+// };
 
 const createWindow = async () => {
   if (isDebug) {

@@ -252,6 +252,22 @@ function alertTableMessages() {
   } else {
     logging.debug('[reasoning] column already exists in [Messages] table');
   }
+
+  // 2025-08-07
+  // Add 'structuredPrompts' column to 'messages' table.
+  const hasStructuredPromptsColumn = columns.some(
+    (column: any) => column.name === 'structuredPrompts',
+  );
+  if (!hasStructuredPromptsColumn) {
+    database
+      .prepare(`ALTER TABLE messages ADD COLUMN structuredPrompts TEXT`)
+      .run();
+    logging.debug('Added [structuredPrompts] column to [messages] table');
+  } else {
+    logging.debug(
+      '[structuredPrompts] column already exists in [messages] table',
+    );
+  }
 }
 
 function alertTableBookmarks() {
@@ -280,24 +296,6 @@ function alertTableFolders() {
   }
 }
 
-// Add 'structuredPrompts' column to 'messages' table.
-function alertTableMessages2() {
-  const columns = database.prepare(`PRAGMA table_info(messages)`).all();
-  const hasReasoningColumn = columns.some(
-    (column: any) => column.name === 'structuredPrompts',
-  );
-  if (!hasReasoningColumn) {
-    database
-      .prepare(`ALTER TABLE messages ADD COLUMN structuredPrompts TEXT`)
-      .run();
-    logging.debug('Added [structuredPrompts] column to  [messages] table');
-  } else {
-    logging.debug(
-      '[structuredPrompts] column already exists in [Messages] table',
-    );
-  }
-}
-
 const initDatabase = database.transaction(() => {
   logging.debug('Init database...');
 
@@ -318,8 +316,6 @@ const initDatabase = database.transaction(() => {
   alertTableBookmarks();
   // v1.0.0
   alertTableFolders();
-  // Add 'structuredPrompts' column to 'messages' table.
-  alertTableMessages2();
 
   logging.info('Database initialized.');
 });

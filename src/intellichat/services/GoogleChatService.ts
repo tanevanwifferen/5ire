@@ -1,4 +1,5 @@
 import Debug from 'debug';
+import { filetypemime } from 'magic-bytes.js';
 import {
   IChatContext,
   IChatRequestMessage,
@@ -22,6 +23,7 @@ import {
 } from 'utils/util';
 import BaseReader from 'intellichat/readers/BaseReader';
 import GoogleReader from 'intellichat/readers/GoogleReader';
+import { FinalContentBlock } from 'intellichat/mcp/ContentBlockConverter';
 import { ITool } from 'intellichat/readers/IChatReader';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
@@ -179,10 +181,69 @@ export default class GoogleChatService
     }
     // eslint-disable-next-line no-restricted-syntax
     for (const msg of this.context.getCtxMessages(msgId)) {
-      result.push({
-        role: 'user',
-        parts: [{ text: msg.prompt }],
-      });
+      if (msg.structuredPrompts) {
+        const strucuredPrompts = JSON.parse(msg.structuredPrompts) as {
+          role: string;
+          content: FinalContentBlock[];
+        }[];
+
+        // eslint-disable-next-line no-restricted-syntax
+        for (const prompt of strucuredPrompts) {
+          const parts = [] as IGeminiChatRequestMessagePart[];
+
+          // eslint-disable-next-line no-restricted-syntax
+          for (const block of prompt.content) {
+            if (block.type === 'text') {
+              parts.push({
+                text: block.text,
+              });
+            } else if (block.type === 'image') {
+              const { source } = block;
+
+              if (source.type === 'base64') {
+                parts.push({
+                  inline_data: {
+                    mimeType: source.mimeType,
+                    data: source.data,
+                  },
+                });
+              } else {
+                // eslint-disable-next-line no-await-in-loop
+                const data = await getBase64(source.url);
+                const binary = new Uint8Array(
+                  atob(data)
+                    .split('')
+                    .map((c) => c.charCodeAt(0)),
+                );
+                const mimeType = filetypemime(binary)[0] || 'audio/mpeg';
+
+                parts.push({
+                  inline_data: {
+                    data,
+                    mimeType,
+                  },
+                });
+              }
+            } else {
+              parts.push({
+                inline_data: {
+                  mimeType: block.source.mimeType,
+                  data: block.source.data,
+                },
+              });
+            }
+          }
+        }
+      } else {
+        result.push({
+          role: 'user',
+          parts: [{ text: msg.prompt }],
+        });
+      }
+      // result.push({
+      //   role: 'user',
+      //   parts: [{ text: msg.prompt }],
+      // });
       result.push({
         role: 'model',
         parts: [

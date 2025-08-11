@@ -323,5 +323,6 @@
   "Common.Citation": "引用",
   "Common.Capabilities": "能力",
   "Common.Action.Rename": "重命名",
-  "Common.NoSubtitlesAvailable": "无可用字幕"
+  "Common.NoSubtitlesAvailable": "无可用字幕",
+  "Tools.UnsupportedCapability": "无法支持工具使用此能力"
 }

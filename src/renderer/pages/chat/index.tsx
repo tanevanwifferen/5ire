@@ -9,10 +9,21 @@ import React, {
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { TEMP_CHAT_ID } from 'consts';
+import { ContentBlock as MCPContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import useToast from 'hooks/useToast';
 import useToken from 'hooks/useToken';
 
-import { IChat, IChatMessage, IChatResponseMessage } from 'intellichat/types';
+import {
+  IChat,
+  IChatMessage,
+  IChatRequestMessage,
+  IChatResponseMessage,
+} from 'intellichat/types';
+import {
+  ContentBlockConverter as MCPContentBlockConverter,
+  FinalContentBlock as MCPFinalContentBlock,
+} from 'intellichat/mcp/ContentBlockConverter';
+import { UnsupportedError as MCPUnsupportedError } from 'intellichat/mcp/UnsupportedError';
 import INextChatService from 'intellichat/services/INextCharService';
 import { ICollectionFile } from 'types/knowledge';
 
@@ -35,7 +46,7 @@ import {
 import useAppearanceStore from 'stores/useAppearanceStore';
 import createService from 'intellichat/services';
 import eventBus from 'utils/bus';
-import ChatContext, { createChatContext } from '../../ChatContext';
+import { createChatContext } from '../../ChatContext';
 import Header from './Header';
 import Messages from './Messages';
 import Editor from './Editor';
@@ -50,6 +61,14 @@ const debug = Debug('5ire:pages:chat');
 const MemoizedMessages = React.memo(Messages);
 
 const DEFAULT_SIDEBAR_WIDTH = 250;
+
+type TriggerPrompt =
+  | string
+  | {
+      name: string;
+      description?: string;
+      messages: { role: string; content: MCPContentBlock }[];
+    };
 
 export default function Chat() {
   const { t } = useTranslation();
@@ -66,7 +85,6 @@ export default function Chat() {
   const chatContext = useMemo(() => {
     return createChatContext(activeChatId);
   }, [activeChatId]);
-
 
   const [verticalSizes, setVerticalSizes] = useState(['auto', 200]);
   const [horizontalSizes, setHorizontalSizes] = useState(['auto', 0]);
@@ -208,26 +226,81 @@ export default function Chat() {
   const { createMessage, createChat, deleteStage, updateMessage, appendReply } =
     useChatStore();
 
-  const { countInput, countOutput } = useToken();
+  const { countInput, countOutput, countBlobInput } = useToken();
 
   const { moveChatCollections, listChatCollections, setChatCollections } =
     useChatKnowledgeStore.getState();
 
   const onSubmit = useCallback(
-    async (prompt: string, msgId?: string) => {
+    async (prompt: unknown, msgId?: string) => {
       chatService.current = createService(chatContext);
-      if (!chatService.current || prompt.trim() === '') {
+
+      if (!chatService.current) {
         return;
       }
+
+      const triggerPrompt = prompt as TriggerPrompt;
+
+      if (typeof triggerPrompt === 'string' && triggerPrompt.trim() === '') {
+        return;
+      }
+
+      if (
+        typeof triggerPrompt !== 'string' &&
+        triggerPrompt.messages.length === 0
+      ) {
+        return;
+      }
+
+      const convertedMCPTriggerPrompt =
+        typeof triggerPrompt === 'string'
+          ? undefined
+          : {
+              name: triggerPrompt.name,
+              description: triggerPrompt.description,
+              messages: [] as Array<{
+                role: string;
+                content: MCPFinalContentBlock[];
+              }>,
+            };
+
+      if (typeof triggerPrompt !== 'string') {
+        try {
+          // eslint-disable-next-line no-restricted-syntax
+          for await (const message of triggerPrompt.messages) {
+            convertedMCPTriggerPrompt?.messages.push({
+              role: message.role,
+              content: [
+                await MCPContentBlockConverter.convert(message.content),
+              ],
+            });
+          }
+        } catch (error) {
+          if (MCPUnsupportedError.isInstance(error)) {
+            notifyError(t('Tools.UnsupportedCapability'));
+            return;
+          }
+
+          throw error;
+        }
+      }
+
       const provider = chatContext.getProvider();
       const model = chatContext.getModel();
       const temperature = chatContext.getTemperature();
       const maxTokens = chatContext.getMaxTokens();
+
       let $chatId = activeChatId;
+
+      const summary =
+        typeof triggerPrompt === 'string'
+          ? triggerPrompt.substring(0, 50)
+          : `${triggerPrompt.name}${triggerPrompt.description ? ` (${triggerPrompt.description})` : ''}`;
+
       if (activeChatId === TEMP_CHAT_ID) {
         const $chat = await createChat(
           {
-            summary: prompt.substring(0, 50),
+            summary,
             provider: provider.name,
             model: model.name,
             temperature,
@@ -255,7 +328,7 @@ export default function Chat() {
             provider: provider.name,
             model: model.name,
             temperature,
-            summary: prompt.substring(0, 50),
+            summary,
           });
         }
         setKeyword(activeChatId, ''); // clear filter keyword
@@ -264,7 +337,13 @@ export default function Chat() {
       const msg = msgId
         ? (messages.find((message) => msgId === message.id) as IChatMessage)
         : await useChatStore.getState().createMessage({
-            prompt,
+            prompt:
+              typeof triggerPrompt === 'string'
+                ? triggerPrompt
+                : `/${triggerPrompt.name}`,
+            structuredPrompts: convertedMCPTriggerPrompt
+              ? JSON.stringify(convertedMCPTriggerPrompt.messages)
+              : null,
             reply: '',
             chatId: $chatId,
             model: model.label,
@@ -292,12 +371,14 @@ export default function Chat() {
       // Knowledge Collections
       let knowledgeChunks = [];
       let files: ICollectionFile[] = [];
-      let actualPrompt = prompt;
+      let actualPrompt = typeof triggerPrompt === 'string' ? triggerPrompt : '';
       const chatCollections = await listChatCollections($chatId);
       if (chatCollections.length) {
         const knowledgeString = await window.electron.knowledge.search(
           chatCollections.map((c) => c.id),
-          prompt,
+          typeof triggerPrompt === 'string'
+            ? triggerPrompt
+            : triggerPrompt.description || '',
         );
         knowledgeChunks = JSON.parse(knowledgeString);
         useKnowledgeStore.getState().cacheChunks(knowledgeChunks);
@@ -347,7 +428,45 @@ ${prompt}
             isActive: 0,
           });
         } else {
-          const inputTokens = result.inputTokens || (await countInput(prompt));
+          let { inputTokens } = result;
+
+          if (!inputTokens) {
+            inputTokens = 0;
+
+            if (typeof triggerPrompt === 'string') {
+              inputTokens += await countInput(actualPrompt);
+            } else {
+              inputTokens += convertedMCPTriggerPrompt!.messages.reduce(
+                (_total, message) => {
+                  const content = message.content[0];
+
+                  if (content.type === 'audio' || content.type === 'image') {
+                    const { source } = content;
+
+                    if (source.type === 'base64') {
+                      return _total + countBlobInput(source.data, content.type);
+                    }
+
+                    // TODO: Count source url tokens
+                  }
+
+                  return _total;
+                },
+                0,
+              );
+              inputTokens += await countInput(
+                convertedMCPTriggerPrompt!.messages.reduce((text, message) => {
+                  if (message.content[0].type === 'text') {
+                    return text + message.content[0].text;
+                  }
+
+                  return text;
+                }, ''),
+              );
+            }
+          }
+
+          // const inputTokens = result.inputTokens || (await countInput(prompt));
           const outputTokens =
             result.outputTokens || (await countOutput(result.content || ''));
           const citedChunkIds = extractCitationIds(result.content || '');
@@ -414,6 +533,19 @@ ${prompt}
             role: 'user',
             content: actualPrompt,
           },
+
+          ...(convertedMCPTriggerPrompt?.messages || []).map(
+            (message): IChatRequestMessage => {
+              return {
+                role: message.role as 'user' | 'assistant',
+                content: message.content.map((part) => {
+                  return MCPContentBlockConverter.contentBlockToLegacyMessageContent(
+                    part,
+                  );
+                }),
+              };
+            },
+          ),
         ],
         msgId,
       );

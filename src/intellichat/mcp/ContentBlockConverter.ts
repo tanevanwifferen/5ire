@@ -1,6 +1,7 @@
 import { filetypemime } from 'magic-bytes.js';
 import type { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import { UnsupportedError } from 'intellichat/mcp/UnsupportedError';
+import type { IChatRequestMessageContent } from 'intellichat/types';
 
 type TextBlock = Extract<ContentBlock, { type: 'text' }>;
 type AudioBlock = Extract<ContentBlock, { type: 'audio' }>;
@@ -302,6 +303,55 @@ export class ContentBlockConverter {
     }
 
     return ContentBlockConverter.#instance.convert(block);
+  }
+
+  /**
+   * @deprecated This method is temporary and will be removed in a future version.
+   *
+   * This function converts a `FinalContentBlock` into an `IChatRequestMessageContent`.
+   * It was introduced to maintain compatibility with earlier code that used `IChatRequestMessageContent`
+   * to represent a portion of a message. This part of the code is likely to be refactored
+   * in subsequent versions.
+   *
+   * @param part The content block to convert.
+   * @returns The legacy message content object.
+   */
+  static contentBlockToLegacyMessageContent(
+    part: FinalContentBlock,
+  ): IChatRequestMessageContent {
+    if (part.type === 'text') {
+      return {
+        type: 'text',
+        text: part.text,
+      };
+    }
+
+    if (part.type === 'image') {
+      if (part.source.type === 'base64') {
+        return {
+          type: 'image_url',
+          image_url: {
+            url: `data:${part.source.mimeType};base64,${part.source.data}`,
+          },
+        };
+      }
+
+      return {
+        type: 'image_url',
+        image_url: {
+          url: part.source.url,
+        },
+      };
+    }
+
+    return {
+      type: 'audio',
+      source: {
+        type: 'base64',
+        data: part.source.data,
+        media_type: part.source.mimeType,
+      },
+    };
   }
 }
 

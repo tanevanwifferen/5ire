@@ -14,10 +14,12 @@ export default function EditorToolbar({
   ctx,
   isReady,
   onConfirm,
+  onTriggerPrompt,
 }: {
   ctx: IChatContext;
   isReady: boolean;
   onConfirm: () => void;
+  onTriggerPrompt?: (prompt: unknown) => void;
 }) {
   const chat = useChatStore((state) => state.chat) as IChat;
   return (
@@ -30,7 +32,11 @@ export default function EditorToolbar({
         <ModelCtrl ctx={ctx} chat={chat} />
         <div className="flex justify-start items-center gap-2.5 -ml-2">
           <PromptCtrl ctx={ctx} chat={chat} disabled={!isReady} />
-          <McpPromptCtrl chat={chat} disabled={!isReady} />
+          <McpPromptCtrl
+            chat={chat}
+            disabled={!isReady}
+            onTrigger={onTriggerPrompt}
+          />
           <KnowledgeCtrl ctx={ctx} chat={chat} disabled={!isReady} />
 
           <MaxTokensCtrl

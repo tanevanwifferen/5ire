@@ -17,6 +17,8 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': 'error',
     'prefer-destructuring': 'warn',
     'react/jsx-props-no-spreading': 'warn',
+    'class-methods-use-this': 'off',
+    'no-use-before-define': 'off',
   },
   parserOptions: {
     ecmaVersion: 2020,

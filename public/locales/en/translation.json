@@ -334,5 +334,6 @@
   "Common.Citation": "Citation",
   "Common.Capabilities": "Capabilities",
   "Common.Action.Rename": "Rename",
-  "Common.NoSubtitlesAvailable": "No subtitles available"
+  "Common.NoSubtitlesAvailable": "No subtitles available",
+  "Tools.UnsupportedCapability": "Unable to support tool usage for this capability"
 }

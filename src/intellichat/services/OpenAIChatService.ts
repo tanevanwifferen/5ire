@@ -15,6 +15,10 @@ import { splitByImg, stripHtmlTags, urlJoin } from 'utils/util';
 import OpenAIReader from 'intellichat/readers/OpenAIReader';
 import { ITool } from 'intellichat/readers/IChatReader';
 import Ollama from 'providers/Ollama';
+import {
+  ContentBlockConverter as MCPContentBlockConverter,
+  FinalContentBlock,
+} from 'intellichat/mcp/ContentBlockConverter';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
 import OpenAI from '../../providers/OpenAI';
@@ -87,10 +91,34 @@ export default class OpenAIChatService
       });
     }
     this.context.getCtxMessages(msgId).forEach((msg: IChatMessage) => {
-      result.push({
-        role: 'user',
-        content: msg.prompt,
-      });
+      if (msg.structuredPrompts) {
+        let strucuredPrompts: {
+          role: string;
+          content: FinalContentBlock[];
+        }[];
+
+        try {
+          strucuredPrompts = JSON.parse(msg.structuredPrompts);
+        } catch (e) {
+          throw new Error('Failed to parse structuredPrompts');
+        }
+
+        strucuredPrompts.forEach((message) => {
+          result.push({
+            role: message.role,
+            content: message.content.map((block) => {
+              return MCPContentBlockConverter.contentBlockToLegacyMessageContent(
+                block,
+              );
+            }),
+          });
+        });
+      } else {
+        result.push({
+          role: 'user',
+          content: msg.prompt,
+        });
+      }
       result.push({
         role: 'assistant',
         content: msg.reply,
@@ -161,11 +189,12 @@ export default class OpenAIChatService
           };
         }
         return {
-          role: 'user',
+          role: msg.role,
           content,
         };
       }),
     );
+
     result.push(...processedMessages);
     return result as IChatRequestMessage[];
   }

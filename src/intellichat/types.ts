@@ -33,7 +33,7 @@ export interface IChatMessage {
   chatId: string;
   systemMessage?: string | null;
   prompt: string;
-  structuredPrompts?: unknown[] | null;
+  structuredPrompts?: string | null;
   reply: string;
   reasoning?: string;
   model: string;
@@ -118,6 +118,7 @@ export interface IChatRequestMessageContent {
     | 'image_url'
     | 'image'
     | 'function'
+    | 'audio'
     | 'tool_result'
     | 'tool_use';
   id?: string;

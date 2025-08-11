@@ -18,6 +18,10 @@ import {
   urlJoin,
 } from 'utils/util';
 import AnthropicReader from 'intellichat/readers/AnthropicReader';
+import {
+  ContentBlockConverter as MCPContentBlockConverter,
+  FinalContentBlock,
+} from 'intellichat/mcp/ContentBlockConverter';
 import { ITool } from 'intellichat/readers/IChatReader';
 import INextChatService from './INextCharService';
 import NextChatService from './NextChatService';
@@ -153,17 +157,43 @@ export default class AnthropicChatService
     const result = this.context
       .getCtxMessages(msgId)
       .reduce((acc: IChatRequestMessage[], msg: IChatMessage) => {
-        return [
-          ...acc,
-          {
+        const msgs: IChatRequestMessage[] = [];
+
+        if (msg.structuredPrompts) {
+          let strucuredPrompts: {
+            role: string;
+            content: FinalContentBlock[];
+          }[];
+
+          try {
+            strucuredPrompts = JSON.parse(msg.structuredPrompts);
+          } catch (e) {
+            throw new Error('Failed to parse structuredPrompts');
+          }
+
+          strucuredPrompts.forEach((message) => {
+            msgs.push({
+              role: message.role as 'user',
+              content: message.content.map((block) => {
+                return MCPContentBlockConverter.contentBlockToLegacyMessageContent(
+                  block,
+                );
+              }),
+            });
+          });
+        } else {
+          msgs.push({
             role: 'user',
             content: msg.prompt,
-          },
-          {
-            role: 'assistant',
-            content: msg.reply,
-          },
-        ] as IChatRequestMessage[];
+          });
+        }
+
+        msgs.push({
+          role: 'assistant',
+          content: msg.reply,
+        });
+
+        return [...acc, ...msgs] as IChatRequestMessage[];
       }, []);
 
     const processedMessages = (await Promise.all(

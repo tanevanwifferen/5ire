@@ -43,9 +43,11 @@ const PromptIcon = bundleIcon(
 export default function McpPromptCtrl({
   chat,
   disabled,
+  onTrigger,
 }: {
   chat: IChat;
   disabled?: boolean;
+  onTrigger?: (prompt: unknown) => void;
 }) {
   const { t } = useTranslation();
   const { notifyError } = useToast();
@@ -67,6 +69,7 @@ export default function McpPromptCtrl({
   const openDialog = () => {
     setOpen(true);
     setLoadingList(true);
+    setPrompt(null);
     window.electron.mcp
       .listPrompts()
       .then((res: { error?: string; prompts: IMCPPromptListItem[] }) => {
@@ -107,12 +110,12 @@ export default function McpPromptCtrl({
     window.electron.ingestEvent([{ app: 'apply-mcp-prompt' }]);
   };
 
-  const removePrompt = () => {
+  const removePrompt = useCallback(() => {
     setOpen(false);
     setPromptItem(null);
     setPrompt(null);
     setVariableDialogOpen(false);
-  };
+  }, []);
 
   const onVariablesCancel = useCallback(() => {
     setPromptItem(null);
@@ -226,6 +229,19 @@ export default function McpPromptCtrl({
     });
   }, [prompt, t]);
 
+  const onSubmit = useCallback(async () => {
+    if (prompt && promptItem) {
+      onTrigger?.({
+        name: promptItem.name,
+        description: promptItem.description,
+        messages: prompt.messages,
+      });
+
+      // Close the dialog and clear prompt state.
+      removePrompt();
+    }
+  }, [prompt, promptItem, removePrompt, onTrigger]);
+
   return (
     <>
       <Dialog open={open} onOpenChange={(_, data) => setOpen(data.open)}>
@@ -278,7 +294,11 @@ export default function McpPromptCtrl({
                   {t('Common.Cancel')}
                 </Button>
               </DialogTrigger>
-              <Button appearance="primary" disabled={isNil(prompt)}>
+              <Button
+                appearance="primary"
+                disabled={isNil(prompt)}
+                onClick={onSubmit}
+              >
                 {t('Common.Submit')}
               </Button>
             </DialogActions>

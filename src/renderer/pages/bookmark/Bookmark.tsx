@@ -38,6 +38,13 @@ const DeleteIcon = bundleIcon(Delete16Filled, Delete16Regular);
 const FavoriteIcon = bundleIcon(Heart16Filled, Heart16Regular);
 const UnfavoriteIcon = bundleIcon(HeartOff16Filled, HeartOff16Regular);
 
+/**
+ * Bookmark component for displaying and managing individual bookmarks.
+ * Provides functionality to view bookmark content, toggle favorites, delete bookmarks,
+ * and display citations and references.
+ * 
+ * @returns {JSX.Element} The rendered bookmark page component
+ */
 export default function Bookmark() {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -64,6 +71,13 @@ export default function Bookmark() {
   const { renderMermaid } = useMermaid();
   const { initECharts, disposeECharts } = useECharts({ message: bookmark });
 
+  /**
+   * Renders ECharts components within a given DOM element.
+   * Searches for elements with the 'echarts-container' class and initializes charts for each.
+   * 
+   * @param {string} prefix - The prefix to use for chart identification
+   * @param {Element} msgDom - The DOM element to search for chart containers
+   */
   const renderECharts = useCallback(
     (prefix: string, msgDom: Element) => {
       const charts = msgDom.querySelectorAll('.echarts-container');
@@ -76,6 +90,12 @@ export default function Bookmark() {
     [initECharts],
   );
 
+  /**
+   * Handles citation link clicks within the bookmark content.
+   * Prevents default navigation and shows citation content in a dialog.
+   * 
+   * @param {any} event - The click event from the citation link
+   */
   const onCitationClick = async (event: any) => {
     const url = new URL(event.target?.href);
     if (url.pathname === '/citation' || url.protocol.startsWith('file:')) {
@@ -118,18 +138,30 @@ export default function Bookmark() {
   }, [updated, id]);
 
   const [isThinkShow, setIsThinkShow] = useState(false);
+  
+  /**
+   * Toggles the visibility of the reasoning/thinking section.
+   */
   const toggleThink = useCallback(() => {
     setIsThinkShow(!isThinkShow);
   }, [isThinkShow]);
 
   const { notifySuccess } = useToast();
 
+  /**
+   * Handles bookmark deletion.
+   * Deletes the bookmark from storage, navigates back, and shows success notification.
+   */
   const onDeleteBookmark = async () => {
     await deleteBookmark(bookmark.id);
     navigate(-1);
     notifySuccess(t('Bookmarks.Notification.Removed'));
   };
 
+  /**
+   * Adds the current bookmark to favorites.
+   * Updates the bookmark's favorite status, refreshes the favorites list, and shows success notification.
+   */
   const addToFavorites = async () => {
     await updateBookmarks({ id: bookmark.id, favorite: true });
     setUpdated(true);
@@ -137,6 +169,10 @@ export default function Bookmark() {
     notifySuccess(t('Bookmarks.Notification.Added'));
   };
 
+  /**
+   * Removes the current bookmark from favorites.
+   * Updates the bookmark's favorite status, refreshes the favorites list, and shows success notification.
+   */
   const removeFromFavorites = async () => {
     await updateBookmarks({ id: bookmark.id, favorite: false });
     setUpdated(true);

@@ -215,9 +215,56 @@ export default class AnthropicChatService
             content: await this.convertPromptContent(content),
           };
         }
+
+        if (Array.isArray(content)) {
+          return {
+            role: msg.role,
+            content: content.map((item) => {
+              if (item.type === 'text') {
+                return {
+                  type: 'text',
+                  text: item.text,
+                };
+              }
+
+              if (item.type === 'image_url') {
+                const url = item.image_url?.url || '';
+
+                return {
+                  type: 'image',
+                  source: {
+                    type: 'url',
+                    url,
+                  },
+                };
+              }
+
+              // Unsupport audio
+              if (item.type === 'audio') {
+                debug(
+                  'Warning: Audio content type not supported, converting to empty text',
+                );
+
+                return {
+                  type: 'text',
+                  text: '',
+                };
+              }
+
+              debug(
+                `Warning: Unknown content type '${item.type}', converting to empty text`,
+              );
+              return {
+                type: 'text',
+                text: '',
+              };
+            }),
+          };
+        }
+
         return {
           role: msg.role,
-          content,
+          content: '',
         };
       }),
     )) as IChatRequestMessage[];

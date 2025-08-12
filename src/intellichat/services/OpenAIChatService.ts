@@ -1,4 +1,4 @@
-// import Debug from 'debug';
+import Debug from 'debug';
 import {
   IChatContext,
   IChatRequestMessage,
@@ -23,7 +23,7 @@ import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
 import OpenAI from '../../providers/OpenAI';
 
-// const debug = Debug('5ire:intellichat:OpenAIChatService');
+const debug = Debug('5ire:intellichat:OpenAIChatService');
 
 export default class OpenAIChatService
   extends NextChatService
@@ -188,9 +188,53 @@ export default class OpenAIChatService
             content: formattedContent,
           };
         }
+
+        if (Array.isArray(content)) {
+          return {
+            role: msg.role,
+            content: content.map((item) => {
+              if (item.type === 'text') {
+                return {
+                  type: 'text',
+                  text: item.text ?? '',
+                };
+              }
+
+              if (item.type === 'image_url') {
+                return {
+                  type: 'image_url',
+                  image_url: item.image_url,
+                };
+              }
+
+              if (item.type === 'audio') {
+                const fmt = item.source?.media_type
+                  ? item.source.media_type.split('/')[1]
+                  : 'mpeg';
+
+                return {
+                  type: 'input_audio',
+                  input_audio: {
+                    data: item.source?.data || '',
+                    format: fmt,
+                  },
+                };
+              }
+
+              debug(
+                `Warning: Unknown content type '${item.type}', converting to empty text`,
+              );
+              return {
+                type: 'text',
+                text: '',
+              };
+            }),
+          };
+        }
+
         return {
           role: msg.role,
-          content,
+          content: '',
         };
       }),
     );

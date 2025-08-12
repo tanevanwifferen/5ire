@@ -4,15 +4,31 @@ import OpenAIChatService from './OpenAIChatService';
 import DeepSeek from '../../providers/DeepSeek';
 import INextChatService from './INextCharService';
 
+/**
+ * Chat service implementation for DeepSeek AI provider.
+ * Extends OpenAIChatService to provide DeepSeek-specific functionality.
+ */
 export default class DeepSeekChatService
   extends OpenAIChatService
   implements INextChatService
 {
+  /**
+   * Creates a new DeepSeekChatService instance.
+   * @param name - The name identifier for this chat service
+   * @param chatContext - The chat context containing configuration and state
+   */
   constructor(name: string, chatContext: IChatContext) {
     super(name, chatContext);
     this.provider = DeepSeek;
   }
 
+  /**
+   * Makes an HTTP request to the DeepSeek API for chat completions.
+   * Constructs the request URL, headers, and payload specific to DeepSeek's API requirements.
+   * @param messages - Array of chat request messages to send
+   * @param msgId - Optional message ID for context tracking
+   * @returns Promise that resolves to the HTTP response from DeepSeek API
+   */
   protected async makeRequest(
     messages: IChatRequestMessage[],
     msgId?: string,

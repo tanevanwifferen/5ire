@@ -8,8 +8,13 @@ import { merge } from 'lodash';
 import IChatReader, { IReadResult, ITool } from './IChatReader';
 
 export default abstract class BaseReader implements IChatReader {
+  /** The stream reader for processing incoming data chunks */
   protected streamReader: ReadableStreamDefaultReader<Uint8Array>;
 
+  /**
+   * Creates a new BaseReader instance.
+   * @param reader - The readable stream reader for processing data chunks
+   */
   constructor(reader: ReadableStreamDefaultReader<Uint8Array>) {
     this.streamReader = reader;
   }
@@ -18,6 +23,8 @@ export default abstract class BaseReader implements IChatReader {
    * Parse tool calls from a response message.
    * Base implementation looks for tool_calls array and returns the first tool call if found.
    * Override this method for different tool call formats.
+   * @param respMsg - The response message to parse tools from
+   * @returns The first tool call found, or null if none exist
    */
   protected parseTools(respMsg: IChatResponseMessage): ITool | null {
     if (!respMsg.toolCalls || respMsg.toolCalls.length === 0) {
@@ -35,6 +42,8 @@ export default abstract class BaseReader implements IChatReader {
    * Parse tool arguments from a response message.
    * Base implementation assumes arguments are JSON strings that can be concatenated.
    * Override this method for different argument formats.
+   * @param respMsg - The response message to parse tool arguments from
+   * @returns Object containing argument index and args string, or null if no tool calls
    */
   protected parseToolArgs(respMsg: IChatResponseMessage): {
     index: number;
@@ -55,6 +64,8 @@ export default abstract class BaseReader implements IChatReader {
    * Parse a raw chunk into a structured message.
    * Base implementation assumes chunks are JSON strings.
    * Override this method for different message formats.
+   * @param chunk - The raw chunk string to parse
+   * @returns Parsed chat response message
    */
   protected parseReply(chunk: string): IChatResponseMessage {
     try {
@@ -84,7 +95,7 @@ export default abstract class BaseReader implements IChatReader {
    * before parsing. Override shouldCombineChunks() and getCombinedChunk() to
    * implement custom combining logic.
    *
-   * @param chunk The current chunk of data to process
+   * @param chunk - The current chunk of data to process
    * @returns A complete message if one is ready, null otherwise
    */
   protected processChunk(chunk: string): IChatResponseMessage | null {
@@ -98,9 +109,8 @@ export default abstract class BaseReader implements IChatReader {
   }
 
   /**
-   * Determine if chunks should be combined before parsing.
-   * Base implementation returns false.
-   * Override this to enable chunk combining for providers that split messages.
+   * Array to store incomplete chunks that need to be combined.
+   * Used when chunks are split across multiple reads and need reassembly.
    */
   private incompleteChunks: string[] = [];
 
@@ -108,7 +118,8 @@ export default abstract class BaseReader implements IChatReader {
    * Check if a chunk can be parsed as valid JSON.
    * Returns true if parsing fails, indicating chunks need to be combined.
    *
-   * @param chunk The chunk to check
+   * @param chunk - The chunk to check
+   * @returns True if chunk should be combined with others, false if it's complete
    */
   protected shouldCombineChunks(chunk: string): boolean {
     try {
@@ -123,7 +134,8 @@ export default abstract class BaseReader implements IChatReader {
    * Combine chunks until we have valid JSON or reach max attempts.
    * Returns the combined chunk and whether it forms valid JSON.
    *
-   * @param chunk Current chunk to process
+   * @param chunk - Current chunk to process
+   * @returns Object containing the combined chunk and completion status
    */
   protected getCombinedChunk(chunk: string): {
     combinedChunk: string;
@@ -154,6 +166,11 @@ export default abstract class BaseReader implements IChatReader {
     }
   }
 
+  /**
+   * Read and process the stream data, calling appropriate callbacks during processing.
+   * @param callbacks - Object containing callback functions for error handling, progress updates, and tool calls
+   * @returns Promise resolving to the final read result containing content, reasoning, tools, and token counts
+   */
   public async read({
     onError,
     onProgress,
@@ -203,6 +220,12 @@ export default abstract class BaseReader implements IChatReader {
     }
   }
 
+  /**
+   * Process the stream data by reading chunks and handling them appropriately.
+   * @param decoder - Text decoder for converting bytes to strings
+   * @param state - Current processing state containing content, tokens, and tool information
+   * @param callbacks - Callback functions for progress updates and tool calls
+   */
   private async processStreamData(
     decoder: TextDecoder,
     state: {
@@ -255,6 +278,11 @@ export default abstract class BaseReader implements IChatReader {
     }
   }
 
+  /**
+   * Split decoded stream value into individual lines, filtering out event lines.
+   * @param value - The decoded string value to split
+   * @returns Array of trimmed, non-empty lines
+   */
   private splitIntoLines(value: string): string[] {
     return value
       .split('\n')
@@ -263,6 +291,11 @@ export default abstract class BaseReader implements IChatReader {
       .filter((line) => line !== '');
   }
 
+  /**
+   * Extract data chunks from a line by splitting on 'data:' markers.
+   * @param line - The line to extract chunks from
+   * @returns Array of trimmed data chunks
+   */
   private extractDataChunks(line: string): string[] {
     return line
       .split('data:')
@@ -270,6 +303,13 @@ export default abstract class BaseReader implements IChatReader {
       .map((chunk) => chunk.trim());
   }
 
+  /**
+   * Process a complete response message and update the current state.
+   * @param response - The response message to process
+   * @param state - Current processing state to update
+   * @param callbacks - Callback functions for progress and tool call notifications
+   * @returns Promise that resolves when processing is complete
+   */
   private async processResponse(
     response: IChatResponseMessage,
     state: {
@@ -308,6 +348,11 @@ export default abstract class BaseReader implements IChatReader {
     state.messageIndex++;
   }
 
+  /**
+   * Process tool arguments from a response and update the state.
+   * @param response - The response message containing tool arguments
+   * @param state - State object containing tool arguments array and message index
+   */
   private processToolArguments(
     response: IChatResponseMessage,
     state: {
@@ -329,6 +374,12 @@ export default abstract class BaseReader implements IChatReader {
     }
   }
 
+  /**
+   * Process content response and update state with content and reasoning.
+   * @param response - The response message containing content
+   * @param state - State object to update with content and reasoning
+   * @param callbacks - Callback functions for progress notifications
+   */
   private processContentResponse(
     response: IChatResponseMessage,
     state: { content: string; reasoning: string },
@@ -339,6 +390,11 @@ export default abstract class BaseReader implements IChatReader {
     callbacks.onProgress(response.content || '', response.reasoning || '');
   }
 
+  /**
+   * Update token counts in the state based on the response.
+   * @param response - The response message containing token information
+   * @param state - State object to update with token counts
+   */
   private updateTokenCounts(
     response: IChatResponseMessage,
     state: { inputTokens: number; outputTokens: number },
@@ -351,6 +407,11 @@ export default abstract class BaseReader implements IChatReader {
     }
   }
 
+  /**
+   * Finalize tool arguments by parsing and merging them into a single object.
+   * @param toolArguments - Array of tool argument strings to finalize
+   * @returns Merged object containing all parsed tool arguments
+   */
   private finalizeToolArguments(toolArguments: string[]): any {
     const parsedArgs = toolArguments.map((arg) => JSON.parse(arg));
     return merge({}, ...parsedArgs);

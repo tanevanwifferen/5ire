@@ -11,6 +11,15 @@ import useDeleteChat from 'hooks/useDeleteChat';
 import ChatIcon from './ChatIcon';
 import { useContextMenu } from './ContextMenuProvider'; // 修改这里
 
+/**
+ * A React component that renders an individual chat item in the chat list.
+ * Supports both display and editing modes, drag-and-drop functionality, and context menu interactions.
+ * 
+ * @param {Object} props - The component props
+ * @param {IChat} props.chat - The chat object containing chat data
+ * @param {boolean} props.collapsed - Whether the chat list is in collapsed state
+ * @returns {JSX.Element} The rendered chat item component
+ */
 export default function ChatItem({
   chat,
   collapsed,
@@ -41,6 +50,10 @@ export default function ChatItem({
   } = useDeleteChat();
   const { registerHandler, unregisterHandler } = useContextMenu(); // 修改这里
 
+  /**
+   * Sets up keyboard shortcut for escaping edit mode when component mounts or edit state changes.
+   * Binds the 'esc' key to cancel editing and restore the original chat name.
+   */
   useEffect(() => {
     Mousetrap.bind('esc', () => {
       setName(chat.name);
@@ -51,6 +64,12 @@ export default function ChatItem({
     };
   }, [editable, chat.name]);
 
+  /**
+   * Updates the chat name if it has changed and is not empty.
+   * Exits edit mode after updating.
+   * 
+   * @param {string} newName - The new name to set for the chat
+   */
   const updateChatName = useCallback(
     async (newName: string) => {
       if (newName !== chat.name && newName.trim().length > 0) {
@@ -61,6 +80,13 @@ export default function ChatItem({
     [chat.id, chat.name, updateChat],
   );
 
+  /**
+   * Handles context menu commands received from the context menu system.
+   * Processes 'delete-chat' and 'rename-chat' commands.
+   * 
+   * @param {string} command - The command to execute
+   * @param {any} params - Additional parameters for the command
+   */
   const handleContextMenuCommand = useCallback(
     (command: string, params: any) => {
       if (command === 'delete-chat') {
@@ -76,6 +102,10 @@ export default function ChatItem({
     [chat, showDeleteConfirmation],
   );
 
+  /**
+   * Registers the context menu handler for this chat item when component mounts.
+   * Unregisters the handler when component unmounts.
+   */
   useEffect(() => {
     registerHandler('chat', chat.id, handleContextMenuCommand); // 修改这里
     return () => {
@@ -83,6 +113,12 @@ export default function ChatItem({
     };
   }, [chat.id, handleContextMenuCommand, registerHandler, unregisterHandler]);
 
+  /**
+   * Handles right-click context menu events.
+   * Prevents default browser context menu and shows custom context menu via IPC.
+   * 
+   * @param {React.MouseEvent} e - The mouse event from right-click
+   */
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -102,7 +138,12 @@ export default function ChatItem({
       id={chat.id}
       key={chat.id}
       onContextMenu={handleContextMenu}
-      onDoubleClick={() => {
+      onDoubleClick={
+        /**
+         * Handles double-click events to enter edit mode.
+         * Only activates when the chat list is not collapsed.
+         */
+        () => {
         if (!collapsed) {
           setEditable(true);
           setTimeout(() => {
@@ -125,7 +166,14 @@ export default function ChatItem({
             placeholder={t('Input.Hint.EnterSubmitEscCancel')}
             className="w-full"
             appearance="underline"
-            onKeyDown={(e) => {
+            onKeyDown={
+              /**
+               * Handles keyboard events in edit mode.
+               * Submits the name change when Enter is pressed.
+               * 
+               * @param {React.KeyboardEvent} e - The keyboard event
+               */
+              (e) => {
               if (e.key === 'Enter') {
                 updateChatName(name);
                 setEditable(false);

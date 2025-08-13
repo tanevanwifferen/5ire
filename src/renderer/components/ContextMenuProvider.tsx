@@ -1,21 +1,49 @@
 import React, { createContext, useContext, useEffect, useRef } from 'react';
 
+/**
+ * Function type for handling context menu commands
+ * @param command - The command string to execute
+ * @param params - Parameters associated with the command
+ */
 type ContextMenuHandler = (command: string, params: any) => void;
 
+/**
+ * Interface defining the context menu management operations
+ */
 interface ContextMenuManager {
+  /**
+   * Registers a handler for context menu commands
+   * @param type - The type identifier for the handler
+   * @param id - The unique identifier for the handler
+   * @param handler - The function to handle context menu commands
+   */
   registerHandler: (
     type: string,
     id: string,
     handler: ContextMenuHandler,
   ) => void;
+  /**
+   * Removes a registered handler
+   * @param type - The type identifier for the handler
+   * @param id - The unique identifier for the handler
+   */
   unregisterHandler: (type: string, id: string) => void;
 }
 
+/**
+ * React context for managing context menu handlers
+ */
 const ContextMenuContext = createContext<ContextMenuManager>({
   registerHandler: () => {},
   unregisterHandler: () => {},
 });
 
+/**
+ * Provider component that manages context menu handlers and IPC communication
+ * @param props - Component properties
+ * @param props.children - Child React nodes to render within the provider
+ * @returns JSX element wrapping children with context menu functionality
+ */
 export function ContextMenuProvider({
   children,
 }: {
@@ -50,6 +78,12 @@ export function ContextMenuProvider({
     };
   }, []);
 
+  /**
+   * Registers a context menu handler with a specific type and id
+   * @param type - The type identifier for the handler
+   * @param id - The unique identifier for the handler
+   * @param handler - The function to handle context menu commands
+   */
   const registerHandler = (
     type: string,
     id: string,
@@ -59,6 +93,11 @@ export function ContextMenuProvider({
     handlersRef.current.set(key, handler);
   };
 
+  /**
+   * Removes a registered context menu handler
+   * @param type - The type identifier for the handler
+   * @param id - The unique identifier for the handler
+   */
   const unregisterHandler = (type: string, id: string) => {
     const key = `${type}:${id}`;
     handlersRef.current.delete(key);
@@ -71,4 +110,8 @@ export function ContextMenuProvider({
   );
 }
 
+/**
+ * Custom hook to access the context menu manager
+ * @returns The context menu manager with register and unregister functions
+ */
 export const useContextMenu = () => useContext(ContextMenuContext);

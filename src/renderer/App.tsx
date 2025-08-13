@@ -21,6 +21,12 @@ const debug = Debug('5ire:App');
 
 logging.init();
 
+/**
+ * Main application component that initializes the app and manages global state.
+ * Handles authentication, MCP server initialization, and IPC communication setup.
+ * 
+ * @returns {JSX.Element} The main application wrapped in context providers
+ */
 export default function App() {
   const loadAuthData = useAuthStore((state) => state.load);
   const setSession = useAuthStore((state) => state.setSession);
@@ -59,8 +65,9 @@ export default function App() {
     });
 
     /**
-     * 当知识库导入任务完成时触发
-     * 放這是为了避免组件卸载后无法接收到事件
+     * Handles knowledge base import completion events from the main process.
+     * Creates a new file entry in the knowledge store when import succeeds.
+     * This listener is placed at the app level to ensure it persists across component unmounts.
      */
     window.electron.ipcRenderer.on(
       'knowledge-import-success',

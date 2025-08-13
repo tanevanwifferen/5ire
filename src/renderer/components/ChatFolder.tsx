@@ -34,15 +34,30 @@ import { useContextMenu } from './ContextMenuProvider';
 
 const MoreVerticalIcon = bundleIcon(MoreVerticalFilled, MoreVerticalRegular);
 
+/**
+ * Props for the ChatFolder component
+ */
+interface ChatFolderProps {
+  /** The folder object containing folder information */
+  folder: IChatFolder;
+  /** Array of chats that belong to this folder */
+  chats: IChat[];
+  /** Whether the folder should be displayed in collapsed mode */
+  collapsed: boolean;
+}
+
+/**
+ * A React component that renders a collapsible chat folder with drag-and-drop support,
+ * context menu actions, and inline editing capabilities.
+ * 
+ * @param props - The component props
+ * @returns The rendered ChatFolder component
+ */
 export default function ChatFolder({
   folder,
   chats,
   collapsed,
-}: {
-  folder: IChatFolder;
-  chats: IChat[];
-  collapsed: boolean;
-}) {
+}: ChatFolderProps) {
   const { setNodeRef } = useDroppable({
     id: folder.id,
   });
@@ -59,6 +74,10 @@ export default function ChatFolder({
   const [folderSettingsOpen, setFolderSettingsOpen] = useState(false);
   const { registerHandler, unregisterHandler } = useContextMenu();
 
+  /**
+   * Saves the current folder name and exits edit mode.
+   * Trims whitespace and provides a default name if empty.
+   */
   const saveName = useCallback(() => {
     setEditable(false);
     const folderName = name.trim() || 'New Folder';
@@ -70,6 +89,11 @@ export default function ChatFolder({
     Mousetrap.unbind('esc');
   }, [name, folder.id, updateFolder]);
 
+  /**
+   * Handles context menu commands for the folder.
+   * 
+   * @param command - The command string to execute
+   */
   const handleContextMenuCommand = useCallback(
     (command: string) => {
       if (command === 'delete-chat-folder') {
@@ -87,6 +111,10 @@ export default function ChatFolder({
     [folder.id, selectFolder],
   );
 
+  /**
+   * Registers the context menu handler for this folder and cleans up on unmount.
+   * Sets up the handler to respond to context menu commands specific to this folder.
+   */
   useEffect(() => {
     registerHandler('chat-folder', folder.id, handleContextMenuCommand);
     return () => {
@@ -94,7 +122,12 @@ export default function ChatFolder({
     };
   }, [folder.id, handleContextMenuCommand, registerHandler, unregisterHandler]);
 
-  // 右键菜单事件处理
+  /**
+   * Handles right-click context menu events.
+   * Prevents default browser context menu and shows custom context menu.
+   * 
+   * @param e - The mouse event
+   */
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
@@ -108,6 +141,10 @@ export default function ChatFolder({
     [folder.id],
   );
 
+  /**
+   * Sets up escape key binding to cancel folder name editing.
+   * Binds the escape key to reset the name and exit edit mode.
+   */
   useEffect(() => {
     Mousetrap.bind('esc', () => {
       setName(folder.name);
@@ -118,6 +155,10 @@ export default function ChatFolder({
     };
   }, [editable, folder.name]);
 
+  /**
+   * Handles new folder initialization and cleanup.
+   * Automatically enters edit mode for new folders and marks them as old on unmount.
+   */
   useEffect(() => {
     if (folder.isNew) {
       setEditable(true);
@@ -130,6 +171,12 @@ export default function ChatFolder({
     };
   }, [folder.isNew, folder.id, markFolderAsOld]);
 
+  /**
+   * Returns the appropriate folder icon based on folder state.
+   * 
+   * @param fld - The folder object
+   * @returns The React icon component to display
+   */
   const icon = useCallback(
     (fld: IChatFolder) => {
       if (openFolders.includes(fld.id)) {

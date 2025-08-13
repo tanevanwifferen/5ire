@@ -27,10 +27,19 @@ import { isPlainObject, omit } from 'lodash';
 
 const debug = Debug('5ire:intellichat:AnthropicChatService');
 
+/**
+ * Chat service implementation for Anthropic API integration.
+ * Extends NextChatService to provide Anthropic-specific functionality for chat interactions.
+ */
 export default class AnthropicChatService
   extends NextChatService
   implements INextChatService
 {
+  /**
+   * Creates a new AnthropicChatService instance.
+   * @param {string} name - The name identifier for this chat service
+   * @param {IChatContext} context - The chat context containing configuration and state
+   */
   constructor(name: string, context: IChatContext) {
     super({
       name,
@@ -39,6 +48,15 @@ export default class AnthropicChatService
     });
   }
 
+  /**
+   * Creates tool messages for Anthropic API format.
+   * Converts tool execution results into the message format expected by Anthropic.
+   * Note: mimeType is not supported in tool inputs and will be removed.
+   * @param {ITool} tool - The tool that was executed
+   * @param {any} toolResult - The result returned from tool execution
+   * @param {string} [content] - Optional additional content to include in the assistant message
+   * @returns {IChatRequestMessage[]} Array of messages representing the tool use and result
+   */
   // eslint-disable-next-line class-methods-use-this
   protected makeToolMessages(
     tool: ITool,
@@ -88,6 +106,12 @@ export default class AnthropicChatService
     return result;
   }
 
+  /**
+   * Converts an MCP tool definition to Anthropic tool format.
+   * Transforms the tool schema to match Anthropic's expected structure.
+   * @param {IMCPTool} tool - The MCP tool definition to convert
+   * @returns {IOpenAITool | IAnthropicTool} The tool in Anthropic format
+   */
   // eslint-disable-next-line class-methods-use-this
   protected makeTool(tool: IMCPTool): IOpenAITool | IAnthropicTool {
     return {
@@ -102,11 +126,22 @@ export default class AnthropicChatService
     };
   }
 
+  /**
+   * Returns the reader class type for processing Anthropic responses.
+   * @returns {typeof AnthropicReader} The AnthropicReader class
+   */
   // eslint-disable-next-line class-methods-use-this
   protected getReaderType() {
     return AnthropicReader;
   }
 
+  /**
+   * Converts prompt content to the format expected by Anthropic API.
+   * Handles both text-only content and multimodal content with images.
+   * @param {string} content - The raw content string that may contain HTML and images
+   * @returns {Promise<string | IChatRequestMessageContent[]>} Processed content as string or structured content array
+   * @throws {Error} When an unknown message type is encountered during processing
+   */
   protected async convertPromptContent(
     content: string,
   ): Promise<string | IChatRequestMessageContent[]> {
@@ -146,6 +181,13 @@ export default class AnthropicChatService
     return stripHtmlTags(content);
   }
 
+  /**
+   * Prepares messages for the Anthropic API request.
+   * Combines context messages with new messages and processes tool-related content.
+   * @param {IChatRequestMessage[]} messages - The new messages to process
+   * @param {string} [msgId] - Optional message ID for context retrieval
+   * @returns {Promise<IChatRequestMessage[]>} Array of processed messages ready for API request
+   */
   protected async makeMessages(
     messages: IChatRequestMessage[],
     msgId?: string,
@@ -195,6 +237,13 @@ export default class AnthropicChatService
     return [...result, ...processedMessages];
   }
 
+  /**
+   * Creates the complete payload for Anthropic API requests.
+   * Assembles all necessary parameters including model, messages, tools, and configuration.
+   * @param {IChatRequestMessage[]} messages - The messages to include in the request
+   * @param {string} [msgId] - Optional message ID for context retrieval
+   * @returns {Promise<IChatRequestPayload>} Complete payload object for the API request
+   */
   protected async makePayload(
     messages: IChatRequestMessage[],
     msgId?: string,
@@ -235,6 +284,13 @@ export default class AnthropicChatService
     return payload;
   }
 
+  /**
+   * Makes an HTTP request to the Anthropic API.
+   * Constructs the request with proper headers and authentication for Anthropic's API.
+   * @param {IChatRequestMessage[]} messages - The messages to send in the request
+   * @param {string} [msgId] - Optional message ID for context retrieval
+   * @returns {Promise<Response>} The HTTP response from the Anthropic API
+   */
   protected async makeRequest(
     messages: IChatRequestMessage[],
     msgId?: string,

@@ -532,7 +532,7 @@ export default class ModuleContext {
     client,
     name,
     args,
-    signal,
+    // signal,
   }: {
     client: string;
     name: string;
@@ -555,7 +555,8 @@ export default class ModuleContext {
     const callFn = () =>
       this.clients[client].callTool({ name, arguments: args }, undefined, {
         timeout: CONNECT_TIMEOUT,
-        signal,
+        // When passed through an IPC channel, an AbortSignal cannot be serialized, so the signal here is not a valid AbortSignal.
+        // signal,
       });
     try {
       const result = await this.safeCall(client, callFn);

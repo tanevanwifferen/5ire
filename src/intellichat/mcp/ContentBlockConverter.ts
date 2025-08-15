@@ -123,6 +123,13 @@ export class ContentBlockConverter {
   private convertImageBlock(block: ImageBlock) {
     const { data, mimeType } = block;
 
+    if (mimeType === 'image/svg+xml') {
+      return this.convertTextBlock({
+        type: 'text',
+        text: `\`\`\`html \n${data}\n\`\`\``,
+      });
+    }
+
     // TODO: Use FFmpeg to convert other unsupported formats
     if (!SUPPORTED_IMAGE_MIMETYPES.includes(mimeType as any)) {
       throw new UnsupportedError('Unsupported image mimetype');
@@ -251,7 +258,80 @@ export class ContentBlockConverter {
     throw new UnsupportedError('Unsupported resource type');
   }
 
-  private convertResourceLinkBlock(block: ResourceLinkBlock) {
+  private async convertResourceLinkBlock(block: ResourceLinkBlock) {
+    if (block.uri.startsWith('data:')) {
+      const mimeType = block.uri.split(';')[0].split(':')[1];
+
+      if (mimeType.startsWith('image/')) {
+        return this.convertImageBlock({
+          type: 'image',
+          data: block.uri.split(',')[1],
+          mimeType,
+        }) as FinalContentBlock;
+      }
+
+      if (mimeType.startsWith('audio/')) {
+        return this.convertAudioBlock({
+          type: 'audio',
+          data: block.uri.split(',')[1],
+          mimeType,
+        }) as FinalContentBlock;
+      }
+
+      if (mimeType.startsWith('text/')) {
+        const bytes = Uint8Array.from(
+          atob(block.uri.split(',')[1] || '')
+            .split('')
+            .map((c) => c.charCodeAt(0)),
+        );
+
+        return {
+          type: 'text',
+          text: [
+            `[Document Start]`,
+            `MimeType: ${mimeType}`,
+            `Content:`,
+            `"""`,
+            `${new TextDecoder('utf-8').decode(bytes)}`,
+            `"""`,
+            `[Document End]`,
+          ].join('\n'),
+        } satisfies FinalTextBlock;
+      }
+    }
+
+    let url: URL | undefined;
+
+    try {
+      url = new URL(block.uri);
+    } catch (e) {
+      //
+    }
+
+    if (url && ['file:', 'http:', 'https:'].includes(url.protocol)) {
+      try {
+        const content = await window.electron.documentLoader.loadFromURI(
+          block.uri,
+        );
+
+        return {
+          type: 'text',
+          text: [
+            `[Document Start]`,
+            `URI: ${block.uri}`,
+            `Content:`,
+            `"""`,
+            `${content.map((c) => c.text).join('\n\n')}`,
+            `"""`,
+            `[Document End]`,
+          ].join('\n'),
+        } satisfies FinalTextBlock;
+      } catch (e) {
+        //
+      }
+    }
+
+    // De-escalation
     return {
       type: 'text',
       text: [

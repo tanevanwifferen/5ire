@@ -235,7 +235,7 @@ export class DocumentLoader {
       );
     }
 
-    if (resource.mimeType) {
+    if (!mimeType && resource.mimeType) {
       if (!this.#isMimeTypeSupported(resource.mimeType)) {
         throw new Error(`Unsupported MIME type: ${resource.mimeType}`);
       }
@@ -286,7 +286,10 @@ export class DocumentLoader {
    * @returns A promise resolving to an array of content parts.
    */
   loadFromFilePath = async (filepath: string, mimeType?: string) => {
-    return this.loadFromURI(`file://${filepath}`, mimeType);
+    return this.loadFromURI(
+      `file://${filepath}`,
+      mimeType || this.#detectMimeType(undefined, filepath),
+    );
   };
 
   static #instance = new DocumentLoader();
@@ -297,6 +300,10 @@ export class DocumentLoader {
 
   static get supportedURIProtocols() {
     return this.#instance.supportedURIProtocols;
+  }
+
+  static get supportedFileExtensions() {
+    return this.#instance.supportedFileExtensions;
   }
 
   static get loadFromBuffer() {
@@ -320,7 +327,9 @@ export class DocumentLoader {
   }
 }
 
-DocumentLoader.registerURILoader(new FileURILoader());
+DocumentLoader.registerURILoader(
+  new FileURILoader(() => DocumentLoader.supportedFileExtensions),
+);
 DocumentLoader.registerURILoader(new HttpURILoader());
 
 DocumentLoader.registerLoader(new TextLoader());

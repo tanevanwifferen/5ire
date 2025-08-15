@@ -7,6 +7,14 @@ import { basename } from 'node:path';
 import type { URILoader, URIResource } from './DocumentLoader';
 
 export class FileURILoader implements URILoader {
+  // eslint-disable-next-line no-useless-constructor
+  constructor(
+    // eslint-disable-next-line no-unused-vars
+    private getSupportedFileExtensions: () => Record<string, string>,
+  ) {
+    //
+  }
+
   load = async (url: URL): Promise<URIResource> => {
     const path = fileURLToPath(url);
 
@@ -32,12 +40,18 @@ export class FileURILoader implements URILoader {
     }
 
     const handle = await open(path);
-    const stream = handle.createReadStream({ encoding: 'binary' });
+    const stream = handle.createReadStream({});
+
+    const extension = path.split('.').pop();
+    const mimeType = extension
+      ? this.getSupportedFileExtensions()[extension]
+      : undefined;
 
     return {
       stream: Readable.toWeb(stream) as ReadableStream<Uint8Array>,
       size: stats.size,
       fileName: basename(path),
+      mimeType,
     };
   };
 

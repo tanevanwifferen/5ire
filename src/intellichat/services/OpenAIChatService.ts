@@ -263,11 +263,60 @@ export default class OpenAIChatService
   }
 
   // eslint-disable-next-line class-methods-use-this
-  protected makeToolMessages(
+  protected async makeToolMessages(
     tool: ITool,
     toolResult: any,
-  ): IChatRequestMessage[] {
-    return [
+  ): Promise<IChatRequestMessage[]> {
+    let supplement: IChatRequestMessage | undefined;
+
+    const toolMessageContent: IChatRequestMessageContent[] = [];
+
+    if (typeof toolResult === 'string') {
+      toolMessageContent.push({
+        type: 'text',
+        text: toolResult,
+      });
+    } else {
+      const content = Array.isArray(toolResult.content)
+        ? toolResult.content
+        : [];
+
+      const convertedBlocks: FinalContentBlock[] = [];
+
+      // eslint-disable-next-line no-restricted-syntax
+      for (const block of content) {
+        // eslint-disable-next-line no-await-in-loop
+        convertedBlocks.push(await MCPContentBlockConverter.convert(block));
+      }
+
+      if (convertedBlocks.every((item) => item.type === 'text')) {
+        // eslint-disable-next-line no-restricted-syntax
+        for (const block of convertedBlocks) {
+          toolMessageContent.push(
+            MCPContentBlockConverter.contentBlockToLegacyMessageContent(block),
+          );
+        }
+      } else {
+        toolMessageContent.push({
+          type: 'text',
+          text: JSON.stringify({
+            message:
+              'NOTE: This tool output is only a placeholder. The actual result from the tool is included in the next message with role "user". Please use that for processing.',
+          }),
+        });
+
+        supplement = {
+          role: 'user',
+          content: convertedBlocks.map((item) => {
+            return MCPContentBlockConverter.contentBlockToLegacyMessageContent(
+              item,
+            );
+          }),
+        };
+      }
+    }
+
+    const result: IChatRequestMessage[] = [
       {
         role: 'assistant',
         tool_calls: [
@@ -284,11 +333,16 @@ export default class OpenAIChatService
       {
         role: 'tool',
         name: tool.name,
-        content:
-          typeof toolResult === 'string' ? toolResult : toolResult.content,
+        content: toolMessageContent,
         tool_call_id: tool.id,
       },
     ];
+
+    if (supplement) {
+      result.push(supplement);
+    }
+
+    return result;
   }
 
   protected async makePayload(
@@ -304,6 +358,7 @@ export default class OpenAIChatService
     };
     if (this.isToolsEnabled()) {
       const tools = await window.electron.mcp.listTools();
+      console.log(tools);
       if (tools) {
         const $tools = tools.tools.map((tool: any) => {
           return this.makeTool(tool);

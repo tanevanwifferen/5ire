@@ -30,6 +30,7 @@ export default abstract class NextCharService {
   name: string;
 
   abortController: AbortController;
+
   toolAbortController: AbortController | undefined = undefined;
 
   context: IChatContext;
@@ -103,7 +104,7 @@ export default abstract class NextCharService {
     tool: ITool,
     toolResult: any,
     content?: string,
-  ): IChatRequestMessage[];
+  ): IChatRequestMessage[] | Promise<IChatRequestMessage[]>;
 
   protected abstract makeTool(
     tool: IMCPTool,
@@ -267,11 +268,11 @@ export default abstract class NextCharService {
         }
         const messagesWithTool = [
           ...messages,
-          ...this.makeToolMessages(
+          ...(await this.makeToolMessages(
             readResult.tool,
             toolCallsResult,
             readResult.content,
-          ),
+          )),
         ] as IChatRequestMessage[];
         await this.chat(messagesWithTool);
       } else {

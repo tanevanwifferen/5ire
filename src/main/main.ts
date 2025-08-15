@@ -42,6 +42,7 @@ import {
   SUPPORTED_IMAGE_TYPES,
 } from '../consts';
 import { loadDocumentFromBuffer } from './docloader';
+import { DocumentLoader } from './next/document-loader/DocumentLoader';
 
 dotenv.config({
   path: app.isPackaged
@@ -708,6 +709,16 @@ ipcMain.handle(
     return loadDocumentFromBuffer(buffer, fileType);
   },
 );
+
+ipcMain.handle('DocumentLoader::loadFromBuffer', (_, buffer, mimeType) => {
+  return DocumentLoader.loadFromBuffer(buffer, mimeType);
+});
+ipcMain.handle('DocumentLoader::loadFromURI', (_, url, mimeType) => {
+  return DocumentLoader.loadFromURI(url, mimeType);
+});
+ipcMain.handle('DocumentLoader::loadFromFilePath', (_, file, mimeType) => {
+  return DocumentLoader.loadFromFilePath(file, mimeType);
+});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');

@@ -3,6 +3,7 @@
 
 import v8 from 'v8';
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import type { ContentPart as DocumentContentPart } from './next/document-loader/DocumentLoader';
 
 // Setting the file descriptor limit
 if (process.platform !== 'win32') {
@@ -217,8 +218,34 @@ const electronHandler = {
     },
   },
   document: {
+    /**
+     * @deprecated This method is temporary and will be removed in a future version.
+     */
     loadFromBuffer: (buffer: Uint8Array, fileType: string) => {
       return ipcRenderer.invoke('load-document-buffer', buffer, fileType);
+    },
+  },
+  documentLoader: {
+    loadFromBuffer: (buffer: Uint8Array, mimeType?: string) => {
+      return ipcRenderer.invoke(
+        'DocumentLoader::loadFromBuffer',
+        buffer,
+        mimeType,
+      ) as Promise<DocumentContentPart[]>;
+    },
+    loadFromURI: (url: string, mimeType?: string) => {
+      return ipcRenderer.invoke(
+        'DocumentLoader::loadFromURI',
+        url,
+        mimeType,
+      ) as Promise<DocumentContentPart[]>;
+    },
+    loadFromFilePath: (file: string, mimeType?: string) => {
+      return ipcRenderer.invoke(
+        'DocumentLoader::loadFromFilePath',
+        file,
+        mimeType,
+      ) as Promise<DocumentContentPart[]>;
     },
   },
 };

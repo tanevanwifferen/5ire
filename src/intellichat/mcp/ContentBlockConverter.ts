@@ -120,7 +120,7 @@ export class ContentBlockConverter {
     } satisfies FinalAudioBlock;
   }
 
-  private convertImageBlock(block: ImageBlock) {
+  private async convertImageBlock(block: ImageBlock) {
     const { data, mimeType } = block;
 
     if (mimeType === 'image/svg+xml') {
@@ -130,9 +130,42 @@ export class ContentBlockConverter {
       });
     }
 
-    // TODO: Use FFmpeg to convert other unsupported formats
     if (!SUPPORTED_IMAGE_MIMETYPES.includes(mimeType as any)) {
-      throw new UnsupportedError('Unsupported image mimetype');
+      const dataURL = await new Promise<string>((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const image = new Image();
+        const ctx = canvas.getContext('2d');
+
+        image.crossOrigin = 'anonymous';
+        image.src = `data:${mimeType};base64,${data}`;
+
+        image.onload = () => {
+          canvas.width = image.width;
+          canvas.height = image.height;
+
+          if (ctx) {
+            ctx.drawImage(image, 0, 0);
+          }
+
+          resolve(canvas.toDataURL());
+        };
+
+        image.onerror = () => {
+          reject(new Error('Failed to load image'));
+        };
+
+        setTimeout(() => {
+          reject(new Error('Failed to load image'));
+        }, 5000);
+      });
+
+      return {
+        type: 'image',
+        source: {
+          type: 'url',
+          url: dataURL,
+        },
+      } satisfies FinalImageBlock;
     }
 
     return {
@@ -267,7 +300,7 @@ export class ContentBlockConverter {
           type: 'image',
           data: block.uri.split(',')[1],
           mimeType,
-        }) as FinalContentBlock;
+        }) as Promise<FinalContentBlock>;
       }
 
       if (mimeType.startsWith('audio/')) {

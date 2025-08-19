@@ -23,7 +23,10 @@ import {
 } from 'utils/util';
 import BaseReader from 'intellichat/readers/BaseReader';
 import GoogleReader from 'intellichat/readers/GoogleReader';
-import { FinalContentBlock } from 'intellichat/mcp/ContentBlockConverter';
+import {
+  ContentBlockConverter as MCPContentBlockConverter,
+  FinalContentBlock,
+} from 'intellichat/mcp/ContentBlockConverter';
 import { ITool } from 'intellichat/readers/IChatReader';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
@@ -50,10 +53,88 @@ export default class GoogleChatService
   }
 
   // eslint-disable-next-line class-methods-use-this
-  protected makeToolMessages(
+  protected async makeToolMessages(
     tool: ITool,
     toolResult: any,
-  ): IChatRequestMessage[] {
+  ): Promise<IChatRequestMessage[]> {
+    const parts = [];
+
+    if (typeof toolResult === 'string') {
+      parts.push({
+        functionResponse: {
+          name: tool.name,
+          content: toolResult,
+        },
+      });
+    } else {
+      const content = Array.isArray(toolResult.content)
+        ? toolResult.content
+        : [];
+
+      const convertedBlocks: FinalContentBlock[] = [];
+
+      // eslint-disable-next-line no-restricted-syntax
+      for (const block of content) {
+        // eslint-disable-next-line no-await-in-loop
+        convertedBlocks.push(await MCPContentBlockConverter.convert(block));
+      }
+
+      if (convertedBlocks.every((item) => item.type === 'text')) {
+        parts.push({
+          functionResponse: {
+            name: tool.name,
+            content: convertedBlocks.map((item) => item.text).join('\n\n\n'),
+          },
+        });
+      } else {
+        parts.push({
+          functionResponse: {
+            name: tool.name,
+            content: `NOTE: This tool output is only a placeholder. See the following parts of this message for the actual tool result. Please use that for processing.`,
+          },
+        });
+
+        // eslint-disable-next-line no-restricted-syntax
+        for (const item of convertedBlocks) {
+          switch (item.type) {
+            case 'text':
+              parts.push({
+                text: item.text,
+              });
+              break;
+            case 'audio': {
+              parts.push({
+                inline_data: {
+                  mimeType: item.source.mimeType,
+                  data: item.source.data,
+                },
+              });
+              break;
+            }
+            case 'image':
+              if (item.source.type === 'url') {
+                parts.push({
+                  fileData: {
+                    fileUri: item.source.url,
+                    mimeType: item.source.mimeType,
+                  },
+                });
+              } else {
+                parts.push({
+                  inline_data: {
+                    mimeType: item.source.mimeType,
+                    data: item.source.data,
+                  },
+                });
+              }
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    }
+
     return [
       {
         role: 'model',
@@ -68,20 +149,7 @@ export default class GoogleChatService
       },
       {
         role: 'user',
-        parts: [
-          {
-            functionResponse: {
-              name: tool.name,
-              response: {
-                name: tool.name,
-                content:
-                  typeof toolResult === 'string'
-                    ? toolResult
-                    : toolResult.content,
-              },
-            },
-          },
-        ],
+        parts: parts as any,
       },
     ];
   }

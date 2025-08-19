@@ -242,7 +242,7 @@ export default class OllamaChatService
         processedMessages.push({
           ...message,
           content: texts.join('\n\n\n'),
-          images: visionEnabled ? images : undefined,
+          images: visionEnabled ? images.filter(Boolean) : undefined,
         });
       }
     }

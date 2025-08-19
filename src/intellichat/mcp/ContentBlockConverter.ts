@@ -44,11 +44,12 @@ export type FinalImageBlock = {
     | {
         type: 'base64';
         data: string;
-        mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+        mimeType: string;
       }
     | {
         type: 'url';
         url: string;
+        mimeType: string;
       };
 };
 
@@ -164,6 +165,7 @@ export class ContentBlockConverter {
         source: {
           type: 'url',
           url: dataURL,
+          mimeType,
         },
       } satisfies FinalImageBlock;
     }

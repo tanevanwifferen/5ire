@@ -27,7 +27,7 @@ import INextChatService from './INextCharService';
 import NextChatService from './NextChatService';
 import Anthropic from '../../providers/Anthropic';
 // eslint-disable-next-line import/order
-import { isPlainObject, omit } from 'lodash';
+// import { isPlainObject, omit } from 'lodash';
 
 const debug = Debug('5ire:intellichat:AnthropicChatService');
 
@@ -44,22 +44,66 @@ export default class AnthropicChatService
   }
 
   // eslint-disable-next-line class-methods-use-this
-  protected makeToolMessages(
+  protected async makeToolMessages(
     tool: ITool,
     toolResult: any,
     content?: string,
-  ): IChatRequestMessage[] {
+  ): Promise<IChatRequestMessage[]> {
     /**
      * Note：not supported tool's inputs
      * 1.mimeType
      */
-    if (isPlainObject(toolResult.content)) {
-      delete toolResult.content.mimeType;
-    } else if (Array.isArray(toolResult.content)) {
-      toolResult.content = toolResult.content.map((item: any) => {
-        return omit(item, ['mimeType']);
+    // if (isPlainObject(toolResult.content)) {
+    //   delete toolResult.content.mimeType;
+    // } else if (Array.isArray(toolResult.content)) {
+    //   toolResult.content = toolResult.content.map((item: any) => {
+    //     return omit(item, ['mimeType']);
+    //   });
+    // }
+
+    const parts = [];
+
+    if (typeof toolResult === 'string') {
+      parts.push({
+        type: 'tool_result',
+        tool_use_id: tool.id,
+        content: toolResult,
       });
+    } else {
+      const contentParts = Array.isArray(toolResult.content)
+        ? toolResult.content
+        : [];
+
+      const convertedBlocks: FinalContentBlock[] = [];
+
+      // eslint-disable-next-line no-restricted-syntax
+      for (const block of contentParts) {
+        // eslint-disable-next-line no-await-in-loop
+        convertedBlocks.push(await MCPContentBlockConverter.convert(block));
+      }
+
+      if (convertedBlocks.every((item) => item.type === 'text')) {
+        parts.push({
+          type: 'tool_result',
+          tool_use_id: tool.id,
+          content: convertedBlocks.map((item) => item.text).join('\n\n\n'),
+        });
+      } else {
+        parts.push({
+          type: 'tool_result',
+          tool_use_id: tool.id,
+          content: `NOTE: This tool output is only a placeholder. See the following parts of this message for the actual tool result. Please use that for processing.`,
+        });
+
+        // eslint-disable-next-line no-restricted-syntax
+        for (const item of convertedBlocks) {
+          parts.push(
+            MCPContentBlockConverter.contentBlockToLegacyMessageContent(item),
+          );
+        }
+      }
     }
+
     const result = [
       {
         role: 'assistant',
@@ -74,13 +118,7 @@ export default class AnthropicChatService
       },
       {
         role: 'user',
-        content: [
-          {
-            type: 'tool_result',
-            tool_use_id: tool.id,
-            content: toolResult.content,
-          },
-        ],
+        content: parts,
       },
     ] as IChatRequestMessage[];
     if (content) {

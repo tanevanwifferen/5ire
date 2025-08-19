@@ -240,6 +240,7 @@ export default class OpenAIChatService
     );
 
     result.push(...processedMessages);
+
     return result as IChatRequestMessage[];
   }
 

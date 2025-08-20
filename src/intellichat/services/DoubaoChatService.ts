@@ -40,7 +40,7 @@ export default class DoubaoChatService
       this.context.getModel().capabilities.vision?.enabled,
     );
 
-    return result.map((message) => {
+    const sanitized = result.map((message) => {
       let { content } = message;
 
       if (Array.isArray(content)) {
@@ -57,13 +57,12 @@ export default class DoubaoChatService
         });
       }
 
-      return {
-        ...message,
-        ...{
-          content,
-        },
-      };
+      return { ...message, content };
     });
+
+    return sanitized.filter(
+      (m) => !(Array.isArray(m.content) && m.content.length === 0),
+    );
   }
 
   protected async makeRequest(

@@ -96,6 +96,44 @@ export class ContentBlockConverter {
     )[0] as string | undefined;
   }
 
+  /**
+   * Loads an image from the given URL and returns a base64-encoded PNG image string.
+   *
+   * @param url URL to load the image from
+   * @param timeout Timeout in milliseconds, default to 5000
+   * @returns a Promise that resolves to a base64-encoded PNG image string
+   * @throws {Error} If the image fails to load or if the timeout is exceeded
+   */
+  private imageToBase64PNG(url: string, timeout = 5000) {
+    return new Promise<string>((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const image = new Image();
+
+      image.crossOrigin = 'anonymous';
+      image.src = url;
+
+      image.onload = () => {
+        canvas.width = image.width;
+        canvas.height = image.height;
+
+        if (ctx) {
+          ctx.drawImage(image, 0, 0);
+        }
+
+        resolve(canvas.toDataURL());
+      };
+
+      image.onerror = () => {
+        reject(new Error('Failed to load image'));
+      };
+
+      setTimeout(() => {
+        reject(new Error('Timeout loading image'));
+      }, timeout);
+    });
+  }
+
   private convertTextBlock(block: TextBlock) {
     return {
       type: 'text',
@@ -132,40 +170,12 @@ export class ContentBlockConverter {
     }
 
     if (!SUPPORTED_IMAGE_MIMETYPES.includes(mimeType as any)) {
-      const dataURL = await new Promise<string>((resolve, reject) => {
-        const canvas = document.createElement('canvas');
-        const image = new Image();
-        const ctx = canvas.getContext('2d');
-
-        image.crossOrigin = 'anonymous';
-        image.src = `data:${mimeType};base64,${data}`;
-
-        image.onload = () => {
-          canvas.width = image.width;
-          canvas.height = image.height;
-
-          if (ctx) {
-            ctx.drawImage(image, 0, 0);
-          }
-
-          resolve(canvas.toDataURL());
-        };
-
-        image.onerror = () => {
-          reject(new Error('Failed to load image'));
-        };
-
-        setTimeout(() => {
-          reject(new Error('Failed to load image'));
-        }, 5000);
-      });
-
       return {
         type: 'image',
         source: {
           type: 'url',
-          url: dataURL,
-          mimeType,
+          url: await this.imageToBase64PNG(`data:${mimeType};base64,${data}`),
+          mimeType: 'image/png',
         },
       } satisfies FinalImageBlock;
     }
@@ -341,6 +351,17 @@ export class ContentBlockConverter {
       url = new URL(block.uri);
     } catch (e) {
       //
+    }
+
+    if (block.mimeType?.startsWith('image/') && block.uri.startsWith('http')) {
+      return {
+        type: 'image',
+        source: {
+          type: 'url',
+          url: await this.imageToBase64PNG(block.uri),
+          mimeType: 'image/png',
+        },
+      } satisfies FinalImageBlock;
     }
 
     if (url && ['file:', 'http:', 'https:'].includes(url.protocol)) {

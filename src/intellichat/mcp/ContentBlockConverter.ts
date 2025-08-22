@@ -393,8 +393,8 @@ export class ContentBlockConverter {
       text: [
         `[Resource Start]`,
         `Name: ${block.name}`,
-        `Title: ${block.title}`,
-        `Description: ${block.description}`,
+        `Title: ${block.title || '--'}`,
+        `Description: ${block.description || '--'}`,
         `URI: ${block.uri}`,
         `[Resource End]`,
       ].join('\n'),

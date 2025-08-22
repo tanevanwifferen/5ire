@@ -6,7 +6,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useMarkdown from 'hooks/useMarkdown';
 import { IChatMessage } from 'intellichat/types';
 import { useTranslation } from 'react-i18next';
-import { Divider } from '@fluentui/react-components';
+import {
+  Divider,
+  Popover,
+  PopoverSurface,
+  PopoverTrigger,
+} from '@fluentui/react-components';
+import { GetPromptResult } from '@modelcontextprotocol/sdk/types.js';
 import useKnowledgeStore from 'stores/useKnowledgeStore';
 import useToast from 'hooks/useToast';
 import ToolSpinner from 'renderer/components/ToolSpinner';
@@ -15,6 +21,7 @@ import {
   ChevronUp16Regular,
 } from '@fluentui/react-icons';
 import useECharts from 'hooks/useECharts';
+import { FinalContentBlock } from 'intellichat/mcp/ContentBlockConverter';
 import {
   getNormalContent,
   getReasoningContent,
@@ -217,8 +224,9 @@ export default function Message({ message }: { message: IChatMessage }) {
     const isEmpty =
       (!message.reply || message.reply === '') &&
       (!message.reasoning || message.reasoning === '');
-    const thinkTitle = `${isReasoning ? t('Reasoning.Thinking') : t('Reasoning.Thought')
-      }${reasoningSeconds > 0 ? ` ${reasoningSeconds}s` : ''}`;
+    const thinkTitle = `${
+      isReasoning ? t('Reasoning.Thinking') : t('Reasoning.Thought')
+    }${reasoningSeconds > 0 ? ` ${reasoningSeconds}s` : ''}`;
     return (
       <div className={`w-full mt-1.5 ${isLoading ? 'is-loading' : ''}`}>
         {message.isActive && states.runningTool ? (
@@ -253,7 +261,8 @@ export default function Message({ message }: { message: IChatMessage }) {
                   <div
                     dangerouslySetInnerHTML={{
                       __html: render(
-                        `${highlight(deferredReasoning, keyword) || ''
+                        `${
+                          highlight(deferredReasoning, keyword) || ''
                         }${isReasoning && deferredReasoning ? '<span class="blinking-cursor" /></span>' : ''}`,
                       ),
                     }}
@@ -266,7 +275,8 @@ export default function Message({ message }: { message: IChatMessage }) {
               className="break-words hyphens-auto mt-1"
               dangerouslySetInnerHTML={{
                 __html: render(
-                  `${highlight(deferredReply, keyword) || ''
+                  `${
+                    highlight(deferredReply, keyword) || ''
                   }${isLoading && deferredReply ? '<span class="blinking-cursor" /></span>' : ''}`,
                 ),
               }}
@@ -275,6 +285,60 @@ export default function Message({ message }: { message: IChatMessage }) {
         )}
       </div>
     );
+  };
+
+  const renderStructedPrompts = (
+    messages: { role: string; content: FinalContentBlock[] }[],
+  ) => {
+    const renderContent = (blocks: FinalContentBlock[]) => {
+      return blocks.map((content) => {
+        if (content.type === 'image') {
+          if (content.source.type === 'url') {
+            return <img src={content.source.url} alt="" className="w-full" />;
+          }
+          return (
+            <img
+              src={`data:${content.source.mimeType};base64,${content.source.data}`}
+              alt=""
+            />
+          );
+        }
+        if (content.type === 'audio') {
+          return (
+            <audio controls>
+              <source
+                src={`data:${content.source.mimeType};base64,${content.source.data}`}
+                type={content.source.mimeType}
+              />
+              <track
+                kind="captions"
+                label={t('Common.NoSubtitlesAvailable')}
+                default
+              />
+              Your browser does not support the audio element.
+            </audio>
+          );
+        }
+        return <pre>{content.text || ''}</pre>;
+      });
+    };
+
+    return messages.map((msg) => {
+      return (
+        <fieldset
+          className="border border-neutral-200 dark:border-neutral-700 rounded p-1 my-2 bg-neutral-50 dark:bg-neutral-800"
+          key={`${msg.role}-${msg.content}`}
+        >
+          <legend className="text-base font-semibold px-1 ml-2">
+            {msg.role}&nbsp;
+            <span className="text-sm text-neutral-500">
+              ({msg.content[0].type})
+            </span>
+          </legend>
+          {renderContent(msg.content)}
+        </fieldset>
+      );
+    });
   };
 
   return (
@@ -290,12 +354,35 @@ export default function Message({ message }: { message: IChatMessage }) {
           style={{ minHeight: '40px' }}
         >
           <div className="avatar flex-shrink-0 mr-2" />
-          <div
-            className="mt-1 break-word"
-            dangerouslySetInnerHTML={{
-              __html: render(highlight(message.prompt, keyword) || ''),
-            }}
-          />
+          {message.structuredPrompts ? (
+            <Popover
+              withArrow
+              size="small"
+              positioning="below-start"
+              openOnHover
+            >
+              <PopoverTrigger>
+                <div
+                  className="mt-1 break-word text-indigo-800 dark:text-indigo-200"
+                  dangerouslySetInnerHTML={{
+                    __html: render(highlight(message.prompt, keyword) || ''),
+                  }}
+                />
+              </PopoverTrigger>
+              <PopoverSurface tabIndex={-1}>
+                <div className="text-xs" style={{ width: '340px' }}>
+                  {renderStructedPrompts(JSON.parse(message.structuredPrompts))}
+                </div>
+              </PopoverSurface>
+            </Popover>
+          ) : (
+            <div
+              className="mt-1 break-word"
+              dangerouslySetInnerHTML={{
+                __html: render(highlight(message.prompt, keyword) || ''),
+              }}
+            />
+          )}
         </div>
       </div>
       <div>

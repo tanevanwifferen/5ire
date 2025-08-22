@@ -66,7 +66,18 @@ export default class GoogleChatService
           content: toolResult,
         },
       });
-    } else {
+    }
+
+    if (toolResult.isError) {
+      parts.push({
+        functionResponse: {
+          name: tool.name,
+          content: JSON.stringify(toolResult.error),
+        },
+      });
+    }
+
+    if (!toolResult.isError && toolResult.content) {
       const content = Array.isArray(toolResult.content)
         ? toolResult.content
         : [];

@@ -232,6 +232,8 @@ export default class OpenAIChatService
           };
         }
 
+        console.log('msg', msg);
+
         return {
           role: msg.role,
           content: '',
@@ -277,7 +279,16 @@ export default class OpenAIChatService
         type: 'text',
         text: toolResult,
       });
-    } else {
+    }
+
+    if (toolResult.isError) {
+      toolMessageContent.push({
+        type: 'text',
+        text: JSON.stringify(toolResult.error),
+      });
+    }
+
+    if (!toolResult.isError && toolResult.content) {
       const content = Array.isArray(toolResult.content)
         ? toolResult.content
         : [];

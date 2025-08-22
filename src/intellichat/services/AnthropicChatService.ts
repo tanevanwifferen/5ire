@@ -69,7 +69,17 @@ export default class AnthropicChatService
         tool_use_id: tool.id,
         content: toolResult,
       });
-    } else {
+    }
+
+    if (toolResult.isError) {
+      parts.push({
+        type: 'tool_result',
+        tool_use_id: tool.id,
+        content: JSON.stringify(toolResult.error),
+      });
+    }
+
+    if (!toolResult.isError && toolResult.content) {
       const contentParts = Array.isArray(toolResult.content)
         ? toolResult.content
         : [];

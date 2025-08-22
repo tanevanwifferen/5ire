@@ -99,7 +99,16 @@ export default class OllamaChatService
         type: 'text',
         text: toolResult,
       });
-    } else {
+    }
+
+    if (toolResult.isError) {
+      toolMessageContent.push({
+        type: 'text',
+        text: JSON.stringify(toolResult.error),
+      });
+    }
+
+    if (!toolResult.isError && toolResult.content) {
       const content = Array.isArray(toolResult.content)
         ? toolResult.content
         : [];

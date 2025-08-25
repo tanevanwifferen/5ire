@@ -22,6 +22,7 @@ import {
   ContentBlockConverter as MCPContentBlockConverter,
   FinalContentBlock,
 } from 'intellichat/mcp/ContentBlockConverter';
+import type { ContentBlock as MCPContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import { ITool } from 'intellichat/readers/IChatReader';
 import INextChatService from './INextCharService';
 import NextChatService from './NextChatService';
@@ -86,11 +87,11 @@ export default class AnthropicChatService
 
       const convertedBlocks: FinalContentBlock[] = [];
 
-      // eslint-disable-next-line no-restricted-syntax
-      for (const block of contentParts) {
-        // eslint-disable-next-line no-await-in-loop
-        convertedBlocks.push(await MCPContentBlockConverter.convert(block));
-      }
+      await Promise.all(
+        contentParts.map(async (block: MCPContentBlock) => {
+          convertedBlocks.push(await MCPContentBlockConverter.convert(block));
+        }),
+      );
 
       if (convertedBlocks.every((item) => item.type === 'text')) {
         parts.push({

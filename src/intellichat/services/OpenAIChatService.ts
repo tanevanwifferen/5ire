@@ -19,6 +19,7 @@ import {
   ContentBlockConverter as MCPContentBlockConverter,
   FinalContentBlock,
 } from 'intellichat/mcp/ContentBlockConverter';
+import { ContentBlock as MCPContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
 import OpenAI from '../../providers/OpenAI';
@@ -293,13 +294,11 @@ export default class OpenAIChatService
         ? toolResult.content
         : [];
 
-      const convertedBlocks: FinalContentBlock[] = [];
-
-      // eslint-disable-next-line no-restricted-syntax
-      for (const block of content) {
-        // eslint-disable-next-line no-await-in-loop
-        convertedBlocks.push(await MCPContentBlockConverter.convert(block));
-      }
+      const convertedBlocks = await Promise.all(
+        content.map((block: MCPContentBlock) =>
+          MCPContentBlockConverter.convert(block),
+        ),
+      );
 
       if (convertedBlocks.every((item) => item.type === 'text')) {
         // eslint-disable-next-line no-restricted-syntax

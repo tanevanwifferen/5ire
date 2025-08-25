@@ -7,10 +7,8 @@ import {
 import OllamaReader from 'intellichat/readers/OllamaChatReader';
 import { ITool } from 'intellichat/readers/IChatReader';
 import { splitByImg, stripHtmlTags, urlJoin } from 'utils/util';
-import {
-  FinalContentBlock,
-  ContentBlockConverter as MCPContentBlockConverter,
-} from 'intellichat/mcp/ContentBlockConverter';
+import { ContentBlockConverter as MCPContentBlockConverter } from 'intellichat/mcp/ContentBlockConverter';
+import { ContentBlock as MCPContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import OpenAIChatService from './OpenAIChatService';
 import INextChatService from './INextCharService';
 import Ollama from '../../providers/Ollama';
@@ -113,13 +111,11 @@ export default class OllamaChatService
         ? toolResult.content
         : [];
 
-      const convertedBlocks: FinalContentBlock[] = [];
-
-      // eslint-disable-next-line no-restricted-syntax
-      for (const block of content) {
-        // eslint-disable-next-line no-await-in-loop
-        convertedBlocks.push(await MCPContentBlockConverter.convert(block));
-      }
+      const convertedBlocks = await Promise.all(
+        content.map((block: MCPContentBlock) =>
+          MCPContentBlockConverter.convert(block),
+        ),
+      );
 
       if (convertedBlocks.every((item) => item.type === 'text')) {
         // eslint-disable-next-line no-restricted-syntax
@@ -184,77 +180,71 @@ export default class OllamaChatService
     const result = await super.makeMessages(messages, msgId);
     const visionEnabled =
       this.context.getModel().capabilities.vision?.enabled ?? false;
-    const processedMessages = [];
+    const processedMessages: IChatRequestMessage[] = [];
 
-    // eslint-disable-next-line no-restricted-syntax
-    for (const message of result) {
-      if (typeof message.content === 'string') {
-        processedMessages.push(message);
-      }
-
-      if (Array.isArray(message.content)) {
-        const texts = [];
-        const images: string[] = [];
-
-        // eslint-disable-next-line no-restricted-syntax
-        for (const item of message.content) {
-          if (item.text) {
-            texts.push(item.text);
-          }
-
-          if (item.image_url?.url) {
-            images.push(item.image_url.url);
-          }
-
-          if (item.images) {
-            images.push(...item.images);
-          }
+    await Promise.all(
+      result.map(async (message) => {
+        if (typeof message.content === 'string') {
+          processedMessages.push(message);
         }
 
-        if (visionEnabled) {
-          // eslint-disable-next-line no-plusplus
-          for (let index = 0; index < images.length; index++) {
-            const image = images[index];
+        if (Array.isArray(message.content)) {
+          const texts = message.content
+            .filter((item) => item.type === 'text')
+            .map((item) => item.text);
 
-            if (image.startsWith('data:')) {
-              // eslint-disable-next-line prefer-destructuring
-              images[index] = images[index].split(',')[1];
-            } else if (
-              image.startsWith('http:') ||
-              image.startsWith('https:') ||
-              image.startsWith('blob:')
-            ) {
-              try {
-                // eslint-disable-next-line no-await-in-loop
-                const bytes = await fetch(image)
-                  .then((res) => res.arrayBuffer())
-                  .then((buffer) => new Uint8Array(buffer));
-
-                let binary = '';
-
-                // eslint-disable-next-line no-plusplus
-                for (let i = 0; i < bytes.byteLength; i++) {
-                  binary += String.fromCharCode(bytes[i]);
-                }
-
-                images[index] = btoa(binary);
-              } catch (error) {
-                console.error('Failed to convert image to base64:', error);
-                images[index] = '';
-              }
-            } else {
-              images[index] = '';
+          const images = message.content.flatMap((item) => {
+            if (item.image_url?.url) {
+              return [item.image_url.url];
             }
-          }
-        }
 
-        processedMessages.push({
-          ...message,
-          content: texts.join('\n\n\n'),
-          images: visionEnabled ? images.filter(Boolean) : undefined,
-        });
-      }
-    }
+            return item.images || [];
+          });
+
+          if (visionEnabled) {
+            await Promise.all(
+              images.map(async (image, index) => {
+                if (image.startsWith('data:')) {
+                  // eslint-disable-next-line prefer-destructuring
+                  images[index] = images[index].split(',')[1];
+                } else if (
+                  image.startsWith('http:') ||
+                  image.startsWith('https:') ||
+                  image.startsWith('blob:')
+                ) {
+                  try {
+                    const bytes = await fetch(image)
+                      .then((res) => res.arrayBuffer())
+                      .then((buffer) => new Uint8Array(buffer));
+
+                    let binary = '';
+
+                    // eslint-disable-next-line no-plusplus
+                    for (let i = 0; i < bytes.byteLength; i++) {
+                      binary += String.fromCharCode(bytes[i]);
+                    }
+
+                    images[index] = btoa(binary);
+                  } catch (error) {
+                    console.error('Failed to convert image to base64:', error);
+                    images[index] = '';
+                  }
+                } else {
+                  images[index] = '';
+                }
+              }),
+            );
+          }
+
+          processedMessages.push({
+            ...message,
+            content: texts.join('\n\n\n'),
+            // @ts-ignore Ollama requires that all image content be placed separately in the images field.
+            images: visionEnabled ? images.filter(Boolean) : undefined,
+          });
+        }
+      }),
+    );
 
     return processedMessages;
   }

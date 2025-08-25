@@ -266,15 +266,15 @@ export default function Chat() {
 
       if (typeof triggerPrompt !== 'string') {
         try {
-          // eslint-disable-next-line no-restricted-syntax
-          for await (const message of triggerPrompt.messages) {
-            convertedMCPTriggerPrompt?.messages.push({
+          const convertedMessages = await Promise.all(
+            triggerPrompt.messages.map(async (message) => ({
               role: message.role,
               content: [
                 await MCPContentBlockConverter.convert(message.content),
               ],
-            });
-          }
+            })),
+          );
+          convertedMCPTriggerPrompt!.messages = convertedMessages;
         } catch (error) {
           if (MCPUnsupportedError.isInstance(error)) {
             notifyError(t('Tools.UnsupportedCapability'));

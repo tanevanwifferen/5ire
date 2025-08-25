@@ -27,6 +27,7 @@ import {
   ContentBlockConverter as MCPContentBlockConverter,
   FinalContentBlock,
 } from 'intellichat/mcp/ContentBlockConverter';
+import { ContentBlock as MCPContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import { ITool } from 'intellichat/readers/IChatReader';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
@@ -82,13 +83,11 @@ export default class GoogleChatService
         ? toolResult.content
         : [];
 
-      const convertedBlocks: FinalContentBlock[] = [];
-
-      // eslint-disable-next-line no-restricted-syntax
-      for (const block of content) {
-        // eslint-disable-next-line no-await-in-loop
-        convertedBlocks.push(await MCPContentBlockConverter.convert(block));
-      }
+      const convertedBlocks = await Promise.all(
+        content.map((block: MCPContentBlock) =>
+          MCPContentBlockConverter.convert(block),
+        ),
+      );
 
       if (convertedBlocks.every((item) => item.type === 'text')) {
         parts.push({
@@ -209,34 +208,34 @@ export default class GoogleChatService
   ): Promise<IGeminiChatRequestMessagePart[]> {
     if (this.context.getModel().capabilities?.vision?.enabled) {
       const items = splitByImg(content, false);
-      const result: IGeminiChatRequestMessagePart[] = [];
-      // eslint-disable-next-line no-restricted-syntax
-      for (const item of items) {
-        if (item.type === 'image') {
-          if (item.dataType === 'URL') {
-            result.push({
-              inline_data: {
-                mimeType: item.mimeType,
-                // eslint-disable-next-line no-await-in-loop
-                data: await getBase64(item.data),
-              },
-            });
-          } else {
-            result.push({
+
+      const result = await Promise.all(
+        items.map(async (item) => {
+          if (item.type === 'image') {
+            if (item.dataType === 'URL') {
+              return {
+                inline_data: {
+                  mimeType: item.mimeType,
+                  data: await getBase64(item.data),
+                },
+              };
+            }
+            return {
               inline_data: {
                 mimeType: item.mimeType as string,
                 data: item.data.split('base64,')[1], // remove data:image/png;base64,
               },
-            });
+            };
           }
-        } else if (item.type === 'text') {
-          result.push({
-            text: item.data,
-          });
-        } else {
+          if (item.type === 'text') {
+            return {
+              text: item.data,
+            };
+          }
           throw new Error('Unknown message type');
-        }
-      }
+        }),
+      );
+
       return result;
     }
     return Promise.resolve([{ text: stripHtmlTags(content) }]);
@@ -258,95 +257,106 @@ export default class GoogleChatService
         parts: [{ text: systemMessage as string }],
       });
     }
-    // eslint-disable-next-line no-restricted-syntax
-    for (const msg of this.context.getCtxMessages(msgId)) {
-      if (msg.structuredPrompts) {
-        const strucuredPrompts = JSON.parse(msg.structuredPrompts) as {
-          role: string;
-          content: FinalContentBlock[];
-        }[];
 
-        // eslint-disable-next-line no-restricted-syntax
-        for (const prompt of strucuredPrompts) {
-          const parts = [] as IGeminiChatRequestMessagePart[];
+    await Promise.all(
+      this.context.getCtxMessages(msgId).map(async (msg) => {
+        if (msg.structuredPrompts) {
+          const strucuredPrompts = JSON.parse(msg.structuredPrompts) as {
+            role: string;
+            content: FinalContentBlock[];
+          }[];
 
-          // eslint-disable-next-line no-restricted-syntax
-          for (const block of prompt.content) {
-            if (block.type === 'text') {
-              parts.push({
-                text: block.text,
-              });
-            } else if (block.type === 'image') {
-              const { source } = block;
+          const transformedMessages = await Promise.all(
+            strucuredPrompts.map<Promise<IChatRequestMessage>>(
+              async (prompt) => {
+                const parts = await Promise.all(
+                  prompt.content.map<Promise<IGeminiChatRequestMessagePart>>(
+                    async (block) => {
+                      if (block.type === 'text') {
+                        return {
+                          text: block.text,
+                        };
+                      }
+                      if (block.type === 'image') {
+                        const { source } = block;
 
-              if (source.type === 'base64') {
-                parts.push({
-                  inline_data: {
-                    mimeType: source.mimeType,
-                    data: source.data,
-                  },
-                });
-              } else {
-                // eslint-disable-next-line no-await-in-loop
-                const data = await getBase64(source.url);
-                const binary = new Uint8Array(
-                  atob(data)
-                    .split('')
-                    .map((c) => c.charCodeAt(0)),
+                        if (source.type === 'base64') {
+                          return {
+                            inline_data: {
+                              mimeType: source.mimeType,
+                              data: source.data,
+                            },
+                          };
+                        }
+                        const data = await getBase64(source.url);
+                        const binary = new Uint8Array(
+                          atob(data)
+                            .split('')
+                            .map((c) => c.charCodeAt(0)),
+                        );
+                        const mimeType =
+                          filetypemime(binary)[0] || 'audio/mpeg';
+
+                        return {
+                          inline_data: {
+                            data,
+                            mimeType,
+                          },
+                        };
+                      }
+                      return {
+                        inline_data: {
+                          mimeType: block.source.mimeType,
+                          data: block.source.data,
+                        },
+                      };
+                    },
+                  ),
                 );
-                const mimeType = filetypemime(binary)[0] || 'audio/mpeg';
 
-                parts.push({
-                  inline_data: {
-                    data,
-                    mimeType,
-                  },
-                });
-              }
-            } else {
-              parts.push({
-                inline_data: {
-                  mimeType: block.source.mimeType,
-                  data: block.source.data,
-                },
-              });
-            }
-          }
+                return {
+                  role: prompt.role as 'user',
+                  parts,
+                };
+              },
+            ),
+          );
+
+          result.push(...transformedMessages);
+        } else {
+          result.push({
+            role: 'user',
+            parts: [{ text: msg.prompt }],
+          });
         }
-      } else {
+
         result.push({
-          role: 'user',
-          parts: [{ text: msg.prompt }],
+          role: 'model',
+          parts: [
+            {
+              text: msg.reply,
+            },
+          ],
         });
-      }
-      // result.push({
-      //   role: 'user',
-      //   parts: [{ text: msg.prompt }],
-      // });
-      result.push({
-        role: 'model',
-        parts: [
-          {
-            text: msg.reply,
-          },
-        ],
-      });
-    }
-    // eslint-disable-next-line no-restricted-syntax
-    for (const msg of messages) {
-      if (typeof msg.content === 'string') {
-        result.push({
-          role: msg.role,
-          // eslint-disable-next-line no-await-in-loop
-          parts: await this.convertPromptContent(msg.content),
-        });
-      } else {
-        result.push({
-          role: msg.role,
-          parts: msg.parts,
-        });
-      }
-    }
+      }),
+    );
+
+    await Promise.all(
+      messages.map(async (msg) => {
+        if (typeof msg.content === 'string') {
+          result.push({
+            role: msg.role,
+            parts: await this.convertPromptContent(msg.content),
+          });
+        } else {
+          result.push({
+            role: msg.role,
+            parts: msg.parts,
+          });
+        }
+      }),
+    );
+
     return result;
   }
 

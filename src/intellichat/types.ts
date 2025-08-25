@@ -257,12 +257,39 @@ export interface IStage {
   stream?: boolean;
 }
 
+/**
+ * Structured representation of a Prompt, designed to unify the data format
+ * for `Complection.Message`. Primarily used for storing Prompts generated
+ * in MCP (Model Context Protocol) scenarios, while preserving both the
+ * original content and its converted form to ensure extensibility and traceability.
+ */
 export type StructuredPrompt = {
+  /**
+   * Role of the message. Currently limited to "user" and "assistant",
+   * as these are the only roles supported in MCP Prompts.
+   */
   role: 'user' | 'assistant';
+  /**
+   * Processed and standardized content of the `Complection.Message`,
+   * optimized for downstream handling and consumption.
+   */
   content: IChatRequestMessageContent[];
+  /**
+   * Raw prompt data, including both the direct MCP Prompt output
+   * and its converted form.
+   */
   raw: {
+    /**
+     * Type of the prompt. Currently fixed as "mcp-prompts".
+     */
     type: 'mcp-prompts';
+    /**
+     * Original content blocks returned by the MCP Prompt.
+     */
     content: ContentBlock[];
+    /**
+     * Content blocks converted via `mcp/ContentBlockConverter`.
+     */
     convertedContent: FinalContentBlock[];
   };
 };

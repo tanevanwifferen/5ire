@@ -74,6 +74,16 @@ const SUPPORTED_DOCUMENT_RESOURCE_MIMETYPES = {
   pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 };
 
+/**
+ * Responsible for converting various types of content blocks returned by
+ * MCP (Model Context Protocol) into a unified and more manageable
+ * intermediate format.
+ *
+ * This intermediate format serves as an abstraction layer, enabling
+ * convenient transformation into data structures compatible with
+ * different large language models (LLMs), thereby improving reusability
+ * and extensibility.
+ */
 export class ContentBlockConverter {
   // Singleton pattern
   private constructor() {

@@ -266,6 +266,8 @@ export default class OpenAIChatService
 
     const toolMessageContent: IChatRequestMessageContent[] = [];
 
+    console.log('toolResult', toolResult);
+
     if (typeof toolResult === 'string') {
       toolMessageContent.push({
         type: 'text',
@@ -276,7 +278,7 @@ export default class OpenAIChatService
     if (toolResult.isError) {
       toolMessageContent.push({
         type: 'text',
-        text: JSON.stringify(toolResult.error),
+        text: JSON.stringify(toolResult.content?.[0] || toolResult.content),
       });
     }
 
@@ -343,6 +345,8 @@ export default class OpenAIChatService
     if (supplement) {
       result.push(supplement);
     }
+
+    console.log('tool messages', result);
 
     return result;
   }

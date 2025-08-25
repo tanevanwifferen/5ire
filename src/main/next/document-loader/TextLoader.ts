@@ -1,7 +1,29 @@
+import Parser from '@postlight/parser';
 import type { ContentPart, Loader } from './DocumentLoader';
 
 export class TextLoader implements Loader {
-  load = async (buffer: Uint8Array): Promise<ContentPart[]> => {
+  load = async (
+    buffer: Uint8Array,
+    mimeType: string,
+  ): Promise<ContentPart[]> => {
+    if (mimeType.startsWith('text/html')) {
+      try {
+        return await Parser.parse('https://5ire.app', {
+          html: Buffer.from(buffer),
+          contentType: 'markdown',
+        }).then((result) => {
+          return [
+            {
+              type: 'text',
+              text: `# ${result.title || ''}\n\n${result.content || ''}`,
+            },
+          ];
+        });
+      } catch {
+        // noop
+      }
+    }
+
     return [
       {
         type: 'text',

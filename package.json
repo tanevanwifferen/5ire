@@ -80,7 +80,8 @@
     }
   },
   "dependencies": {
-    "@lancedb/lancedb": "^0.14.1"
+    "@lancedb/lancedb": "^0.14.1",
+    "@postlight/parser": "^2.2.3"
   },
   "devDependencies": {
     "@axiomhq/js": "^1.0.0-rc.1",

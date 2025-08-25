@@ -8,6 +8,7 @@ import {
   IAnthropicTool,
   IMCPTool,
   IOpenAITool,
+  StructuredPrompt,
 } from 'intellichat/types';
 import { isBlank } from 'utils/validators';
 import {
@@ -209,10 +210,7 @@ export default class AnthropicChatService
         const msgs: IChatRequestMessage[] = [];
 
         if (msg.structuredPrompts) {
-          let strucuredPrompts: {
-            role: string;
-            content: FinalContentBlock[];
-          }[];
+          let strucuredPrompts: StructuredPrompt[];
 
           try {
             strucuredPrompts = JSON.parse(msg.structuredPrompts);
@@ -222,12 +220,8 @@ export default class AnthropicChatService
 
           strucuredPrompts.forEach((message) => {
             msgs.push({
-              role: message.role as 'user',
-              content: message.content.map((block) => {
-                return MCPContentBlockConverter.contentBlockToLegacyMessageContent(
-                  block,
-                );
-              }),
+              role: message.role,
+              content: message.content,
             });
           });
         } else {

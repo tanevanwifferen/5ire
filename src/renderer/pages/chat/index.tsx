@@ -18,11 +18,9 @@ import {
   IChatMessage,
   IChatRequestMessage,
   IChatResponseMessage,
+  StructuredPrompt,
 } from 'intellichat/types';
-import {
-  ContentBlockConverter as MCPContentBlockConverter,
-  FinalContentBlock as MCPFinalContentBlock,
-} from 'intellichat/mcp/ContentBlockConverter';
+import { ContentBlockConverter as MCPContentBlockConverter } from 'intellichat/mcp/ContentBlockConverter';
 import { UnsupportedError as MCPUnsupportedError } from 'intellichat/mcp/UnsupportedError';
 import INextChatService from 'intellichat/services/INextCharService';
 import { ICollectionFile } from 'types/knowledge';
@@ -258,21 +256,33 @@ export default function Chat() {
           : {
               name: triggerPrompt.name,
               description: triggerPrompt.description,
-              messages: [] as Array<{
-                role: string;
-                content: MCPFinalContentBlock[];
-              }>,
+              messages: [] as Array<StructuredPrompt>,
             };
 
       if (typeof triggerPrompt !== 'string') {
         try {
           const convertedMessages = await Promise.all(
-            triggerPrompt.messages.map(async (message) => ({
-              role: message.role,
-              content: [
-                await MCPContentBlockConverter.convert(message.content),
-              ],
-            })),
+            triggerPrompt.messages.map<Promise<StructuredPrompt>>(
+              async (message) => {
+                const converted = await MCPContentBlockConverter.convert(
+                  message.content,
+                );
+
+                return {
+                  role: message.role as 'user',
+                  content: [
+                    MCPContentBlockConverter.contentBlockToLegacyMessageContent(
+                      converted,
+                    ),
+                  ],
+                  raw: {
+                    type: 'mcp-prompts',
+                    content: [message.content],
+                    convertedContent: [converted],
+                  },
+                };
+              },
+            ),
           );
           convertedMCPTriggerPrompt!.messages = convertedMessages;
         } catch (error) {
@@ -437,30 +447,55 @@ ${prompt}
               inputTokens += await countInput(actualPrompt);
             } else {
               inputTokens += convertedMCPTriggerPrompt!.messages.reduce(
-                (_total, message) => {
-                  const content = message.content[0];
+                (prev, message) => {
+                  return (
+                    prev +
+                    message.content.reduce((value, item) => {
+                      let num = value;
 
-                  if (content.type === 'audio' || content.type === 'image') {
-                    const { source } = content;
+                      if (item.source) {
+                        if (item.source.media_type.startsWith('image/')) {
+                          num += countBlobInput(item.source.data, 'image');
+                        }
 
-                    if (source.type === 'base64') {
-                      return _total + countBlobInput(source.data, content.type);
-                    }
+                        if (item.source.media_type.startsWith('audio/')) {
+                          num += countBlobInput(item.source.data, 'audio');
+                        }
+                      }
 
-                    // TODO: Count source url tokens
-                  }
+                      if (item.image_url?.url) {
+                        if (item.image_url.url.startsWith('data:')) {
+                          num += countBlobInput(
+                            item.image_url.url.split(',')[1],
+                            'image',
+                          );
+                        }
+                      }
 
-                  return _total;
+                      if (item.images) {
+                        item.images.forEach((image) => {
+                          if (image.startsWith('data:')) {
+                            num += countBlobInput(image.split(',')[1], 'image');
+                          }
+                        });
+                      }
+
+                      return num;
+                    }, 0)
+                  );
                 },
                 0,
               );
               inputTokens += await countInput(
                 convertedMCPTriggerPrompt!.messages.reduce((text, message) => {
-                  if (message.content[0].type === 'text') {
-                    return text + message.content[0].text;
-                  }
-
-                  return text;
+                  return (
+                    text +
+                    message.content
+                      .map((item) => {
+                        return item.text || '';
+                      })
+                      .join(' ')
+                  );
                 }, ''),
               );
             }
@@ -538,11 +573,7 @@ ${prompt}
             (message): IChatRequestMessage => {
               return {
                 role: message.role as 'user' | 'assistant',
-                content: message.content.map((part) => {
-                  return MCPContentBlockConverter.contentBlockToLegacyMessageContent(
-                    part,
-                  );
-                }),
+                content: message.content,
               };
             },
           ),

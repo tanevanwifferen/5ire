@@ -1,4 +1,6 @@
 import { IChatModelConfig, IChatProviderConfig } from 'providers/types';
+import { ContentBlock } from '@modelcontextprotocol/sdk/types.js';
+import { FinalContentBlock } from './mcp/ContentBlockConverter';
 
 export interface IPrompt {
   id: string;
@@ -254,3 +256,13 @@ export interface IStage {
   maxCtxMessages?: number;
   stream?: boolean;
 }
+
+export type StructuredPrompt = {
+  role: 'user' | 'assistant';
+  content: IChatRequestMessageContent[];
+  raw: {
+    type: 'mcp-prompts';
+    content: ContentBlock[];
+    convertedContent: FinalContentBlock[];
+  };
+};

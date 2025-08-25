@@ -9,16 +9,14 @@ import {
   IOpenAITool,
   IMCPTool,
   IGoogleTool,
+  StructuredPrompt,
 } from 'intellichat/types';
 import { isBlank } from 'utils/validators';
 import { splitByImg, stripHtmlTags, urlJoin } from 'utils/util';
 import OpenAIReader from 'intellichat/readers/OpenAIReader';
 import { ITool } from 'intellichat/readers/IChatReader';
 import Ollama from 'providers/Ollama';
-import {
-  ContentBlockConverter as MCPContentBlockConverter,
-  FinalContentBlock,
-} from 'intellichat/mcp/ContentBlockConverter';
+import { ContentBlockConverter as MCPContentBlockConverter } from 'intellichat/mcp/ContentBlockConverter';
 import { ContentBlock as MCPContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import NextChatService from './NextChatService';
 import INextChatService from './INextCharService';
@@ -93,10 +91,7 @@ export default class OpenAIChatService
     }
     this.context.getCtxMessages(msgId).forEach((msg: IChatMessage) => {
       if (msg.structuredPrompts) {
-        let strucuredPrompts: {
-          role: string;
-          content: FinalContentBlock[];
-        }[];
+        let strucuredPrompts: StructuredPrompt[];
 
         try {
           strucuredPrompts = JSON.parse(msg.structuredPrompts);
@@ -107,11 +102,7 @@ export default class OpenAIChatService
         strucuredPrompts.forEach((message) => {
           result.push({
             role: message.role,
-            content: message.content.map((block) => {
-              return MCPContentBlockConverter.contentBlockToLegacyMessageContent(
-                block,
-              );
-            }),
+            content: message.content,
           });
         });
       } else {

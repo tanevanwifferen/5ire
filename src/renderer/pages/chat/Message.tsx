@@ -4,7 +4,7 @@ import Debug from 'debug';
 import useChatStore from 'stores/useChatStore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useMarkdown from 'hooks/useMarkdown';
-import { IChatMessage } from 'intellichat/types';
+import { IChatMessage, StructuredPrompt } from 'intellichat/types';
 import { useTranslation } from 'react-i18next';
 import {
   Divider,
@@ -12,7 +12,6 @@ import {
   PopoverSurface,
   PopoverTrigger,
 } from '@fluentui/react-components';
-import { GetPromptResult } from '@modelcontextprotocol/sdk/types.js';
 import useKnowledgeStore from 'stores/useKnowledgeStore';
 import useToast from 'hooks/useToast';
 import ToolSpinner from 'renderer/components/ToolSpinner';
@@ -244,6 +243,7 @@ export default function Message({ message }: { message: IChatMessage }) {
           <div className="-mt-1">
             {reasoning.trim() ? (
               <div className="think">
+                {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
                 <div className="think-header" onClick={toggleThink}>
                   <span className="font-bold text-gray-400 ">{thinkTitle}</span>
                   <div className="text-gray-400 -mb-0.5">
@@ -287,9 +287,7 @@ export default function Message({ message }: { message: IChatMessage }) {
     );
   };
 
-  const renderStructedPrompts = (
-    messages: { role: string; content: FinalContentBlock[] }[],
-  ) => {
+  const renderStructedPrompts = (messages: StructuredPrompt[]) => {
     const renderContent = (blocks: FinalContentBlock[]) => {
       return blocks.map((content) => {
         if (content.type === 'image') {
@@ -335,7 +333,7 @@ export default function Message({ message }: { message: IChatMessage }) {
               ({msg.content[0].type})
             </span>
           </legend>
-          {renderContent(msg.content)}
+          {renderContent(msg.raw.convertedContent)}
         </fieldset>
       );
     });
@@ -344,6 +342,7 @@ export default function Message({ message }: { message: IChatMessage }) {
   return (
     <div className="leading-6 message" id={message.id}>
       <div>
+        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
         <a
           id={`prompt-${message.id}`}
           aria-label={`prompt of message ${message.id}`}
@@ -386,6 +385,7 @@ export default function Message({ message }: { message: IChatMessage }) {
         </div>
       </div>
       <div>
+        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
         <a id={`#reply-${message.id}`} aria-label={`Reply ${message.id}`} />
         <div
           className="msg-reply mt-2 flex flex-start"

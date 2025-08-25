@@ -9,6 +9,7 @@ import {
   IGoogleTool,
   IMCPTool,
   IOpenAITool,
+  StructuredPrompt,
 } from 'intellichat/types';
 import { isBlank } from 'utils/validators';
 import Google from 'providers/Google';
@@ -23,10 +24,7 @@ import {
 } from 'utils/util';
 import BaseReader from 'intellichat/readers/BaseReader';
 import GoogleReader from 'intellichat/readers/GoogleReader';
-import {
-  ContentBlockConverter as MCPContentBlockConverter,
-  FinalContentBlock,
-} from 'intellichat/mcp/ContentBlockConverter';
+import { ContentBlockConverter as MCPContentBlockConverter } from 'intellichat/mcp/ContentBlockConverter';
 import { ContentBlock as MCPContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import { ITool } from 'intellichat/readers/IChatReader';
 import NextChatService from './NextChatService';
@@ -261,57 +259,55 @@ export default class GoogleChatService
     await Promise.all(
       this.context.getCtxMessages(msgId).map(async (msg) => {
         if (msg.structuredPrompts) {
-          const strucuredPrompts = JSON.parse(msg.structuredPrompts) as {
-            role: string;
-            content: FinalContentBlock[];
-          }[];
+          const strucuredPrompts = JSON.parse(
+            msg.structuredPrompts,
+          ) as StructuredPrompt[];
 
           const transformedMessages = await Promise.all(
             strucuredPrompts.map<Promise<IChatRequestMessage>>(
               async (prompt) => {
                 const parts = await Promise.all(
-                  prompt.content.map<Promise<IGeminiChatRequestMessagePart>>(
-                    async (block) => {
-                      if (block.type === 'text') {
-                        return {
-                          text: block.text,
-                        };
-                      }
-                      if (block.type === 'image') {
-                        const { source } = block;
+                  prompt.raw.convertedContent.map<
+                    Promise<IGeminiChatRequestMessagePart>
+                  >(async (block) => {
+                    if (block.type === 'text') {
+                      return {
+                        text: block.text,
+                      };
+                    }
+                    if (block.type === 'image') {
+                      const { source } = block;
 
-                        if (source.type === 'base64') {
-                          return {
-                            inline_data: {
-                              mimeType: source.mimeType,
-                              data: source.data,
-                            },
-                          };
-                        }
-                        const data = await getBase64(source.url);
-                        const binary = new Uint8Array(
-                          atob(data)
-                            .split('')
-                            .map((c) => c.charCodeAt(0)),
-                        );
-                        const mimeType =
-                          filetypemime(binary)[0] || 'audio/mpeg';
-
+                      if (source.type === 'base64') {
                         return {
                           inline_data: {
-                            data,
-                            mimeType,
+                            mimeType: source.mimeType,
+                            data: source.data,
                           },
                         };
                       }
+                      const data = await getBase64(source.url);
+                      const binary = new Uint8Array(
+                        atob(data)
+                          .split('')
+                          .map((c) => c.charCodeAt(0)),
+                      );
+                      const mimeType = filetypemime(binary)[0] || 'audio/mpeg';
+
                       return {
                         inline_data: {
-                          mimeType: block.source.mimeType,
-                          data: block.source.data,
+                          data,
+                          mimeType,
                         },
                       };
-                    },
-                  ),
+                    }
+                    return {
+                      inline_data: {
+                        mimeType: block.source.mimeType,
+                        data: block.source.data,
+                      },
+                    };
+                  }),
                 );
 
                 return {

@@ -335,5 +335,8 @@
   "Common.Capabilities": "Capabilities",
   "Common.Action.Rename": "Rename",
   "Common.NoSubtitlesAvailable": "No subtitles available",
-  "Tools.UnsupportedCapability": "Unable to support tool usage for this capability"
+  "Tools.UnsupportedCapability": "Unable to support tool usage for this capability",
+  "Prompt.UnknownContentType": "Unknown content type",
+  "Prompt.Resource": "Resource",
+  "Prompt.ResourceLink": "Link"
 }

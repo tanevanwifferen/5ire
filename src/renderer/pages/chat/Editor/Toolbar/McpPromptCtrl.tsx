@@ -19,6 +19,7 @@ import {
   CommentMultipleLinkRegular,
   Dismiss24Regular,
 } from '@fluentui/react-icons';
+import { GetPromptResult as MCPPromptResult } from '@modelcontextprotocol/sdk/types.js';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isNil } from 'lodash';
@@ -28,12 +29,12 @@ import {
   IMCPPromptArgument,
   IMCPPromptListItem,
   IMCPPromptListItemData,
-  IMCPPromptMessageItem,
 } from 'types/mcp';
 import useToast from 'hooks/useToast';
 import Spinner from 'renderer/components/Spinner';
 import { captureException } from 'renderer/logging';
 import { decodePromptId, encodePromptId } from 'intellichat/mcp/ids';
+import MCPPromptContentPreview from '../../MCPPromptContentPreview';
 import McpPromptVariableDialog from '../McpPromptVariableDialog';
 
 const PromptIcon = bundleIcon(
@@ -138,7 +139,8 @@ export default function McpPromptCtrl({
       });
       if ($prompt.isError) {
         notifyError(
-          $prompt.error || 'Unknown error occurred while fetching prompt',
+          $prompt.content?.[0]?.error ||
+            'Unknown error occurred while fetching prompt',
         );
         return;
       }
@@ -193,44 +195,11 @@ export default function McpPromptCtrl({
         <div className="py-6 px-1 tips">{t('Common.NoPromptSelected')}</div>
       );
     }
-    const renderContent = (message: IMCPPromptMessageItem) => {
-      if (message.content.type === 'image') {
-        return <img src={message.content.data} alt="" className="w-full" />;
-      }
-      if (message.content.type === 'audio') {
-        return (
-          <audio controls>
-            <source
-              src={message.content.data}
-              type={message.content.mimeType}
-            />
-            <track
-              kind="captions"
-              label={t('Common.NoSubtitlesAvailable')}
-              default
-            />
-            Your browser does not support the audio element.
-          </audio>
-        );
-      }
-      return <pre>{message.content.text || ''}</pre>;
-    };
-    return prompt.messages.map((message: IMCPPromptMessageItem) => {
-      return (
-        <fieldset
-          className="border border-neutral-200 dark:border-neutral-700 rounded p-1 my-2 bg-neutral-50 dark:bg-neutral-800"
-          key={`${message.role}-${message.content.text}`}
-        >
-          <legend className="text-base font-semibold px-1 ml-2">
-            {message.role}&nbsp;
-            <span className="text-sm text-neutral-500">
-              ({message.content.type})
-            </span>
-          </legend>
-          {renderContent(message)}
-        </fieldset>
-      );
-    });
+    return (
+      <MCPPromptContentPreview
+        messages={prompt.messages as unknown as MCPPromptResult['messages']}
+      />
+    );
   }, [prompt, t]);
 
   const onSubmit = useCallback(async () => {
@@ -285,7 +254,6 @@ export default function McpPromptCtrl({
                 placeholder={t('Common.Search')}
                 className="w-full"
                 onOptionSelect={(e, data) => {
-                  console.log(data);
                   applyPrompt(data.optionValue as string);
                 }}
               >

@@ -20,7 +20,7 @@ import {
   ChevronUp16Regular,
 } from '@fluentui/react-icons';
 import useECharts from 'hooks/useECharts';
-import { FinalContentBlock } from 'intellichat/mcp/ContentBlockConverter';
+import MCPPromptContentPreview from './MCPPromptContentPreview';
 import {
   getNormalContent,
   getReasoningContent,
@@ -287,57 +287,18 @@ export default function Message({ message }: { message: IChatMessage }) {
     );
   };
 
-  const renderStructedPrompts = (messages: StructuredPrompt[]) => {
-    const renderContent = (blocks: FinalContentBlock[]) => {
-      return blocks.map((content) => {
-        if (content.type === 'image') {
-          if (content.source.type === 'url') {
-            return <img src={content.source.url} alt="" className="w-full" />;
-          }
-          return (
-            <img
-              src={`data:${content.source.mimeType};base64,${content.source.data}`}
-              alt=""
-            />
-          );
-        }
-        if (content.type === 'audio') {
-          return (
-            <audio controls>
-              <source
-                src={`data:${content.source.mimeType};base64,${content.source.data}`}
-                type={content.source.mimeType}
-              />
-              <track
-                kind="captions"
-                label={t('Common.NoSubtitlesAvailable')}
-                default
-              />
-              Your browser does not support the audio element.
-            </audio>
-          );
-        }
-        return <pre>{content.text || ''}</pre>;
-      });
-    };
-
-    return messages.map((msg) => {
-      return (
-        <fieldset
-          className="border border-neutral-200 dark:border-neutral-700 rounded p-1 my-2 bg-neutral-50 dark:bg-neutral-800"
-          key={`${msg.role}-${msg.content}`}
-        >
-          <legend className="text-base font-semibold px-1 ml-2">
-            {msg.role}&nbsp;
-            <span className="text-sm text-neutral-500">
-              ({msg.content[0].type})
-            </span>
-          </legend>
-          {renderContent(msg.raw.convertedContent)}
-        </fieldset>
-      );
-    });
-  };
+  const renderStructedPrompts = useCallback((messages: StructuredPrompt[]) => {
+    return (
+      <MCPPromptContentPreview
+        messages={messages.map((m) => {
+          return {
+            role: m.role,
+            content: m.raw.content[0],
+          };
+        })}
+      />
+    );
+  }, []);
 
   return (
     <div className="leading-6 message" id={message.id}>

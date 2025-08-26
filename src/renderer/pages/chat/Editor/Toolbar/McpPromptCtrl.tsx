@@ -33,6 +33,7 @@ import {
 import useToast from 'hooks/useToast';
 import Spinner from 'renderer/components/Spinner';
 import { captureException } from 'renderer/logging';
+import { decodePromptId, encodePromptId } from 'intellichat/mcp/ids';
 import McpPromptVariableDialog from '../McpPromptVariableDialog';
 
 const PromptIcon = bundleIcon(
@@ -85,19 +86,22 @@ export default function McpPromptCtrl({
   };
 
   const applyPrompt = async (promptName: string) => {
-    const [client, name] = promptName.split('-');
-    const group = options.find((option) => option.client === client);
+    const { server, prompt: name } = decodePromptId(promptName);
+    const group = options.find((option) => option.client === server);
     if (group) {
       const item = group.prompts.find(
         (p: IMCPPromptListItemData) => p.name === name,
       ) as IMCPPromptListItemData & { client: string };
-      item.client = client;
+      item.client = server;
       setPromptItem(item);
       setVariables(item?.arguments || []);
       if ((item?.arguments?.length || 0) > 0) {
         setVariableDialogOpen(true);
       } else {
-        const $prompt = await window.electron.mcp.getPrompt({ client, name });
+        const $prompt = await window.electron.mcp.getPrompt({
+          client: server,
+          name,
+        });
         if ($prompt.isError) {
           notifyError(
             $prompt.error || 'Unknown error occurred while fetching prompt',
@@ -173,8 +177,8 @@ export default function McpPromptCtrl({
       <OptionGroup label={option.client} key={option.client}>
         {option.prompts.map((promptOption: IMCPPromptListItemData) => (
           <Option
-            key={`${option.client}-${promptOption.name}`}
-            value={`${option.client}-${promptOption.name}`}
+            key={`${encodePromptId(option.client, promptOption.name)}`}
+            value={`${encodePromptId(option.client, promptOption.name)}`}
           >
             {promptOption.name}
           </Option>
@@ -281,6 +285,7 @@ export default function McpPromptCtrl({
                 placeholder={t('Common.Search')}
                 className="w-full"
                 onOptionSelect={(e, data) => {
+                  console.log(data);
                   applyPrompt(data.optionValue as string);
                 }}
               >

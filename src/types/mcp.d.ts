@@ -1,5 +1,6 @@
 export type MCPServerType = 'local' | 'remote';
 export type MCPServerCapability = 'tools' | 'prompts' | 'resources';
+export type MCPServerApprovalPolicy = 'never' | 'always' | 'once';
 export interface IMCPServer {
   key: string;
   type: MCPServerType;
@@ -14,6 +15,7 @@ export interface IMCPServer {
   homepage?: string;
   proxy?: string; // Optional: Proxy URL for this entrypoint (e.g., "http://localhost:8080")
   capabilities: MCPServerCapability[];
+  approvalPolicy?: MCPServerApprovalPolicy;
 }
 
 export type MCPArgType = 'string' | 'list' | 'number';

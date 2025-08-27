@@ -343,5 +343,13 @@
   "Tools.UnsupportedCapability": "Unable to support tool usage for this capability",
   "Prompt.UnknownContentType": "Unknown content type",
   "Prompt.Resource": "Resource",
-  "Prompt.ResourceLink": "Link"
+  "Prompt.ResourceLink": "Link",
+  "Tools.ApprovalPolicy": "Approval Policy",
+  "Tools.ApprovalPolicy.Never": "Never",
+  "Tools.ApprovalPolicy.Always": "Always",
+  "Tools.ApprovalPolicy.Once": "Once",
+  "Tools.ApprovalPolicy.Once.Hint": "Requires one-time approval for each session",
+  "Tools.ApprovalMessage": "Allow executing the tool from \"{{tool}}\" ({{type}})?",
+  "Common.Allow": "Allow",
+  "Common.Deny": "Deny"
 }

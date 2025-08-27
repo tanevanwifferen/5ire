@@ -330,7 +330,14 @@ export default function Message({ message }: { message: IChatMessage }) {
                 />
               </PopoverTrigger>
               <PopoverSurface tabIndex={-1}>
-                <div className="text-xs" style={{ width: '340px' }}>
+                <div
+                  className="text-xs"
+                  style={{
+                    width: '340px',
+                    maxHeight: '400px',
+                    overflow: 'auto',
+                  }}
+                >
                   {renderStructedPrompts(JSON.parse(message.structuredPrompts))}
                 </div>
               </PopoverSurface>

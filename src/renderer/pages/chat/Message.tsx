@@ -4,9 +4,14 @@ import Debug from 'debug';
 import useChatStore from 'stores/useChatStore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import useMarkdown from 'hooks/useMarkdown';
-import { IChatMessage } from 'intellichat/types';
+import { IChatMessage, StructuredPrompt } from 'intellichat/types';
 import { useTranslation } from 'react-i18next';
-import { Divider } from '@fluentui/react-components';
+import {
+  Divider,
+  Popover,
+  PopoverSurface,
+  PopoverTrigger,
+} from '@fluentui/react-components';
 import useKnowledgeStore from 'stores/useKnowledgeStore';
 import useToast from 'hooks/useToast';
 import ToolSpinner from 'renderer/components/ToolSpinner';
@@ -16,6 +21,7 @@ import {
 } from '@fluentui/react-icons';
 import useECharts from 'hooks/useECharts';
 import { debounce } from 'lodash';
+import MCPPromptContentPreview from './MCPPromptContentPreview';
 import {
   getNormalContent,
   getReasoningContent,
@@ -220,6 +226,7 @@ export default function Message({ message }: { message: IChatMessage }) {
 
   const renderedContent = useMemo(() => {
     const isLoading = message.isActive && states.loading;
+
     const isEmpty = !message.reply && !message.reasoning;
 
     const isReasoningInProgress = isReasoning && !reply.trim();
@@ -311,10 +318,24 @@ export default function Message({ message }: { message: IChatMessage }) {
     </div>
   );
 
+  const renderStructedPrompts = useCallback((messages: StructuredPrompt[]) => {
+    return (
+      <MCPPromptContentPreview
+        messages={messages.map((m) => {
+          return {
+            role: m.role,
+            content: m.raw.content[0],
+          };
+        })}
+      />
+    );
+  }, []);
+
   return (
     <div className="leading-6 message" id={message.id}>
       <div>
-        <div
+        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+        <a
           id={`prompt-${message.id}`}
           aria-label={`prompt of message ${message.id}`}
         />
@@ -323,17 +344,48 @@ export default function Message({ message }: { message: IChatMessage }) {
           style={{ minHeight: '40px' }}
         >
           <div className="avatar flex-shrink-0 mr-2" />
-          <div
-            className="mt-1 break-word"
-            dangerouslySetInnerHTML={{
-              __html: render(highlight(message.prompt, keyword) || ''),
-            }}
-          />
+          {message.structuredPrompts ? (
+            <Popover
+              withArrow
+              size="small"
+              positioning="below-start"
+              openOnHover
+            >
+              <PopoverTrigger>
+                <div
+                  className="mt-1 break-word text-indigo-800 dark:text-indigo-200"
+                  dangerouslySetInnerHTML={{
+                    __html: render(highlight(message.prompt, keyword) || ''),
+                  }}
+                />
+              </PopoverTrigger>
+              <PopoverSurface tabIndex={-1}>
+                <div
+                  className="text-xs"
+                  style={{
+                    width: '340px',
+                    maxHeight: '400px',
+                    overflow: 'auto',
+                  }}
+                >
+                  {renderStructedPrompts(JSON.parse(message.structuredPrompts))}
+                </div>
+              </PopoverSurface>
+            </Popover>
+          ) : (
+            <div
+              className="mt-1 break-word"
+              dangerouslySetInnerHTML={{
+                __html: render(highlight(message.prompt, keyword) || ''),
+              }}
+            />
+          )}
         </div>
       </div>
 
       <div>
-        <div id={`reply-${message.id}`} aria-label={`Reply ${message.id}`} />
+        {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+        <a id={`#reply-${message.id}`} aria-label={`Reply ${message.id}`} />
         <div
           className="msg-reply mt-2 flex flex-start"
           style={{ minHeight: '40px' }}

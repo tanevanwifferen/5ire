@@ -21,13 +21,19 @@ const debug = Debug('5ire:intellichat:NextChatService');
 
 export default abstract class NextCharService {
   protected updateBuffer: string = '';
+
   protected reasoningBuffer: string = '';
+
   protected lastUpdateTime: number = 0;
+
   protected readonly UPDATE_INTERVAL: number = 100; // 100ms
+
   protected currentRequestId?: string;
 
   name: string;
+
   abortController: AbortController;
+
   toolAbortController: AbortController | undefined = undefined;
 
   context: IChatContext;
@@ -101,7 +107,7 @@ export default abstract class NextCharService {
     tool: ITool,
     toolResult: any,
     content?: string,
-  ): IChatRequestMessage[];
+  ): IChatRequestMessage[] | Promise<IChatRequestMessage[]>;
 
   protected abstract makeTool(
     tool: IMCPTool,
@@ -233,16 +239,16 @@ export default abstract class NextCharService {
               statusText: response.statusText,
               headers: new Headers(response.headers),
             });
-          } else {
-            // 非流响应，直接返回文本内容
-            return new Response(response.text || '', {
-              status: response.status,
-              statusText: response.statusText,
-              headers: new Headers(response.headers),
-            });
           }
+          // 非流响应，直接返回文本内容
+          return new Response(response.text || '', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: new Headers(response.headers),
+          });
         });
 
+      // eslint-disable-next-line promise/param-names
       const abortPromise = new Promise<never>((_, reject) => {
         this.abortController.signal.addEventListener('abort', async () => {
           if (this.currentRequestId) {
@@ -395,11 +401,11 @@ export default abstract class NextCharService {
           }
           const messagesWithTool = [
             ...messages,
-            ...this.makeToolMessages(
+            ...(await this.makeToolMessages(
               readResult.tool,
               toolCallsResult,
               readResult.content,
-            ),
+            )),
           ] as IChatRequestMessage[];
           await this.chat(messagesWithTool);
         } catch (error) {

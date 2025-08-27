@@ -9,10 +9,19 @@ import React, {
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { TEMP_CHAT_ID } from 'consts';
+import { ContentBlock as MCPContentBlock } from '@modelcontextprotocol/sdk/types.js';
 import useToast from 'hooks/useToast';
 import useToken from 'hooks/useToken';
 
-import { IChat, IChatMessage, IChatResponseMessage } from 'intellichat/types';
+import {
+  IChat,
+  IChatMessage,
+  IChatRequestMessage,
+  IChatResponseMessage,
+  StructuredPrompt,
+} from 'intellichat/types';
+import { ContentBlockConverter as MCPContentBlockConverter } from 'intellichat/mcp/ContentBlockConverter';
+import { UnsupportedError as MCPUnsupportedError } from 'intellichat/mcp/UnsupportedError';
 import INextChatService from 'intellichat/services/INextCharService';
 import { ICollectionFile } from 'types/knowledge';
 
@@ -53,6 +62,14 @@ const debug = Debug('5ire:pages:chat');
 const MemoizedMessages = React.memo(Messages);
 
 const DEFAULT_SIDEBAR_WIDTH = 250;
+
+type TriggerPrompt =
+  | string
+  | {
+      name: string;
+      description?: string;
+      messages: { role: string; content: MCPContentBlock }[];
+    };
 
 export default function Chat() {
   const { t } = useTranslation();
@@ -216,26 +233,93 @@ export default function Chat() {
   const { createMessage, createChat, deleteStage, updateMessage, appendReply } =
     useChatStore();
 
-  const { countInput, countOutput } = useToken();
+  const { countInput, countOutput, countBlobInput } = useToken();
 
   const { moveChatCollections, listChatCollections, setChatCollections } =
     useChatKnowledgeStore.getState();
 
   const onSubmit = useCallback(
-    async (prompt: string, msgId?: string) => {
+    async (prompt: unknown, msgId?: string) => {
       chatService.current = createService(chatContext);
-      if (!chatService.current || prompt.trim() === '') {
+
+      if (!chatService.current) {
         return;
       }
+
+      const triggerPrompt = prompt as TriggerPrompt;
+
+      if (typeof triggerPrompt === 'string' && triggerPrompt.trim() === '') {
+        return;
+      }
+
+      if (
+        typeof triggerPrompt !== 'string' &&
+        triggerPrompt.messages.length === 0
+      ) {
+        return;
+      }
+
+      const convertedMCPTriggerPrompt =
+        typeof triggerPrompt === 'string'
+          ? undefined
+          : {
+              name: triggerPrompt.name,
+              description: triggerPrompt.description,
+              messages: [] as Array<StructuredPrompt>,
+            };
+
+      if (typeof triggerPrompt !== 'string') {
+        try {
+          const convertedMessages = await Promise.all(
+            triggerPrompt.messages.map<Promise<StructuredPrompt>>(
+              async (message) => {
+                const converted = await MCPContentBlockConverter.convert(
+                  message.content,
+                );
+
+                return {
+                  role: message.role as 'user',
+                  content: [
+                    MCPContentBlockConverter.contentBlockToLegacyMessageContent(
+                      converted,
+                    ),
+                  ],
+                  raw: {
+                    type: 'mcp-prompts',
+                    content: [message.content],
+                    convertedContent: [converted],
+                  },
+                };
+              },
+            ),
+          );
+          convertedMCPTriggerPrompt!.messages = convertedMessages;
+        } catch (error) {
+          if (MCPUnsupportedError.isInstance(error)) {
+            notifyError(t('Tools.UnsupportedCapability'));
+            return;
+          }
+
+          throw error;
+        }
+      }
+
       const provider = chatContext.getProvider();
       const model = chatContext.getModel();
       const temperature = chatContext.getTemperature();
       const maxTokens = chatContext.getMaxTokens();
+
       let $chatId = activeChatId;
+
+      const summary =
+        typeof triggerPrompt === 'string'
+          ? triggerPrompt.substring(0, 50)
+          : `${triggerPrompt.name}${triggerPrompt.description ? ` (${triggerPrompt.description})` : ''}`;
+
       if (activeChatId === TEMP_CHAT_ID) {
         const $chat = await createChat(
           {
-            summary: prompt.substring(0, 50),
+            summary,
             provider: provider.name,
             model: model.name,
             temperature,
@@ -263,7 +347,7 @@ export default function Chat() {
             provider: provider.name,
             model: model.name,
             temperature,
-            summary: prompt.substring(0, 50),
+            summary,
           });
         }
         setKeyword(activeChatId, ''); // clear filter keyword
@@ -272,7 +356,13 @@ export default function Chat() {
       const msg = msgId
         ? (messages.find((message) => msgId === message.id) as IChatMessage)
         : await useChatStore.getState().createMessage({
-            prompt,
+            prompt:
+              typeof triggerPrompt === 'string'
+                ? triggerPrompt
+                : `/${triggerPrompt.name}`,
+            structuredPrompts: convertedMCPTriggerPrompt
+              ? JSON.stringify(convertedMCPTriggerPrompt.messages)
+              : null,
             reply: '',
             chatId: $chatId,
             model: model.label,
@@ -300,12 +390,14 @@ export default function Chat() {
       // Knowledge Collections
       let knowledgeChunks = [];
       let files: ICollectionFile[] = [];
-      let actualPrompt = prompt;
+      let actualPrompt = typeof triggerPrompt === 'string' ? triggerPrompt : '';
       const chatCollections = await listChatCollections($chatId);
       if (chatCollections.length) {
         const knowledgeString = await window.electron.knowledge.search(
           chatCollections.map((c) => c.id),
-          prompt,
+          typeof triggerPrompt === 'string'
+            ? triggerPrompt
+            : triggerPrompt.description || '',
         );
         knowledgeChunks = JSON.parse(knowledgeString);
         useKnowledgeStore.getState().cacheChunks(knowledgeChunks);
@@ -355,7 +447,70 @@ ${prompt}
             isActive: 0,
           });
         } else {
-          const inputTokens = result.inputTokens || (await countInput(prompt));
+          let { inputTokens } = result;
+
+          if (!inputTokens) {
+            inputTokens = 0;
+
+            if (typeof triggerPrompt === 'string') {
+              inputTokens += await countInput(actualPrompt);
+            } else {
+              inputTokens += convertedMCPTriggerPrompt!.messages.reduce(
+                (prev, message) => {
+                  return (
+                    prev +
+                    message.content.reduce((value, item) => {
+                      let num = value;
+
+                      if (item.source) {
+                        if (item.source.media_type.startsWith('image/')) {
+                          num += countBlobInput(item.source.data, 'image');
+                        }
+
+                        if (item.source.media_type.startsWith('audio/')) {
+                          num += countBlobInput(item.source.data, 'audio');
+                        }
+                      }
+
+                      if (item.image_url?.url) {
+                        if (item.image_url.url.startsWith('data:')) {
+                          num += countBlobInput(
+                            item.image_url.url.split(',')[1],
+                            'image',
+                          );
+                        }
+                      }
+
+                      if (item.images) {
+                        item.images.forEach((image) => {
+                          if (image.startsWith('data:')) {
+                            num += countBlobInput(image.split(',')[1], 'image');
+                          }
+                        });
+                      }
+
+                      return num;
+                    }, 0)
+                  );
+                },
+                0,
+              );
+              inputTokens += await countInput(
+                convertedMCPTriggerPrompt!.messages.reduce((text, message) => {
+                  return (
+                    text +
+                    message.content
+                      .map((item) => {
+                        return item.text || '';
+                      })
+                      .join(' ')
+                  );
+                }, ''),
+              );
+            }
+          }
+
+          // const inputTokens = result.inputTokens || (await countInput(prompt));
           const outputTokens =
             result.outputTokens || (await countOutput(result.content || ''));
           const citedChunkIds = extractCitationIds(result.content || '');
@@ -422,6 +577,15 @@ ${prompt}
             role: 'user',
             content: actualPrompt,
           },
+
+          ...(convertedMCPTriggerPrompt?.messages || []).map(
+            (message): IChatRequestMessage => {
+              return {
+                role: message.role as 'user' | 'assistant',
+                content: message.content,
+              };
+            },
+          ),
         ],
         msgId,
       );

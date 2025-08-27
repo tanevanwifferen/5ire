@@ -23,7 +23,7 @@ export default function Editor({
 }: {
   ctx: IChatContext;
   isReady: boolean;
-  onSubmit: (prompt: string) => Promise<void> | undefined;
+  onSubmit: (prompt: unknown) => Promise<void> | undefined;
   onAbort: () => void;
 }) {
   const { t } = useTranslation();
@@ -194,7 +194,12 @@ export default function Editor({
           </Button>
         </div>
       ) : null}
-      <Toolbar onConfirm={onToolbarActionConfirm} isReady={isReady} ctx={ctx} />
+      <Toolbar
+        onConfirm={onToolbarActionConfirm}
+        isReady={isReady}
+        ctx={ctx}
+        onTriggerPrompt={onSubmit}
+      />
       {!isReady && (
         <div className="absolute top-[40px] max-w-md right-0 left-0 tips px-2.5">
           <p>{t('Notification.APINotReady')}</p>

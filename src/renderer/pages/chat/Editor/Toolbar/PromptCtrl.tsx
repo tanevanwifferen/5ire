@@ -204,7 +204,7 @@ export default function PromptCtrl({
                 </DialogTrigger>
               }
             >
-              {t('Common.Prompt')}
+              {t('Common.Prompts')}
             </DialogTitle>
             <DialogContent>
               {isNil(chat.prompt) || promptPickerOpen ? (

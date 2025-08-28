@@ -50,42 +50,4 @@ export default class MistralChatService
 
     return messages;
   }
-
-  /**
-   * Override makeMessages to filter message content based on model capabilities.
-   */
-  protected override async makeMessages(
-    messages: IChatRequestMessage[],
-    msgId?: string,
-  ): Promise<IChatRequestMessage[]> {
-    const result = await super.makeMessages(messages, msgId);
-
-    const isVisionEnabled = Boolean(
-      this.context.getModel().capabilities.vision?.enabled,
-    );
-
-    const sanitized = result.map((message) => {
-      let { content } = message;
-
-      if (Array.isArray(content)) {
-        content = content.filter((item) => {
-          if (item.type === 'text') {
-            return true;
-          }
-
-          if (item.type === 'image' || item.type === 'image_url') {
-            return isVisionEnabled;
-          }
-
-          return false;
-        });
-      }
-
-      return { ...message, content };
-    });
-
-    return sanitized.filter(
-      (m) => !(Array.isArray(m.content) && m.content.length === 0),
-    );
-  }
 }

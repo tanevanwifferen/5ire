@@ -71,6 +71,40 @@ export default class OpenAIChatService
     return stripHtmlTags(content);
   }
 
+  /**
+   * Filter out image content from the messages if vision is not enabled
+   *
+   * @param {IChatRequestMessage[]} messages - Array of messages
+   * @returns {Promise<IChatRequestMessage[]>} Array of messages with image content filtered if vision is not enabled
+   */
+  private async filterMessagesByCapabilities(messages: IChatRequestMessage[]) {
+    const isVisionEnabled = Boolean(
+      this.context.getModel().capabilities.vision?.enabled,
+    );
+
+    const sanitized = messages.map((message) => {
+      let { content } = message;
+
+      if (Array.isArray(content)) {
+        content = content.filter((item) => {
+          if (item.type === 'text') {
+            return true;
+          }
+
+          if (item.type === 'image' || item.type === 'image_url') {
+            return isVisionEnabled;
+          }
+
+          return false;
+        });
+      }
+
+      return { ...message, content };
+    });
+
+    return sanitized;
+  }
+
   // eslint-disable-next-line class-methods-use-this
   protected async makeMessages(
     messages: IChatRequestMessage[],
@@ -235,7 +269,7 @@ export default class OpenAIChatService
 
     result.push(...processedMessages);
 
-    return result as IChatRequestMessage[];
+    return this.filterMessagesByCapabilities(result as IChatRequestMessage[]);
   }
 
   // eslint-disable-next-line class-methods-use-this

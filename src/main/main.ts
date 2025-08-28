@@ -388,7 +388,7 @@ ipcMain.handle('request', async (event, options) => {
     }
 
     const response = await fetch(url, fetchOptions);
-    activeRequests.delete(requestId);
+    // activeRequests.delete(requestId);
 
     if (isStream) {
       const nodeStream = response.body as Readable;

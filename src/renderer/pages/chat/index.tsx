@@ -259,55 +259,19 @@ export default function Chat() {
         return;
       }
 
-      const convertedMCPTriggerPrompt =
-        typeof triggerPrompt === 'string'
-          ? undefined
-          : {
-              name: triggerPrompt.name,
-              description: triggerPrompt.description,
-              messages: [] as Array<StructuredPrompt>,
-            };
-
-      if (typeof triggerPrompt !== 'string') {
-        try {
-          const convertedMessages = await Promise.all(
-            triggerPrompt.messages.map<Promise<StructuredPrompt>>(
-              async (message) => {
-                const converted = await MCPContentBlockConverter.convert(
-                  message.content,
-                );
-
-                return {
-                  role: message.role as 'user',
-                  content: [
-                    MCPContentBlockConverter.contentBlockToLegacyMessageContent(
-                      converted,
-                    ),
-                  ],
-                  raw: {
-                    type: 'mcp-prompts',
-                    content: [message.content],
-                    convertedContent: [converted],
-                  },
-                };
-              },
-            ),
-          );
-          convertedMCPTriggerPrompt!.messages = convertedMessages;
-        } catch (error) {
-          if (MCPUnsupportedError.isInstance(error)) {
-            notifyError(t('Tools.UnsupportedCapability'));
-            return;
-          }
-
-          throw error;
-        }
-      }
-
       const provider = chatContext.getProvider();
       const model = chatContext.getModel();
       const temperature = chatContext.getTemperature();
       const maxTokens = chatContext.getMaxTokens();
+
+      let abortController: AbortController | undefined;
+
+      if (
+        'abortController' in chatService.current &&
+        chatService.current.abortController instanceof AbortController
+      ) {
+        abortController = chatService.current.abortController;
+      }
 
       let $chatId = activeChatId;
 
@@ -360,9 +324,7 @@ export default function Chat() {
               typeof triggerPrompt === 'string'
                 ? triggerPrompt
                 : `/${triggerPrompt.name}`,
-            structuredPrompts: convertedMCPTriggerPrompt
-              ? JSON.stringify(convertedMCPTriggerPrompt.messages)
-              : null,
+            structuredPrompts: typeof triggerPrompt === 'string' ? null : '[]',
             reply: '',
             chatId: $chatId,
             model: model.label,
@@ -371,19 +333,71 @@ export default function Chat() {
             isActive: 1,
           });
 
-      if (msgId) {
-        await updateMessage({
-          id: msgId,
-          reply: '',
-          reasoning: '',
-          model: model.label,
-          temperature,
-          maxTokens,
-          isActive: 1,
-          citedFiles: '[]',
-          citedChunks: '[]',
-        });
-      } else {
+      const convertedMCPTriggerPrompt =
+        typeof triggerPrompt === 'string'
+          ? undefined
+          : {
+              name: triggerPrompt.name,
+              description: triggerPrompt.description,
+              messages: [] as Array<StructuredPrompt>,
+            };
+
+      if (typeof triggerPrompt !== 'string') {
+        try {
+          const convertedMessages = await Promise.all(
+            triggerPrompt.messages.map<Promise<StructuredPrompt>>(
+              async (message) => {
+                const converted = await MCPContentBlockConverter.convert(
+                  message.content,
+                );
+
+                return {
+                  role: message.role as 'user',
+                  content: [
+                    MCPContentBlockConverter.contentBlockToLegacyMessageContent(
+                      converted,
+                    ),
+                  ],
+                  raw: {
+                    type: 'mcp-prompts',
+                    content: [message.content],
+                    convertedContent: [converted],
+                  },
+                };
+              },
+            ),
+          );
+          convertedMCPTriggerPrompt!.messages = convertedMessages;
+        } catch (error) {
+          if (MCPUnsupportedError.isInstance(error)) {
+            notifyError(t('Tools.UnsupportedCapability'));
+            return;
+          }
+
+          throw error;
+        }
+      }
+
+      if (abortController?.signal.aborted) {
+        return;
+      }
+
+      await updateMessage({
+        id: msg.id,
+        reply: '',
+        reasoning: '',
+        model: model.label,
+        temperature,
+        maxTokens,
+        isActive: 1,
+        citedFiles: '[]',
+        citedChunks: '[]',
+        structuredPrompts: convertedMCPTriggerPrompt
+          ? JSON.stringify(convertedMCPTriggerPrompt.messages)
+          : null,
+      });
+
+      if (!msgId) {
         scrollToBottom();
       }
 
@@ -430,6 +444,10 @@ ${JSON.stringify(
 # Objective #
 ${prompt}
 `;
+      }
+
+      if (abortController?.signal.aborted) {
+        return;
       }
 
       const onChatComplete = async (result: IChatResponseMessage) => {

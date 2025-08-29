@@ -8,9 +8,13 @@ import { IChatMessage, StructuredPrompt } from 'intellichat/types';
 import { useTranslation } from 'react-i18next';
 import {
   Divider,
-  Popover,
-  PopoverSurface,
-  PopoverTrigger,
+  Dialog,
+  DialogTrigger,
+  DialogSurface,
+  DialogBody,
+  DialogTitle,
+  DialogContent,
+  Button,
 } from '@fluentui/react-components';
 import useKnowledgeStore from 'stores/useKnowledgeStore';
 import useToast from 'hooks/useToast';
@@ -18,6 +22,7 @@ import ToolSpinner from 'renderer/components/ToolSpinner';
 import {
   ChevronDown16Regular,
   ChevronUp16Regular,
+  Dismiss24Regular,
 } from '@fluentui/react-icons';
 import useECharts from 'hooks/useECharts';
 import { debounce } from 'lodash';
@@ -345,33 +350,42 @@ export default function Message({ message }: { message: IChatMessage }) {
         >
           <div className="avatar flex-shrink-0 mr-2" />
           {message.structuredPrompts ? (
-            <Popover
-              withArrow
-              size="small"
-              positioning="below-start"
-              openOnHover
-            >
-              <PopoverTrigger>
+            <Dialog>
+              <DialogTrigger>
                 <div
                   className="mt-1 break-word text-indigo-800 dark:text-indigo-200"
                   dangerouslySetInnerHTML={{
                     __html: render(highlight(message.prompt, keyword) || ''),
                   }}
                 />
-              </PopoverTrigger>
-              <PopoverSurface tabIndex={-1}>
-                <div
-                  className="text-xs"
-                  style={{
-                    width: '340px',
-                    maxHeight: '400px',
-                    overflow: 'auto',
-                  }}
-                >
-                  {renderStructedPrompts(JSON.parse(message.structuredPrompts))}
-                </div>
-              </PopoverSurface>
-            </Popover>
+              </DialogTrigger>
+              <DialogSurface>
+                <DialogBody>
+                  <DialogTitle
+                    action={
+                      <DialogTrigger action="close">
+                        <Button
+                          appearance="subtle"
+                          aria-label="close"
+                          icon={<Dismiss24Regular />}
+                        />
+                      </DialogTrigger>
+                    }
+                  >
+                    <div className="flex justify-start items-center gap-1 font-semibold font-sans">
+                      {message.prompt.slice(1)}
+                    </div>
+                  </DialogTitle>
+                  <DialogContent>
+                    <div className="text-xs">
+                      {renderStructedPrompts(
+                        JSON.parse(message.structuredPrompts),
+                      )}
+                    </div>
+                  </DialogContent>
+                </DialogBody>
+              </DialogSurface>
+            </Dialog>
           ) : (
             <div
               className="mt-1 break-word"

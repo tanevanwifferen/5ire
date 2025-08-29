@@ -45,7 +45,7 @@ const useAppearanceStore = create<IAppearanceStore>((set, get) => ({
       const hidden = false;
       localStorage.setItem('sidebar-collapsed', String(collapsed));
       window.electron.ingestEvent([{ app: 'toggle-sidebar-collapsed' }]);
-      return { sidebar: { collapsed, hidden } };
+      return { sidebar: { collapsed, hidden, folderEditing: false } };
     });
   },
   toggleSidebarVisibility: () => {
@@ -54,7 +54,7 @@ const useAppearanceStore = create<IAppearanceStore>((set, get) => ({
       const collapsed = false;
       localStorage.setItem('sidebar-hidden', String(hidden));
       window.electron.ingestEvent([{ app: 'toggle-sidebar-visibility' }]);
-      return { sidebar: { collapsed, hidden } };
+      return { sidebar: { collapsed, hidden, folderEditing: false } };
     });
   },
   toggleChatSidebarVisibility: () => {

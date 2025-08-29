@@ -9,8 +9,6 @@ import {
   Field,
   Input,
   DialogActions,
-  MessageBar,
-  MessageBarBody,
 } from '@fluentui/react-components';
 import { Dismiss24Regular } from '@fluentui/react-icons';
 import { useState } from 'react';
@@ -26,7 +24,7 @@ export default function PromptVariableDialog(args: {
   const { t } = useTranslation();
   const { open, variables, onCancel, onConfirm } = args;
 
-  const [requiredError, setRequiredError] = useState<string | null>(null);
+  const [requiredFileds, setRequiredFileds] = useState<string[]>([]);
   const [values, setValues] = useState<{ [key: string]: string }>({});
 
   const onValuesChange = (key: string, value: string) => {
@@ -34,18 +32,18 @@ export default function PromptVariableDialog(args: {
   };
 
   const handleConfirm = () => {
-    setRequiredError(null);
+    setRequiredFileds([]);
 
     const requiredVariables = variables.filter((arg) => {
       return arg.required && !values[arg.name]?.trim();
     });
 
     if (requiredVariables.length > 0) {
-      setRequiredError(requiredVariables.map((arg) => arg.name).join(', '));
+      setRequiredFileds(requiredVariables.map((arg) => arg.name));
     } else {
       onConfirm(values);
       setValues({});
-      setRequiredError(null);
+      setRequiredFileds([]);
     }
   };
 
@@ -68,15 +66,6 @@ export default function PromptVariableDialog(args: {
             {t('Prompt.FillVariables')}
           </DialogTitle>
           <DialogContent>
-            {requiredError ? (
-              <MessageBar intent="error">
-                <MessageBarBody>
-                  {t('Prompt.RequiredVariables', {
-                    variables: requiredError,
-                  })}
-                </MessageBarBody>
-              </MessageBar>
-            ) : null}
             <div>
               {variables.length ? (
                 <div>
@@ -86,6 +75,16 @@ export default function PromptVariableDialog(args: {
                         label={variable.name}
                         key={`var-${variable.name}`}
                         className="my-2"
+                        validationMessage={
+                          requiredFileds.includes(variable.name)
+                            ? t('Common.Required')
+                            : ''
+                        }
+                        validationState={
+                          requiredFileds.includes(variable.name)
+                            ? 'error'
+                            : undefined
+                        }
                       >
                         <Input
                           className="w-full"
@@ -95,9 +94,12 @@ export default function PromptVariableDialog(args: {
                               ? t('Common.Required')
                               : t('Common.Optional')
                           }
-                          onChange={(e) =>
-                            onValuesChange(variable.name, e.target.value || '')
-                          }
+                          onChange={(e) => {
+                            onValuesChange(variable.name, e.target.value || '');
+                            setRequiredFileds((fileds) =>
+                              fileds.filter((f) => f !== variable.name),
+                            );
+                          }}
                         />
                       </Field>
                     );

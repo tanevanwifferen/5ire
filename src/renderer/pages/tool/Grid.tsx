@@ -119,7 +119,10 @@ export default function Grid({
       renderCell: (item) => {
         return (
           <TableCell>
-            <TableCellLayout truncate style={{ display: 'block' }}>
+            <TableCellLayout
+              truncate
+              style={{ display: 'block', width: '40vw' }}
+            >
               <div className="flex flex-start items-center">
                 {renderToolState(item)}
                 <div className="ml-1.5 flex-1 min-w-0 max-w-max truncate">

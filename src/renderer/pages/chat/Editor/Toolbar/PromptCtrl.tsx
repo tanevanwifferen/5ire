@@ -270,7 +270,9 @@ export default function PromptCtrl({
                         <span
                           className="leading-6"
                           dangerouslySetInnerHTML={{
-                            __html:  DOMPurify.sanitize((chat.prompt as IPrompt).systemMessage),
+                            __html: DOMPurify.sanitize(
+                              (chat.prompt as IPrompt).systemMessage,
+                            ),
                           }}
                         />
                       </div>

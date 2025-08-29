@@ -9,6 +9,8 @@ import {
   Field,
   Input,
   DialogActions,
+  MessageBar,
+  MessageBarBody,
 } from '@fluentui/react-components';
 import { Dismiss24Regular } from '@fluentui/react-icons';
 import { useState } from 'react';
@@ -19,13 +21,12 @@ export default function PromptVariableDialog(args: {
   open: boolean;
   variables: IMCPPromptArgument[];
   onCancel: () => void;
-  onConfirm: (
-    vars: { [key: string]: string },
-  ) => void;
+  onConfirm: (vars: { [key: string]: string }) => void;
 }) {
   const { t } = useTranslation();
   const { open, variables, onCancel, onConfirm } = args;
 
+  const [requiredError, setRequiredError] = useState<string | null>(null);
   const [values, setValues] = useState<{ [key: string]: string }>({});
 
   const onValuesChange = (key: string, value: string) => {
@@ -33,8 +34,19 @@ export default function PromptVariableDialog(args: {
   };
 
   const handleConfirm = () => {
-    onConfirm(values);
-    setValues({});
+    setRequiredError(null);
+
+    const requiredVariables = variables.filter((arg) => {
+      return arg.required && !values[arg.name]?.trim();
+    });
+
+    if (requiredVariables.length > 0) {
+      setRequiredError(requiredVariables.map((arg) => arg.name).join(', '));
+    } else {
+      onConfirm(values);
+      setValues({});
+      setRequiredError(null);
+    }
   };
 
   return (
@@ -56,6 +68,15 @@ export default function PromptVariableDialog(args: {
             {t('Prompt.FillVariables')}
           </DialogTitle>
           <DialogContent>
+            {requiredError ? (
+              <MessageBar intent="error">
+                <MessageBarBody>
+                  {t('Prompt.RequiredVariables', {
+                    variables: requiredError,
+                  })}
+                </MessageBarBody>
+              </MessageBar>
+            ) : null}
             <div>
               {variables.length ? (
                 <div>
@@ -69,7 +90,11 @@ export default function PromptVariableDialog(args: {
                         <Input
                           className="w-full"
                           value={values[variable.name] || ''}
-                          placeholder={variable.required ? t('Common.Required') : t('Common.Optional')}
+                          placeholder={
+                            variable.required
+                              ? t('Common.Required')
+                              : t('Common.Optional')
+                          }
                           onChange={(e) =>
                             onValuesChange(variable.name, e.target.value || '')
                           }

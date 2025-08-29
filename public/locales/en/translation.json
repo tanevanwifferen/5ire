@@ -344,6 +344,7 @@
   "Prompt.UnknownContentType": "Unknown content type",
   "Prompt.Resource": "Resource",
   "Prompt.ResourceLink": "Link",
+  "Prompt.RequiredVariables": "Prompt variables \"{{variables}}\" are required",
   "Tools.ApprovalPolicy": "Approval Policy",
   "Tools.ApprovalPolicy.Never": "Never",
   "Tools.ApprovalPolicy.Always": "Always",

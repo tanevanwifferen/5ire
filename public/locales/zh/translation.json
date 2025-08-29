@@ -333,6 +333,7 @@
   "Prompt.UnknownContentType": "未知内容类型",
   "Prompt.Resource": "资源",
   "Prompt.ResourceLink": "链接",
+  "Prompt.RequiredVariables": "提示词参数 \"{{variables}}\" 为必填项",
   "Tools.ApprovalPolicy": "审批策略",
   "Tools.ApprovalPolicy.Never": "永不",
   "Tools.ApprovalPolicy.Always": "总是",

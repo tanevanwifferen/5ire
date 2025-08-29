@@ -82,8 +82,8 @@ const useAppearanceStore = create<IAppearanceStore>((set, get) => ({
     return theme === 'dark' ? dark[name] : light[name];
   },
   setFolderEditing(editing) {
-    set(() => {
-      return { sidebar: { folderEditing: editing } };
+    set((prev) => {
+      return { sidebar: { ...prev.sidebar, folderEditing: editing } };
     });
   },
 }));

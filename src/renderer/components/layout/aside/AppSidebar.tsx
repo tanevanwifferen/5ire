@@ -30,7 +30,7 @@ export default function Sidebar() {
   const left = sidebar.hidden ? 'md:left-0' : '-left-64 md:left-0';
   const leftCollapsed = sidebar.hidden ? '-left-64' : '-left-64 md:left-0';
 
-  const collapsed = sidebar.collapsed || !sidebar.folderEditing;
+  const collapsed = sidebar.collapsed && !sidebar.folderEditing;
 
   /**
    * Renders the appropriate navigation component based on the current route.

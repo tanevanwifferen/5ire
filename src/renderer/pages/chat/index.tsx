@@ -96,6 +96,9 @@ export default function Chat() {
   const messages = useChatStore((state) => state.messages);
   const setKeyword = useChatStore((state) => state.setKeyword);
   const tempStage = useChatStore((state) => state.tempStage);
+  const provider = useChatStore((state) => state.chat.provider);
+  const model = useChatStore((state) => state.chat.model);
+
   const {
     fetchMessages,
     initChat,
@@ -108,12 +111,13 @@ export default function Chat() {
 
   const chatSidebarShow = useAppearanceStore((state) => state.chatSidebar.show);
   const chatService = useRef<INextChatService>();
-  // Get the active chat to use its provider/model as dependencies
-  const activeChat = useMemo(() => chatContext.getActiveChat(), [activeChatId]);
 
+  // The ready state depends only on the status of the model and the provider.
+  // When the model or provider changes, call chatContext.isReady() to get the ready state.
   const isReady = useMemo(() => {
     return chatContext.isReady();
-  }, [activeChatId, activeChat?.provider, activeChat?.model]);
+  }, [provider, model, chatContext]);
+
   const [isLoading, setIsLoading] = useState(false);
 
   const { notifyError } = useToast();
@@ -259,8 +263,8 @@ export default function Chat() {
         return;
       }
 
-      const provider = chatContext.getProvider();
-      const model = chatContext.getModel();
+      const providerCtx = chatContext.getProvider();
+      const modelCtx = chatContext.getModel();
       const temperature = chatContext.getTemperature();
       const maxTokens = chatContext.getMaxTokens();
 
@@ -284,8 +288,8 @@ export default function Chat() {
         const $chat = await createChat(
           {
             summary,
-            provider: provider.name,
-            model: model.name,
+            provider: providerCtx.name,
+            model: modelCtx.name,
             temperature,
             folderId: folder?.id || null,
           },
@@ -308,8 +312,8 @@ export default function Chat() {
         if (!msgId) {
           await updateChat({
             id: activeChatId,
-            provider: provider.name,
-            model: model.name,
+            provider: providerCtx.name,
+            model: modelCtx.name,
             temperature,
             summary,
           });
@@ -327,7 +331,7 @@ export default function Chat() {
             structuredPrompts: typeof triggerPrompt === 'string' ? null : '[]',
             reply: '',
             chatId: $chatId,
-            model: model.label,
+            model: modelCtx.label,
             temperature,
             maxTokens,
             isActive: 1,
@@ -386,7 +390,7 @@ export default function Chat() {
         id: msg.id,
         reply: '',
         reasoning: '',
-        model: model.label,
+        model: modelCtx.label,
         temperature,
         maxTokens,
         isActive: 1,
@@ -559,8 +563,8 @@ ${prompt}
             ),
           });
           useUsageStore.getState().create({
-            provider: provider.name,
-            model: model.label,
+            provider: providerCtx.name,
+            model: modelCtx.label,
             inputTokens,
             outputTokens,
           });
@@ -607,7 +611,7 @@ ${prompt}
         ],
         msgId,
       );
-      window.electron.ingestEvent([{ app: 'chat' }, { model: model.label }]);
+      window.electron.ingestEvent([{ app: 'chat' }, { model: modelCtx.label }]);
     },
     [
       activeChatId,

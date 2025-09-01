@@ -700,7 +700,7 @@ ${prompt}
                 <div id="messages" ref={ref} className="overflow-y-auto h-full">
                   {messages.length ? (
                     <div className="mx-auto max-w-screen-md px-5">
-                      <MemoizedMessages messages={messages} />
+                      <MemoizedMessages messages={messages} isReady={isReady} />
                     </div>
                   ) : (
                     isReady || (

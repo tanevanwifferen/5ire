@@ -37,7 +37,13 @@ import useMermaid from '../../../hooks/useMermaid';
 
 const debug = Debug('5ire:pages:chat:Message');
 
-export default function Message({ message }: { message: IChatMessage }) {
+export default function Message({
+  message,
+  isReady,
+}: {
+  message: IChatMessage;
+  isReady: boolean;
+}) {
   const { t } = useTranslation();
   const { notifyInfo } = useToast();
   const keywords = useChatStore((state: any) => state.keywords);
@@ -422,7 +428,7 @@ export default function Message({ message }: { message: IChatMessage }) {
             </ul>
           </div>
         )}
-        <MessageToolbar message={message} />
+        <MessageToolbar message={message} isReady={isReady} />
       </div>
     </div>
   );

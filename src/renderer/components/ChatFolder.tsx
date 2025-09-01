@@ -216,7 +216,9 @@ export default function ChatFolder({
         <div className="flex justify-between items-center">
           <AccordionHeader
             style={{ height: 28 }}
-            className={collapsed ? 'collapsed' : 'px-1 flex-grow'}
+            className={
+              collapsed ? 'collapsed' : 'px-1 flex-grow min-w-0 flex-1'
+            }
             onDoubleClick={() => {
               if (!collapsed) {
                 setEditable(true);
@@ -247,7 +249,7 @@ export default function ChatFolder({
                 onBlur={saveName}
               />
             ) : (
-              collapsed || folder.name
+              collapsed || <div className="truncate">{folder.name}</div>
             )}
           </AccordionHeader>
           {!collapsed && (

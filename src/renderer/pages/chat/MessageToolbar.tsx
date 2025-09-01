@@ -109,10 +109,7 @@ export default function MessageToolbar({ message }: { message: IChatMessage }) {
             icon={<ArrowSync />}
             appearance="subtle"
             onClick={() => {
-              bus.current.emit('retry', {
-                msgId: message.id,
-                prompt: message.prompt,
-              });
+              bus.current.emit('retry', message);
             }}
           />
           <Popover withArrow open={delPopoverOpen}>

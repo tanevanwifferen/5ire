@@ -250,6 +250,8 @@ export default function Chat() {
         return;
       }
 
+      console.log(prompt);
+
       const triggerPrompt = prompt as TriggerPrompt;
 
       if (typeof triggerPrompt === 'string' && triggerPrompt.trim() === '') {
@@ -633,7 +635,32 @@ ${prompt}
 
   useEffect(() => {
     bus.current.on('retry', async (event: any) => {
-      await onSubmit(event.prompt, event.msgId);
+      const message = event as IChatMessage;
+
+      if (message.structuredPrompts) {
+        const prompts = JSON.parse(
+          message.structuredPrompts,
+        ) as Array<StructuredPrompt>;
+
+        const prompt = {
+          name: message.prompt.startsWith('/')
+            ? message.prompt.slice(1)
+            : message.prompt,
+          messages: prompts.map((msg) => {
+            return {
+              role: msg.role,
+              content: msg.raw.content[0],
+            };
+          }),
+        };
+
+        onSubmit(prompt, message.id);
+      } else {
+        onSubmit(message.prompt, message.id);
+      }
+
+      // console.log('message', event);
+      // await onSubmit(event.prompt, event.msgId);
     });
     return () => {
       bus.current.off('retry');

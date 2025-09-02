@@ -381,45 +381,47 @@ export default abstract class NextCharService {
             ],
           };
 
-          switch (server.approvalPolicy || 'always') {
-            case 'always': {
-              await MCPServerApprovalPolicyDialog.open({
-                toolName: client,
-                toolType: server.type,
-                methodName: name,
-                parameters: readResult.tool.args,
-              }).catch(() => {
-                toolCallsResult = toolCallsCanclledResult;
-              });
-              break;
-            }
-            case 'once': {
-              const isAllowedKey = `APPROVAL_POLICY::${chatId}--${client}`;
-              const isAllowed = await window.electron.store.get(isAllowedKey);
-
-              if (typeof isAllowed !== 'boolean') {
-                const allow = await MCPServerApprovalPolicyDialog.open({
+          if (server?.approvalPolicy) {
+            switch (server.approvalPolicy || 'always') {
+              case 'always': {
+                await MCPServerApprovalPolicyDialog.open({
                   toolName: client,
                   toolType: server.type,
                   methodName: name,
                   parameters: readResult.tool.args,
-                })
-                  .then(() => true)
-                  .catch(() => false);
+                }).catch(() => {
+                  toolCallsResult = toolCallsCanclledResult;
+                });
+                break;
+              }
+              case 'once': {
+                const isAllowedKey = `APPROVAL_POLICY::${chatId}--${client}`;
+                const isAllowed = await window.electron.store.get(isAllowedKey);
 
-                await window.electron.store.set(isAllowedKey, allow);
+                if (typeof isAllowed !== 'boolean') {
+                  const allow = await MCPServerApprovalPolicyDialog.open({
+                    toolName: client,
+                    toolType: server.type,
+                    methodName: name,
+                    parameters: readResult.tool.args,
+                  })
+                    .then(() => true)
+                    .catch(() => false);
 
-                if (!allow) {
+                  await window.electron.store.set(isAllowedKey, allow);
+
+                  if (!allow) {
+                    toolCallsResult = toolCallsCanclledResult;
+                  }
+                } else if (isAllowed === false) {
                   toolCallsResult = toolCallsCanclledResult;
                 }
-              } else if (isAllowed === false) {
-                toolCallsResult = toolCallsCanclledResult;
-              }
 
-              break;
-            }
-            default: {
-              break;
+                break;
+              }
+              default: {
+                break;
+              }
             }
           }
 

@@ -108,7 +108,19 @@ export default class AnthropicChatService
 
       await Promise.all(
         contentParts.map(async (block: MCPContentBlock) => {
-          convertedBlocks.push(await MCPContentBlockConverter.convert(block));
+          convertedBlocks.push(
+            await MCPContentBlockConverter.convert(block, (uri) => {
+              return window.electron.mcp
+                .readResource(tool.name.split('--')[0], uri)
+                .then((result) => {
+                  if (result.isError) {
+                    return [];
+                  }
+
+                  return result.contents;
+                });
+            }),
+          );
         }),
       );
 

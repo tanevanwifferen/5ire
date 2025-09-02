@@ -83,7 +83,17 @@ export default class GoogleChatService
 
       const convertedBlocks = await Promise.all(
         content.map((block: MCPContentBlock) =>
-          MCPContentBlockConverter.convert(block),
+          MCPContentBlockConverter.convert(block, (uri) => {
+            return window.electron.mcp
+              .readResource(tool.name.split('--')[0], uri)
+              .then((result) => {
+                if (result.isError) {
+                  return [];
+                }
+
+                return result.contents;
+              });
+          }),
         ),
       );
 

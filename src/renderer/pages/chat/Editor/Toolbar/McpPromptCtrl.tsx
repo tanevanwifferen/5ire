@@ -206,6 +206,7 @@ export default function McpPromptCtrl({
     if (prompt && promptItem) {
       onTrigger?.({
         name: promptItem.name,
+        source: promptItem.client,
         description: promptItem.description,
         messages: prompt.messages,
       });

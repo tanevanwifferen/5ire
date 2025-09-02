@@ -67,6 +67,7 @@ type TriggerPrompt =
   | string
   | {
       name: string;
+      source: string;
       description?: string;
       messages: { role: string; content: MCPContentBlock }[];
     };
@@ -353,6 +354,17 @@ export default function Chat() {
               async (message) => {
                 const converted = await MCPContentBlockConverter.convert(
                   message.content,
+                  async (uri) => {
+                    return window.electron.mcp
+                      .readResource(triggerPrompt.source, uri)
+                      .then((result) => {
+                        if (result.isError) {
+                          return [];
+                        }
+
+                        return result.contents;
+                      });
+                  },
                 );
 
                 return {
@@ -364,6 +376,11 @@ export default function Chat() {
                   ],
                   raw: {
                     type: 'mcp-prompts',
+                    prompt: {
+                      name: triggerPrompt.name,
+                      description: triggerPrompt.description,
+                      source: triggerPrompt.source,
+                    },
                     content: [message.content],
                     convertedContent: [converted],
                   },
@@ -633,7 +650,32 @@ ${prompt}
 
   useEffect(() => {
     bus.current.on('retry', async (event: any) => {
-      await onSubmit(event.prompt, event.msgId);
+      const message = event as IChatMessage;
+
+      if (message.structuredPrompts) {
+        const prompts = JSON.parse(
+          message.structuredPrompts,
+        ) as Array<StructuredPrompt>;
+
+        const prompt = {
+          name: message.prompt.startsWith('/')
+            ? message.prompt.slice(1)
+            : message.prompt,
+          messages: prompts.map((msg) => {
+            return {
+              role: msg.role,
+              content: msg.raw.content[0],
+            };
+          }),
+        };
+
+        onSubmit(prompt, message.id);
+      } else {
+        onSubmit(message.prompt, message.id);
+      }
+
+      // console.log('message', event);
+      // await onSubmit(event.prompt, event.msgId);
     });
     return () => {
       bus.current.off('retry');
@@ -673,7 +715,7 @@ ${prompt}
                 <div id="messages" ref={ref} className="overflow-y-auto h-full">
                   {messages.length ? (
                     <div className="mx-auto max-w-screen-md px-5">
-                      <MemoizedMessages messages={messages} />
+                      <MemoizedMessages messages={messages} isReady={isReady} />
                     </div>
                   ) : (
                     isReady || (

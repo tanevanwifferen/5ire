@@ -156,7 +156,10 @@ export class ContentBlockConverter {
 
     // TODO: Use FFmpeg to convert other unsupported formats
     if (!SUPPORTED_AUDIO_MIMETYPES.includes(mimeType as any)) {
-      throw new UnsupportedError('Unsupported audio mimetype');
+      return this.convertTextBlock({
+        type: 'text',
+        text: `[Resource not supported: mimetype=${mimeType}]`,
+      });
     }
 
     return {
@@ -231,7 +234,10 @@ export class ContentBlockConverter {
       }
 
       if (!mimeType) {
-        throw new UnsupportedError('Unknown resource mimetype');
+        return this.convertTextBlock({
+          type: 'text',
+          text: `[Resource not supported: uri="${resource.uri}" mimetype=${mimeType}]`,
+        });
       }
 
       if (mimeType.startsWith('image/')) {
@@ -310,10 +316,16 @@ export class ContentBlockConverter {
       }
     }
 
-    throw new UnsupportedError('Unsupported resource type');
+    return this.convertTextBlock({
+      type: 'text',
+      text: `[Resource not supported: uri="${resource.uri}"]`,
+    });
   }
 
-  private async convertResourceLinkBlock(block: ResourceLinkBlock) {
+  private async convertResourceLinkBlock(
+    block: ResourceLinkBlock,
+    readResource: (uri: string) => Promise<ResourceBlock[]>,
+  ) {
     if (block.uri.startsWith('data:')) {
       const mimeType = block.uri.split(';')[0].split(':')[1];
 
@@ -355,46 +367,10 @@ export class ContentBlockConverter {
       }
     }
 
-    let url: URL | undefined;
+    const contents = await readResource(block.uri);
 
-    try {
-      url = new URL(block.uri);
-    } catch (e) {
-      //
-    }
-
-    if (block.mimeType?.startsWith('image/') && block.uri.startsWith('http')) {
-      return {
-        type: 'image',
-        source: {
-          type: 'url',
-          url: await this.imageToBase64PNG(block.uri),
-          mimeType: 'image/png',
-        },
-      } satisfies FinalImageBlock;
-    }
-
-    if (url && ['file:', 'http:', 'https:'].includes(url.protocol)) {
-      try {
-        const content = await window.electron.documentLoader.loadFromURI(
-          block.uri,
-        );
-
-        return {
-          type: 'text',
-          text: [
-            `[Document Start]`,
-            `URI: ${block.uri}`,
-            `Content:`,
-            `"""`,
-            `${content.map((c) => c.text).join('\n\n')}`,
-            `"""`,
-            `[Document End]`,
-          ].join('\n'),
-        } satisfies FinalTextBlock;
-      } catch (e) {
-        //
-      }
+    if (contents.length) {
+      return this.convertResourceBlock(contents[0]);
     }
 
     // De-escalation
@@ -411,7 +387,10 @@ export class ContentBlockConverter {
     } satisfies FinalTextBlock;
   }
 
-  public async convert(block: ContentBlock): Promise<FinalContentBlock> {
+  public async convert(
+    block: ContentBlock,
+    readResource: (uri: string) => Promise<ResourceBlock[]>,
+  ): Promise<FinalContentBlock> {
     switch (block.type) {
       case 'text': {
         return this.convertTextBlock(block);
@@ -426,7 +405,7 @@ export class ContentBlockConverter {
         return this.convertResourceBlock(block);
       }
       case 'resource_link': {
-        return this.convertResourceLinkBlock(block);
+        return this.convertResourceLinkBlock(block, readResource);
       }
       default: {
         throw new UnsupportedError('Unknown content block type.');
@@ -443,12 +422,15 @@ export class ContentBlockConverter {
    * @param block - The content block returned by MCP.
    * @returns A promise that resolves to the converted content block.
    */
-  static async convert(block: ContentBlock) {
+  static async convert(
+    block: ContentBlock,
+    readResource: (uri: string) => Promise<ResourceBlock[]>,
+  ) {
     if (!ContentBlockConverter.#instance) {
       ContentBlockConverter.#instance = new ContentBlockConverter();
     }
 
-    return ContentBlockConverter.#instance.convert(block);
+    return ContentBlockConverter.#instance.convert(block, readResource);
   }
 
   /**

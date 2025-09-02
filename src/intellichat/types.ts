@@ -284,6 +284,23 @@ export type StructuredPrompt = {
      */
     type: 'mcp-prompts';
     /**
+     * Original MCP Prompt metadata.
+     */
+    prompt: {
+      /**
+       * The prompt name.
+       */
+      name: string;
+      /**
+       * The prompt description.
+       */
+      description?: string;
+      /**
+       * The MCP client key.
+       */
+      source: string;
+    };
+    /**
      * Original content blocks returned by the MCP Prompt.
      */
     content: ContentBlock[];

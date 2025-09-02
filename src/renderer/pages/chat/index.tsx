@@ -67,6 +67,7 @@ type TriggerPrompt =
   | string
   | {
       name: string;
+      source: string;
       description?: string;
       messages: { role: string; content: MCPContentBlock }[];
     };
@@ -250,8 +251,6 @@ export default function Chat() {
         return;
       }
 
-      console.log(prompt);
-
       const triggerPrompt = prompt as TriggerPrompt;
 
       if (typeof triggerPrompt === 'string' && triggerPrompt.trim() === '') {
@@ -355,6 +354,17 @@ export default function Chat() {
               async (message) => {
                 const converted = await MCPContentBlockConverter.convert(
                   message.content,
+                  async (uri) => {
+                    return window.electron.mcp
+                      .readResource(triggerPrompt.source, uri)
+                      .then((result) => {
+                        if (result.isError) {
+                          return [];
+                        }
+
+                        return result.contents;
+                      });
+                  },
                 );
 
                 return {
@@ -366,6 +376,11 @@ export default function Chat() {
                   ],
                   raw: {
                     type: 'mcp-prompts',
+                    prompt: {
+                      name: triggerPrompt.name,
+                      description: triggerPrompt.description,
+                      source: triggerPrompt.source,
+                    },
                     content: [message.content],
                     convertedContent: [converted],
                   },

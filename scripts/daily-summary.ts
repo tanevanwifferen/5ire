@@ -4,7 +4,7 @@
 //   - OPENAI_BASE_URL：LLM API 地址（可替换为自建网关）
 //   - LARK_WEBHOOK_URL：飞书自定义机器人 Webhook （也可替换为其他通知 Webhook ）
 // 可选：
-//   - PER_BRANCH_LIMIT：每个分支最多统计的“今日提交”条数（默认 200）
+//   - PER_BRANCH_LIMIT：每个分支最多统计的"今日提交"条数（默认 200）
 //   - DIFF_CHUNK_MAX_CHARS：单次送模的最大字符数（默认 80000）
 //   - MODEL_NAME：指定模型名称（默认 gpt-4.1-mini）
 //   - REPO：owner/repo（Actions 内自动注入）
@@ -30,6 +30,11 @@ if (!OPENAI_API_KEY) {
 }
 
 // ------- 工具函数 -------
+/**
+ * Executes a shell command synchronously and returns the trimmed output
+ * @param {string} cmd - The shell command to execute
+ * @returns {string} The trimmed stdout output from the command
+ */
 function sh(cmd: string) {
   return execSync(cmd, {
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -63,11 +68,19 @@ const remoteBranches = sh(
 
 // 分支白名单/黑名单（如需）：在此可用正则筛选 remoteBranches
 
+/**
+ * Represents metadata for a git commit
+ */
 type CommitMeta = {
+  /** The commit SHA hash */
   sha: string;
+  /** The commit title/message */
   title: string;
+  /** The commit author name */
   author: string;
+  /** The URL to view the commit */
   url: string;
+  /** Array of branch names that contain this commit */
   branches: string[]; // 该提交归属的分支集合
 };
 
@@ -143,6 +156,11 @@ const FILE_EXCLUDES = [
   ':!**/*.min.*',
 ];
 
+/**
+ * Gets the parent SHA of a given commit
+ * @param {string} sha - The commit SHA to find the parent for
+ * @returns {string} The parent commit SHA, or undefined for root commits
+ */
 function getParentSha(sha: string) {
   const line = sh(`git rev-list --parents -n 1 ${sha} || true`);
   const parts = line.split(' ').filter(Boolean);
@@ -150,6 +168,11 @@ function getParentSha(sha: string) {
   return parts[1];
 }
 
+/**
+ * Gets the git diff for a specific commit
+ * @param {string} sha - The commit SHA to get the diff for
+ * @returns {string} The git diff output
+ */
 function getDiff(sha: string) {
   const parent = getParentSha(sha);
   const base = parent || sh(`git hash-object -t tree /dev/null`);
@@ -160,12 +183,23 @@ function getDiff(sha: string) {
   return diff;
 }
 
+/**
+ * Splits a git patch into separate file parts
+ * @param {string} patch - The git patch content
+ * @returns {string[]} Array of individual file patches
+ */
 function splitPatchByFile(patch: string): string[] {
   if (!patch) return [];
   const parts = patch.split(/^diff --git.*$/m);
   return parts.map((p) => p.trim()).filter(Boolean);
 }
 
+/**
+ * Chunks an array of strings by character size limit
+ * @param {string[]} parts - Array of strings to chunk
+ * @param {number} limit - Maximum character limit per chunk
+ * @returns {string[]} Array of chunked strings
+ */
 function chunkBySize(parts: string[], limit = DIFF_CHUNK_MAX_CHARS): string[] {
   const out: string[] = [];
   let buf = '';
@@ -191,12 +225,23 @@ function chunkBySize(parts: string[], limit = DIFF_CHUNK_MAX_CHARS): string[] {
 }
 
 // ------- OpenAI Chat API -------
+/**
+ * Represents the payload structure for OpenAI Chat API
+ */
 type ChatPayload = {
+  /** The model name to use */
   model: string;
+  /** Array of chat messages */
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
+  /** Temperature setting for response randomness */
   temperature?: number;
 };
 
+/**
+ * Sends a chat request to OpenAI API
+ * @param {string} prompt - The prompt to send to the AI
+ * @returns {Promise<string>} The AI response content
+ */
 async function chat(prompt: string): Promise<string> {
   const payload: ChatPayload = {
     model: MODEL_NAME,
@@ -249,6 +294,14 @@ async function chat(prompt: string): Promise<string> {
 }
 
 // ------- 提示词 -------
+/**
+ * Generates a prompt for analyzing a commit diff chunk
+ * @param {CommitMeta} meta - The commit metadata
+ * @param {number} partIdx - The current part index (1-based)
+ * @param {number} total - Total number of parts
+ * @param {string} patch - The diff patch content
+ * @returns {string} The formatted prompt
+ */
 function commitChunkPrompt(
   meta: CommitMeta,
   partIdx: number,
@@ -276,6 +329,12 @@ ${patch}
 === DIFF PART END ===`;
 }
 
+/**
+ * Generates a prompt for merging multiple commit chunk summaries
+ * @param {CommitMeta} meta - The commit metadata
+ * @param {string[]} parts - Array of chunk summaries to merge
+ * @returns {string} The formatted prompt
+ */
 function commitMergePrompt(meta: CommitMeta, parts: string[]) {
   const joined = parts.map((p, i) => `【片段${i + 1}】\n${p}`).join('\n\n');
   return `下面是提交 ${meta.sha.slice(0, 7)} 的各片段小结，请合并为**单条提交**的最终摘要（中文），输出以下小节：
@@ -285,13 +344,20 @@ function commitMergePrompt(meta: CommitMeta, parts: string[]) {
 - 测试建议
 - 面向用户的可见影响（如有）
 
-请避免重复、合并同类项，标注“可能不完整”当某些片段缺失或被截断。
+请避免重复、合并同类项，标注"可能不完整"当某些片段缺失或被截断。
 
 === 片段小结集合 BEGIN ===
 ${joined}
 === 片段小结集合 END ===`;
 }
 
+/**
+ * Generates a prompt for creating a daily summary report
+ * @param {string} dateLabel - The date label for the report
+ * @param {Array} items - Array of commit metadata and summaries
+ * @param {string} repo - The repository name
+ * @returns {string} The formatted prompt
+ */
 function dailyMergePrompt(
   dateLabel: string,
   items: { meta: CommitMeta; summary: string }[],
@@ -300,12 +366,11 @@ function dailyMergePrompt(
   const body = items
     .map(
       (it) =>
-        `[${it.meta.sha.slice(0, 7)}] ${it.meta.title} — ${it.meta.author} — ${it.meta.branches.join(', ')}
-${it.summary}`,
+        `[${it.meta.sha.slice(0, 7)}] ${it.meta.title} — ${it.meta.author} — ${it.meta.branches.join(', ')}\n${it.summary}`,
     )
     .join('\n\n---\n\n');
 
-  return `请将以下“当日各提交摘要”整合成**当日开发变更日报（中文）**，输出结构如下：
+  return `请将以下"当日各提交摘要"整合成**当日开发变更日报（中文）**，输出结构如下：
 # ${dateLabel} 开发变更日报（${repo})
 1. 今日概览（不超过5条）
 2. **按分支**的关键改动清单（每条含模块/影响、是否潜在破坏性）
@@ -319,6 +384,11 @@ ${body}
 }
 
 // ------- 飞书 Webhook -------
+/**
+ * Posts a message to Lark (Feishu) webhook
+ * @param {string} text - The text content to send
+ * @returns {Promise<void>} Promise that resolves when the message is sent
+ */
 async function postToLark(text: string) {
   if (!LARK_WEBHOOK_URL) {
     console.log(`LARK_WEBHOOK_URL 未配置，以下为最终日报文本：\n\n${text}`);
@@ -378,7 +448,7 @@ async function postToLark(text: string) {
       }
     }
 
-    // 合并为“单提交摘要”
+    // 合并为"单提交摘要"
     let merged = '';
     try {
       // eslint-disable-next-line no-await-in-loop
@@ -395,7 +465,7 @@ async function postToLark(text: string) {
     timeZone: 'America/Los_Angeles',
   });
 
-  // 汇总“当日总览”
+  // 汇总"当日总览"
   let daily = '';
   try {
     daily = await chat(

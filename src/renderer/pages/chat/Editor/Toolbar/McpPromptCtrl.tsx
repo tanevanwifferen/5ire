@@ -37,20 +37,39 @@ import { decodePromptId, encodePromptId } from 'intellichat/mcp/ids';
 import MCPPromptContentPreview from '../../MCPPromptContentPreview';
 import McpPromptVariableDialog from '../McpPromptVariableDialog';
 
+/**
+ * Bundled icon for the prompt control button
+ */
 const PromptIcon = bundleIcon(
   CommentMultipleLinkFilled,
   CommentMultipleLinkRegular,
 );
 
+/**
+ * Props interface for the McpPromptCtrl component
+ */
+interface McpPromptCtrlProps {
+  /** The chat instance to associate with the prompt */
+  chat: IChat;
+  /** Whether the control should be disabled */
+  disabled?: boolean;
+  /** Callback function triggered when a prompt is selected and applied */
+  onTrigger?: (prompt: unknown) => void;
+}
+
+/**
+ * A React component that provides a dialog interface for browsing and selecting MCP prompts.
+ * Displays available prompts from MCP servers, handles variable input for parameterized prompts,
+ * and triggers the selected prompt through a callback.
+ * 
+ * @param props - The component props
+ * @returns JSX element containing the prompt control dialog
+ */
 export default function McpPromptCtrl({
   chat,
   disabled,
   onTrigger,
-}: {
-  chat: IChat;
-  disabled?: boolean;
-  onTrigger?: (prompt: unknown) => void;
-}) {
+}: McpPromptCtrlProps) {
   const { t } = useTranslation();
   const { notifyError } = useToast();
   const [loadingList, setLoadingList] = useState<boolean>(false);
@@ -63,11 +82,18 @@ export default function McpPromptCtrl({
   const [options, setOptions] = useState<IMCPPromptListItem[]>([]);
   const [prompt, setPrompt] = useState<IMCPPrompt | null>(null);
 
+  /**
+   * Closes the main prompt dialog and unbinds keyboard shortcuts
+   */
   const closeDialog = () => {
     setOpen(false);
     Mousetrap.unbind('esc');
   };
 
+  /**
+   * Opens the main prompt dialog, loads available prompts from MCP servers,
+   * and sets up keyboard shortcuts
+   */
   const openDialog = () => {
     setOpen(true);
     setLoadingList(true);
@@ -86,6 +112,12 @@ export default function McpPromptCtrl({
     Mousetrap.bind('esc', closeDialog);
   };
 
+  /**
+   * Applies a selected prompt by decoding its ID and either showing the variable dialog
+   * for parameterized prompts or directly fetching the prompt content
+   * 
+   * @param promptName - The encoded prompt identifier containing server and prompt name
+   */
   const applyPrompt = async (promptName: string) => {
     const { server, prompt: name } = decodePromptId(promptName);
     const group = options.find((option) => option.client === server);
@@ -115,6 +147,9 @@ export default function McpPromptCtrl({
     window.electron.ingestEvent([{ app: 'apply-mcp-prompt' }]);
   };
 
+  /**
+   * Resets all prompt-related state and closes dialogs
+   */
   const removePrompt = useCallback(() => {
     setOpen(false);
     setPromptItem(null);
@@ -122,11 +157,19 @@ export default function McpPromptCtrl({
     setVariableDialogOpen(false);
   }, []);
 
+  /**
+   * Handles cancellation of the variable input dialog
+   */
   const onVariablesCancel = useCallback(() => {
     setPromptItem(null);
     setVariableDialogOpen(false);
   }, [setPromptItem]);
 
+  /**
+   * Handles confirmation of variable input and fetches the prompt with provided arguments
+   * 
+   * @param args - Key-value pairs of variable names and their values
+   */
   const onVariablesConfirm = useCallback(
     async (args: { [key: string]: string }) => {
       if (isNil(promptItem)) {
@@ -150,6 +193,9 @@ export default function McpPromptCtrl({
     [promptItem, chat.id],
   );
 
+  /**
+   * Sets up keyboard shortcut for opening the dialog
+   */
   useEffect(() => {
     Mousetrap.bind('mod+shift+2', openDialog);
     return () => {
@@ -157,6 +203,11 @@ export default function McpPromptCtrl({
     };
   }, [open]);
 
+  /**
+   * Renders the dropdown options for available prompts, grouped by MCP server
+   * 
+   * @returns JSX elements representing the prompt options
+   */
   const renderOptions = useCallback(() => {
     if (loadingList) {
       return (
@@ -189,6 +240,11 @@ export default function McpPromptCtrl({
     ));
   }, [loadingList, options]);
 
+  /**
+   * Renders the preview of the selected prompt content
+   * 
+   * @returns JSX element showing the prompt preview or placeholder message
+   */
   const renderPrompt = useCallback(() => {
     if (!prompt) {
       return (
@@ -202,6 +258,10 @@ export default function McpPromptCtrl({
     );
   }, [prompt, t]);
 
+  /**
+   * Handles submission of the selected prompt by triggering the callback
+   * and resetting the component state
+   */
   const onSubmit = useCallback(async () => {
     if (prompt && promptItem) {
       onTrigger?.({

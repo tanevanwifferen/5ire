@@ -4,15 +4,33 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * Props for the MCPPromptContentPreview component
+ */
 export type MCPPromptContentPreviewProps = {
+  /** Array of messages from MCP prompt result to be displayed */
   messages: GetPromptResult['messages'];
 };
 
+/**
+ * React component that renders MCP prompt content with support for multiple content types.
+ * Displays messages in fieldsets with role-based legends and renders content based on type.
+ * 
+ * @param props - Component props containing messages to render
+ * @returns JSX elements representing the rendered prompt content
+ */
 export default function MCPPromptContentPreview(
   props: MCPPromptContentPreviewProps,
 ) {
   const { t } = useTranslation();
 
+  /**
+   * Renders individual content blocks based on their type.
+   * Supports image, audio, text, resource, and resource_link content types.
+   * 
+   * @param content - The content block to render
+   * @returns JSX element representing the rendered content
+   */
   const renderContent = (content: ContentBlock) => {
     if (content.type === 'image') {
       return (

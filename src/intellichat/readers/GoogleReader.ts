@@ -6,7 +6,17 @@ import { IReadResult, ITool } from './IChatReader';
 
 const debug = Debug('5ire:intellichat:GoogleReader');
 
+/**
+ * Reader implementation for Google's chat API responses.
+ * Handles parsing of streaming responses from Google's chat services.
+ * @extends BaseReader
+ */
 export default class GoogleReader extends BaseReader {
+  /**
+   * Parses a JSON chunk from Google's API response into a standardized chat message format.
+   * @param {string} chunk - Raw JSON string chunk from the API response
+   * @returns {IChatResponseMessage} Parsed chat response message with content, tokens, and tool calls
+   */
   protected parseReply(chunk: string): IChatResponseMessage {
     const _chunk = chunk.trim();
     try {
@@ -36,6 +46,11 @@ export default class GoogleReader extends BaseReader {
     }
   }
 
+  /**
+   * Extracts tool information from a chat response message.
+   * @param {IChatResponseMessage} respMsg - The response message containing potential tool calls
+   * @returns {ITool | null} Tool object with id, name, and arguments, or null if no tool calls present
+   */
   protected parseTools(respMsg: IChatResponseMessage): ITool | null {
     if (respMsg.toolCalls) {
       return {
@@ -47,6 +62,11 @@ export default class GoogleReader extends BaseReader {
     return null;
   }
 
+  /**
+   * Parses tool arguments from a response message into a structured format.
+   * @param {IChatResponseMessage} respMsg - The response message containing tool calls
+   * @returns {{ index: number; args: string } | null} Object with index and arguments, or null if no tool calls
+   */
   protected parseToolArgs(respMsg: IChatResponseMessage): {
     index: number;
     args: string;
@@ -60,6 +80,15 @@ export default class GoogleReader extends BaseReader {
     return null;
   }
 
+  /**
+   * Reads and processes the streaming response from Google's API.
+   * Handles chunked JSON data, accumulates content, and triggers callbacks for progress and tool calls.
+   * @param {Object} callbacks - Object containing callback functions
+   * @param {Function} callbacks.onError - Called when an error occurs during reading
+   * @param {Function} callbacks.onProgress - Called with each content chunk as it's processed
+   * @param {Function} callbacks.onToolCalls - Called when tool calls are detected
+   * @returns {Promise<IReadResult>} Promise resolving to the complete read result with content, tools, and token counts
+   */
   public async read({
     onError,
     onProgress,

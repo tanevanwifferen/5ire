@@ -23,14 +23,35 @@ import DOMPurify from 'dompurify';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const debug = Debug('5ire:components:SearchDialog');
 
+/**
+ * Represents a search result item containing matched content from chat messages.
+ */
 interface ISearchResultItem {
+  /** Unique identifier for the search result item */
   key: string;
+  /** ID of the chat containing the matched content */
   chatId: string;
+  /** HTML content snippet with highlighted search terms */
   content: string;
 }
 
+/**
+ * Extracts text snippets from chat messages that contain the specified keywords,
+ * highlighting the matched terms with HTML mark tags.
+ * 
+ * @param msgs - Array of chat messages to search through
+ * @param keywords - Array of keywords to search for in the messages
+ * @returns Array of search result items with highlighted content snippets
+ */
 const extractMatchedSnippet = (msgs: IChatMessage[], keywords: string[]) => {
   const radius = 50;
+  /**
+   * Extracts text snippets around matched keywords with highlighting.
+   * 
+   * @param text - The text content to search within
+   * @param words - Array of words to search for and highlight
+   * @returns HTML string with highlighted keywords and surrounding context
+   */
   const extract = (text: string, words: string[]) => {
     const indices = words
       .map((word) => {
@@ -86,6 +107,15 @@ const extractMatchedSnippet = (msgs: IChatMessage[], keywords: string[]) => {
   return result;
 };
 
+/**
+ * A modal dialog component that provides search functionality across all chat messages.
+ * Users can search for keywords and navigate to specific chat messages containing those terms.
+ * 
+ * @param args - Component props
+ * @param args.open - Whether the dialog is currently open
+ * @param args.setOpen - Function to control the dialog's open state
+ * @returns The SearchDialog component
+ */
 export default function SearchDialog(args: {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -145,6 +175,12 @@ export default function SearchDialog(args: {
     [],
   );
 
+  /**
+   * Handles changes to the search input field and triggers the search operation.
+   * 
+   * @param ev - The change event from the input element
+   * @param data - Additional data from the Fluent UI Input component
+   */
   const onKeywordChange = (
     ev: ChangeEvent<HTMLInputElement>,
     data: InputOnChangeData,
@@ -153,6 +189,12 @@ export default function SearchDialog(args: {
     search(data.value);
   };
 
+  /**
+   * Navigates to a specific chat message and closes the search dialog.
+   * 
+   * @param chatId - ID of the chat to navigate to
+   * @param key - Specific message key within the chat
+   */
   const jumpTo = useCallback((chatId: string, key: string) => {
     navigate(`/chats/${chatId}/${key}`);
     setOpen(false);

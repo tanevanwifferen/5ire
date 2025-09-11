@@ -29,6 +29,16 @@ import { isValidHttpHRL, isValidMCPServerKey } from 'utils/validators';
 import useMCPStore from 'stores/useMCPStore';
 import useToast from 'hooks/useToast';
 
+/**
+ * Dialog component for editing or creating remote MCP servers.
+ * Provides a form interface for configuring server details including URL, headers, and approval policies.
+ * 
+ * @param {Object} options - Configuration options for the dialog
+ * @param {IMCPServer | null} options.server - Existing server to edit, or null for creating new server
+ * @param {boolean} options.open - Controls dialog visibility
+ * @param {Function} options.setOpen - Function to control dialog open/close state
+ * @returns {JSX.Element} The rendered dialog component
+ */
 export default function ToolEditDialog(options: {
   server: IMCPServer | null;
   open: boolean;
@@ -90,6 +100,11 @@ export default function ToolEditDialog(options: {
     approvalPolicy,
   ]);
 
+  /**
+   * Adds a new HTTP header to the headers collection.
+   * Only adds the header if both name and value are non-empty after trimming.
+   * Clears the header input fields after successful addition.
+   */
   const addHeader = useCallback(() => {
     if (headerName.trim() === '' || headerValue.trim() === '') {
       return;
@@ -102,6 +117,12 @@ export default function ToolEditDialog(options: {
     setHeaderValue('');
   }, [headerName, headerValue]);
 
+  /**
+   * Validates form data and submits the server configuration.
+   * Performs validation on key and URL fields, then either creates a new server
+   * or updates an existing one based on the server prop.
+   * Shows success/error notifications based on the operation result.
+   */
   const submit = useCallback(async () => {
     let isValid = true;
     if (!isValidMCPServerKey(key)) {
@@ -140,6 +161,11 @@ export default function ToolEditDialog(options: {
     approvalPolicy,
   ]);
 
+  /**
+   * Effect hook that initializes form fields when dialog opens with an existing server,
+   * and cleans up form state when dialog closes.
+   * Populates all form fields with server data when editing, or resets to defaults when creating new.
+   */
   useEffect(() => {
     if (open && server) {
       setName(server.name || '');
@@ -246,6 +272,13 @@ export default function ToolEditDialog(options: {
                     className="w-full min-w-fit"
                     placeholder={t('Common.Optional')}
                     value={description}
+                    /**
+                     * Handles changes to the description input field.
+                     * Updates the description state with the new input value.
+                     * 
+                     * @param {ChangeEvent<HTMLInputElement>} _ - The change event (unused)
+                     * @param {InputOnChangeData} data - The input change data containing the new value
+                     */
                     onChange={(
                       _: ChangeEvent<HTMLInputElement>,
                       data: InputOnChangeData,
@@ -268,6 +301,13 @@ export default function ToolEditDialog(options: {
                   <RadioGroup
                     value={approvalPolicy}
                     layout="horizontal"
+                    /**
+                     * Handles changes to the approval policy radio group selection.
+                     * Updates the approval policy state with the selected value.
+                     * 
+                     * @param {any} _ - The change event (unused)
+                     * @param {any} data - The radio group change data containing the selected value
+                     */
                     onChange={(_, data) => {
                       setApprovalPolicy(data.value as MCPServerApprovalPolicy);
                     }}
@@ -304,6 +344,13 @@ export default function ToolEditDialog(options: {
                     className="w-full min-w-fit"
                     placeholder={t('Common.Required')}
                     value={url}
+                    /**
+                     * Handles input changes to the URL field.
+                     * Updates the URL state and performs real-time validation,
+                     * setting validation state to error if URL is empty.
+                     * 
+                     * @param {ChangeEvent<HTMLInputElement>} event - The input change event
+                     */
                     onInput={(event: ChangeEvent<HTMLInputElement>) => {
                       const val = event.target.value;
                       setUrl(val);

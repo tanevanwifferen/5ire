@@ -35,12 +35,12 @@ import useToast from 'hooks/useToast';
  * @returns {string[]} Array of parsed command arguments with quotes removed
  */
 const parseCommand = (cmd: string) => {
-  const regex = /[^\s\"']+|\"([^\"]*)\"|'([^']*)'/g;
+  const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
 
   const matches = cmd.match(regex) || [];
 
   return matches.map((match) => {
-    return match.replace(/^['\"](.*)['\"]$/, '$1');
+    return match.replace(/^['"](.*)['"]$/, '$1');
   });
 };
 

@@ -62,7 +62,9 @@ export default class GoogleChatService
       parts.push({
         functionResponse: {
           name: tool.name,
-          content: toolResult,
+          response: {
+            content: toolResult,
+          },
         },
       });
     }
@@ -71,7 +73,9 @@ export default class GoogleChatService
       parts.push({
         functionResponse: {
           name: tool.name,
-          content: JSON.stringify(toolResult.error),
+          response: {
+            content: JSON.stringify(toolResult.error),
+          },
         },
       });
     }
@@ -101,14 +105,18 @@ export default class GoogleChatService
         parts.push({
           functionResponse: {
             name: tool.name,
-            content: convertedBlocks.map((item) => item.text).join('\n\n\n'),
+            response: {
+              content: convertedBlocks.map((item) => item.text).join('\n\n\n'),
+            },
           },
         });
       } else {
         parts.push({
           functionResponse: {
             name: tool.name,
-            content: `NOTE: This tool output is only a placeholder. See the following parts of this message for the actual tool result. Please use that for processing.`,
+            response: {
+              content: `NOTE: This tool output is only a placeholder. See the following parts of this message for the actual tool result. Please use that for processing.`,
+            },
           },
         });
 

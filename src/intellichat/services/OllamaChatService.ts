@@ -14,19 +14,42 @@ import INextChatService from './INextCharService';
 import Ollama from '../../providers/Ollama';
 
 const debug = Debug('5ire:intellichat:OllamaChatService');
+
+/**
+ * Chat service implementation for Ollama provider.
+ * Extends OpenAIChatService to provide Ollama-specific functionality including
+ * vision support, tool handling, and message processing.
+ */
 export default class OllamaChatService
   extends OpenAIChatService
   implements INextChatService
 {
+  /**
+   * Creates a new OllamaChatService instance.
+   * @param {string} name - The name of the chat service
+   * @param {IChatContext} context - The chat context containing configuration and state
+   */
   constructor(name: string, context: IChatContext) {
     super(name, context);
     this.provider = Ollama;
   }
 
+  /**
+   * Returns the reader type used for parsing Ollama responses.
+   * @returns {typeof OllamaReader} The OllamaReader class
+   */
   protected getReaderType() {
     return OllamaReader;
   }
 
+  /**
+   * Converts prompt content to the format expected by Ollama.
+   * Handles both text-only and vision-enabled models, processing images
+   * and converting them to base64 format when vision is supported.
+   * @param {string} content - The raw prompt content to convert
+   * @returns {Promise<string | IChatRequestMessageContent[] | Partial<IChatRequestMessageContent>>} 
+   *   The converted content in Ollama format
+   */
   protected async convertPromptContent(
     content: string,
   ): Promise<
@@ -87,6 +110,13 @@ export default class OllamaChatService
     };
   }
 
+  /**
+   * Creates tool messages in Ollama format from tool execution results.
+   * Handles different types of tool results including strings, errors, and MCP content blocks.
+   * @param {ITool} tool - The tool that was executed
+   * @param {any} toolResult - The result returned by the tool execution
+   * @returns {Promise<IChatRequestMessage[]>} Array of messages representing the tool interaction
+   */
   protected async makeToolMessages(tool: ITool, toolResult: any) {
     let supplement: IChatRequestMessage | undefined;
 
@@ -183,6 +213,14 @@ export default class OllamaChatService
     return result;
   }
 
+  /**
+   * Processes and formats messages for Ollama API consumption.
+   * Handles vision-enabled models by converting images to base64 and placing them
+   * in the images field as required by Ollama's API format.
+   * @param {IChatRequestMessage[]} messages - The messages to process
+   * @param {string} [msgId] - Optional message ID for context
+   * @returns {Promise<IChatRequestMessage[]>} The processed messages in Ollama format
+   */
   protected async makeMessages(
     messages: IChatRequestMessage[],
     msgId?: string,
@@ -192,6 +230,10 @@ export default class OllamaChatService
       this.context.getModel().capabilities.vision?.enabled ?? false;
     const processedMessages: IChatRequestMessage[] = [];
 
+    /**
+     * Process each message to handle content formatting and image conversion for Ollama API.
+     * Converts images to base64 format and separates them into the images field when vision is enabled.
+     */
     await Promise.all(
       result.map(async (message) => {
         if (typeof message.content === 'string') {
@@ -259,6 +301,13 @@ export default class OllamaChatService
     return processedMessages;
   }
 
+  /**
+   * Makes an HTTP request to the Ollama API.
+   * Constructs the request URL, headers, and payload for Ollama's chat endpoint.
+   * @param {IChatRequestMessage[]} messages - The messages to send
+   * @param {string} [msgId] - Optional message ID for context
+   * @returns {Promise<Response>} The HTTP response from the Ollama API
+   */
   protected async makeRequest(
     messages: IChatRequestMessage[],
     msgId?: string,

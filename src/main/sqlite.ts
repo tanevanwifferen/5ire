@@ -5,9 +5,16 @@ import path from 'path';
 import * as logging from './logging';
 import { isOneDimensionalArray } from '../utils/util';
 
+/** Database file path in the user data directory */
 const dbPath = path.join(app.getPath('userData'), '5ire.db');
+
+/** SQLite database instance */
 const database = new Database(dbPath);
 
+/**
+ * Creates the folders table if it doesn't exist
+ * Stores folder configurations with AI model settings and knowledge collection references
+ */
 function createTableFolders() {
   database
     .prepare(
@@ -30,6 +37,10 @@ function createTableFolders() {
     .run();
 }
 
+/**
+ * Creates the chats table if it doesn't exist
+ * Stores chat sessions with their configuration and metadata
+ */
 function createTableChats() {
   database
     .prepare(
@@ -56,6 +67,10 @@ function createTableChats() {
     .run();
 }
 
+/**
+ * Creates the messages table if it doesn't exist
+ * Stores individual messages within chats with token usage and citations
+ */
 function createTableMessages() {
   database
     .prepare(
@@ -82,6 +97,10 @@ function createTableMessages() {
     .run();
 }
 
+/**
+ * Creates the bookmarks table if it doesn't exist
+ * Stores bookmarked messages for quick access
+ */
 function createTableBookmarks() {
   database
     .prepare(
@@ -105,6 +124,10 @@ function createTableBookmarks() {
     .run();
 }
 
+/**
+ * Creates the prompts table if it doesn't exist
+ * Stores reusable prompt templates with variables and model configurations
+ */
 function createTablePrompts() {
   database
     .prepare(
@@ -127,6 +150,10 @@ function createTablePrompts() {
     .run();
 }
 
+/**
+ * Creates the usages table if it doesn't exist
+ * Tracks token usage and costs for different AI providers and models
+ */
 function createTableUsages() {
   database
     .prepare(
@@ -145,6 +172,10 @@ function createTableUsages() {
     .run();
 }
 
+/**
+ * Creates the knowledge_collections table if it doesn't exist
+ * Stores collections of knowledge files for RAG functionality
+ */
 function createTableKnowledgeCollections() {
   database
     .prepare(
@@ -161,6 +192,10 @@ function createTableKnowledgeCollections() {
     .run();
 }
 
+/**
+ * Creates the knowledge_files table if it doesn't exist
+ * Stores individual files within knowledge collections
+ */
 function createTableKnowledgeFiles() {
   database
     .prepare(
@@ -181,6 +216,10 @@ function createTableKnowledgeFiles() {
     .run();
 }
 
+/**
+ * Creates the chat_knowledge_rels table if it doesn't exist
+ * Links chats to knowledge collections for context retrieval
+ */
 function createTableChatKnowledgeRels() {
   database
     .prepare(
@@ -196,6 +235,10 @@ function createTableChatKnowledgeRels() {
     .run();
 }
 
+/**
+ * Adds missing columns to the chats table for backward compatibility
+ * Checks for and adds prompt, input, folderId, provider, and name columns if they don't exist
+ */
 function alertTableChats() {
   const columns = database.prepare(`PRAGMA table_info(chats)`).all();
   const hasPromptColumn = columns.some(
@@ -241,6 +284,10 @@ function alertTableChats() {
   }
 }
 
+/**
+ * Adds missing columns to the messages table for backward compatibility
+ * Checks for and adds reasoning and structuredPrompts columns if they don't exist
+ */
 function alertTableMessages() {
   const columns = database.prepare(`PRAGMA table_info(messages)`).all();
   const hasReasoningColumn = columns.some(
@@ -270,6 +317,10 @@ function alertTableMessages() {
   }
 }
 
+/**
+ * Adds missing columns to the bookmarks table for backward compatibility
+ * Checks for and adds reasoning column if it doesn't exist
+ */
 function alertTableBookmarks() {
   const columns = database.prepare(`PRAGMA table_info(bookmarks)`).all();
   const hasReasoningColumn = columns.some(
@@ -283,6 +334,10 @@ function alertTableBookmarks() {
   }
 }
 
+/**
+ * Adds missing columns to the folders table for backward compatibility
+ * Checks for and adds provider column if it doesn't exist
+ */
 function alertTableFolders() {
   const columns = database.prepare(`PRAGMA table_info(folders)`).all();
   const hasProviderColumn = columns.some(
@@ -296,6 +351,10 @@ function alertTableFolders() {
   }
 }
 
+/**
+ * Database initialization transaction that creates all tables and applies schema updates
+ * Runs all table creation and alteration functions in a single transaction
+ */
 const initDatabase = database.transaction(() => {
   logging.debug('Init database...');
 
@@ -323,6 +382,11 @@ const initDatabase = database.transaction(() => {
 database.pragma('journal_mode = WAL'); // performance reason
 initDatabase();
 
+/**
+ * IPC handler for executing SELECT queries and returning all matching rows
+ * @param {Object} data - Contains sql query string and params array
+ * @returns {Array} Array of matching rows or empty array on error
+ */
 ipcMain.handle('db-all', (event, data) => {
   const { sql, params } = data;
   logging.debug('db-all', sql, params);
@@ -334,6 +398,11 @@ ipcMain.handle('db-all', (event, data) => {
   }
 });
 
+/**
+ * IPC handler for executing INSERT, UPDATE, or DELETE queries
+ * @param {Object} data - Contains sql query string and params array
+ * @returns {boolean} True if successful, false on error
+ */
 ipcMain.handle('db-run', (_, data) => {
   const { sql, params } = data;
   logging.debug('db-run', sql, params);
@@ -346,6 +415,11 @@ ipcMain.handle('db-run', (_, data) => {
   }
 });
 
+/**
+ * IPC handler for executing multiple database operations in a single transaction
+ * @param {Array} data - Array of objects containing sql and params for each operation
+ * @returns {Promise<boolean>} Promise resolving to true if successful, false on error
+ */
 ipcMain.handle('db-transaction', (_, data: any[]) => {
   logging.debug('db-transaction', JSON.stringify(data, null, 2));
   const tasks: { statement: Statement; params: any[] }[] = [];
@@ -376,6 +450,11 @@ ipcMain.handle('db-transaction', (_, data: any[]) => {
   });
 });
 
+/**
+ * IPC handler for executing SELECT queries and returning the first matching row
+ * @param {Object} data - Contains sql query string and id parameter
+ * @returns {Object|null} First matching row or null if not found or on error
+ */
 ipcMain.handle('db-get', (_, data) => {
   const { sql, id } = data;
   logging.debug('db-get', sql, id);

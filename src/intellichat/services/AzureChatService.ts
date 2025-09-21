@@ -44,7 +44,7 @@ export default class AzureChatService
     );
     const headers = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${provider.apiKey.trim()}`,
+      'api-key': provider.apiKey.trim(),
     };
     const isStream = this.context.isStream();
     const payload = await this.makePayload(messages, msgId);

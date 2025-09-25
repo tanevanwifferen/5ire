@@ -156,7 +156,6 @@ const chatModels = [
         enabled: true,
       },
     },
-    isDefault: false,
     description: `o3 is a well-rounded and powerful model across domains. It sets a new standard for math, science, coding, and visual reasoning tasks. It also excels at technical writing and instruction-following. Use it to think through multi-step problems that involve analysis across text, code, and images.`,
   },
   {
@@ -173,7 +172,6 @@ const chatModels = [
         enabled: true,
       },
     },
-    isDefault: false,
     description: `o3-mini is OpenAI's most recent small reasoning model, providing high intelligence at the same cost and latency targets of o1-min`,
   },
   {
@@ -190,7 +188,6 @@ const chatModels = [
         enabled: true,
       },
     },
-    isDefault: false,
     description: `o4-mini is OpenAI's latest small o-series model. It's optimized for fast, effective reasoning with exceptionally efficient performance in coding and visual tasks.`,
   },
   {
@@ -212,7 +209,6 @@ const chatModels = [
         allowUrl: true,
       },
     },
-    isDefault: true,
     description: `GPT-4.1 is OpenAI's flagship model for complex tasks. It is well suited for problem solving across domains.`,
   },
   {
@@ -234,7 +230,6 @@ const chatModels = [
         allowUrl: true,
       },
     },
-    isDefault: true,
     description: `GPT-4.1 nano is the fastest, most cost-effective GPT-4.1 model.`,
   },
   {
@@ -256,7 +251,6 @@ const chatModels = [
         allowUrl: true,
       },
     },
-    isDefault: true,
     description: `GPT-4.1 mini provides a balance between intelligence, speed, and cost that makes it an attractive model for many use cases.`,
   },
   {

@@ -184,6 +184,9 @@ const chatModels = [
     inputPrice: 0.0011,
     outputPrice: 0.0044,
     capabilities: {
+      json: {
+        enabled: true,
+      },
       tools: {
         enabled: true,
       },
@@ -200,6 +203,9 @@ const chatModels = [
     inputPrice: 0.002,
     outputPrice: 0.008,
     capabilities: {
+      json: {
+        enabled: true,
+      },
       tools: {
         enabled: true,
       },
@@ -221,6 +227,9 @@ const chatModels = [
     inputPrice: 0.002,
     outputPrice: 0.008,
     capabilities: {
+      json: {
+        enabled: true,
+      },
       tools: {
         enabled: true,
       },
@@ -242,6 +251,9 @@ const chatModels = [
     inputPrice: 0.0004,
     outputPrice: 0.0016,
     capabilities: {
+      json: {
+        enabled: true,
+      },
       tools: {
         enabled: true,
       },
@@ -263,6 +275,9 @@ const chatModels = [
     inputPrice: 0.0025,
     outputPrice: 0.01,
     capabilities: {
+      json: {
+        enabled: true,
+      },
       tools: {
         enabled: true,
       },
@@ -285,6 +300,9 @@ const chatModels = [
     inputPrice: 0.0011,
     outputPrice: 0.0044,
     capabilities: {
+      json: {
+        enabled: true,
+      },
       tools: {
         enabled: true,
       },

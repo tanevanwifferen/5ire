@@ -11,6 +11,63 @@ const chatModels = [
     outputPrice: 0.015,
     description: `Grok's latest and greatest flagship model, offering unparalleled performance in natural language, math and reasoning - the perfect jack of all trades.`,
     capabilities: {
+      json: {
+        enabled: true,
+      },
+      tools: {
+        enabled: true,
+      },
+    },
+  },
+  {
+    id: 'grok-4-fast',
+    name: 'grok-4-fast',
+    contextWindow: 2000000,
+    defaultMaxTokens: 1000000,
+    maxTokens: 2000000,
+    inputPrice: 0.0002,
+    outputPrice: 0.0005,
+    description: `Grok's latest advancement in cost-efficient reasoning models.`,
+    capabilities: {
+      json: {
+        enabled: true,
+      },
+      tools: {
+        enabled: true,
+      },
+    },
+  },
+  {
+    id: 'grok-4-fast-non-reasoning',
+    name: 'grok-4-fast-non-reasoning',
+    contextWindow: 2000000,
+    defaultMaxTokens: 1000000,
+    maxTokens: 2000000,
+    inputPrice: 0.0002,
+    outputPrice: 0.0005,
+    description: `Grok's latest advancement in cost-efficient reasoning models.`,
+    capabilities: {
+      json: {
+        enabled: true,
+      },
+      tools: {
+        enabled: true,
+      },
+    },
+  },
+  {
+    id: 'grok-code-fast',
+    name: 'grok-code-fast',
+    contextWindow: 256000,
+    defaultMaxTokens: 8000,
+    maxTokens: 256000,
+    inputPrice: 0.0003,
+    outputPrice: 0.0015,
+    description: `a speedy and economical reasoning model that excels at agentic coding.`,
+    capabilities: {
+      json: {
+        enabled: true,
+      },
       tools: {
         enabled: true,
       },
@@ -26,6 +83,9 @@ const chatModels = [
     outputPrice: 0.015,
     description: `Grok's flagship model that excels at enterprise tasks like data extraction, programming, and text summarization.`,
     capabilities: {
+      json: {
+        enabled: true,
+      },
       tools: {
         enabled: true,
       },
@@ -43,6 +103,9 @@ const chatModels = [
     description: `Fast mode delivers reduced latency and a quicker time-to-first-token. Scroll down to read more.`,
     capabilities: {
       tools: {
+        enabled: true,
+      },
+      json: {
         enabled: true,
       },
     },
